@@ -31,16 +31,29 @@ export msl=128
 export prefix=4
 export head=12
 
-echo ">> 1. evaluate our method"
-export method="our"
-export gen_type="embedReSend"
-export device=1
+# echo ">> 1. evaluate our method vanilla"
+# export method="our"
+# export gen_type="vanilla"
+# export device=1
+
+# $python profile_gpt.py 0 $device\
+# 	$layer $d $msl $prefix $head $method $gen_type &
+	
+# $python profile_gpt.py 1 $device\
+# 	$layer $d $msl $prefix $head $method $gen_type >./res/ourvanilla.txt & 
+
+echo ">> 2. evaluate mpcformer"
+export method="MPCformer"
+export gen_type="vanilla"
+export device=2
 
 $python profile_gpt.py 0 $device\
 	$layer $d $msl $prefix $head $method $gen_type &
 	
-$python profile_gpt.py 1 $device\
-	$layer $d $msl $prefix $head $method $gen_type 
+nohup $python profile_gpt.py 1 $device\
+	$layer $d $msl $prefix $head $method $gen_type >./res/mpcvanilla.txt &
+
+
 
 # echo "================================"
 # echo "Evaluate for vanilla GPT-2"

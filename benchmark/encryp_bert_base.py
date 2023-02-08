@@ -90,13 +90,40 @@ class BertBaseFlatten(nn.Module):
         xo=self.embeddings(x)
 
         for i in range(self.config.num_hidden_layers):
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
+
             xo=xo.matmul(self.weight_mats[i].T)
             xo=self.multiheadMut(xo,self.M_mats[i])
             xo=xo+self.bias_mats[i]
+
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+
             xo=self.activation(xo)
 
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
+
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+            self.timing["ActivTime"]+=(t2-t1)
+            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+
         ## final transform
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
         xo=xo.matmul(self.last_w.T)+self.last_b
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
         return xo
 

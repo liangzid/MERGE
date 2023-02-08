@@ -55,6 +55,15 @@ class config():
        self.hidden_dropout_prob = 0.1
        self.attention_probs_dropout_prob = 0.1
 
+   def __display__(self):
+      t=""
+      for x,y in self.__dict__.items():
+         t+=f"{x}: {y} \t{type(y)}\n"
+      return t
+         
+   def __str__(self):
+      return self.__display__()
+
 config = config()
 print(f"using model config: {config}")
 
@@ -122,5 +131,8 @@ for i in range(num):
 
 for k,v in avg_t.items():
    avg_t[k]/=num
+   if "Byte" in k:
+      avg_t[k]/=1024
+      avg_t[k]/=1024
 print("-------------")
 print(avg_t)

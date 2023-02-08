@@ -180,19 +180,64 @@ class BertTinyFlatten(nn.Module):
         xo=self.embeddings(x)
 
         ## init transform
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
         xo=xo.matmul(self.init_d_flatten.T)
         xo=self.multiheadMut(xo,self.init_M)
         xo=xo+self.init_d_bias_flatten
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+
         xo=self.activation(xo)
 
+        c2=comm.get().get_communication_stats()
+        t2=time.time()
+
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+        self.timing["ActivTime"]+=(t2-t1)
+        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+
         ## internal0 transform
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
         xo=xo.matmul(self.inter0_d_flatten.T)
         xo=self.multiheadMut(xo,self.inter0_M)
         xo=xo+self.inter0_bias
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+
         xo=self.activation(xo)
 
+        c2=comm.get().get_communication_stats()
+        t2=time.time()
+
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+        self.timing["ActivTime"]+=(t2-t1)
+        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+
         ## final transform
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
         xo=xo.matmul(self.final_d.T)+self.final_b
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
         # logits=self.classifier(xo[:,0,:])
         # return logits 
