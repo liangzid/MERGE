@@ -134,6 +134,7 @@ class gptEmbeddings(cnn.Module):
             self.timing[k] = 0
     
     def cuda(self, device=None):
+        device=self.config.device
         super(gptEmbeddings, self).cuda(device=device)
 
         for i in range(len(self.moduleList)):

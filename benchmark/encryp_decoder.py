@@ -44,14 +44,16 @@ class GPTBaseFlatten(nn.Module):
         self.config=config
         self.timing=timing
         # self.config.num_labels=2
-        self.device=torch.device("cuda:0")
+        # print(config.device)
+        self.device=torch.device(config.device)
 
         self.bos_one_hot=F.one_hot(torch.randint(low=0,
             high=config.vocab_size,
             size=(1,)),
-            config.vocab_size).float().cuda()
+            config.vocab_size).float().to(self.device)
 
         self.embeddings=gptEmbeddings(config,timing)
+        self.embeddings.cuda()
 
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
@@ -110,33 +112,80 @@ class GPTBaseFlatten(nn.Module):
         xo=self.embeddings(x)
 
         for i in range(self.config.num_hidden_layers):
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
+
             xo=xo.matmul(self.weight_mats[i].T)
             xo=self.multiheadMut(xo,self.M_mats[i])
             xo=xo+self.bias_mats[i]
+            
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+            
             xo=self.activation(xo)
 
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
+            
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+            self.timing["ActivTime"]+=(t2-t1)
+            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+
         ## final transform
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
         xo=xo.matmul(self.last_w.T)+self.last_b
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
         return xo
     def forward2(self,x):
-        # print(x.shape)
         xo=self.embeddings(x)
+
         alist=[]
         sl=xo.shape[1]
 
         for i in range(self.config.num_hidden_layers):
             alist.append(xo)
-            # print(xo.shape)
-            # print(self.M_mats[i][:,:sl,:sl].shape)
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
+
             xo=self.multiheadMut(xo,self.M_mats[i][:,:sl,:sl])
             xo=xo.matmul(self.weight_mats[i].T)
             xo=xo+self.bias_mats[i]
+
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+
             xo=self.activation(xo)
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
+            
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+            self.timing["ActivTime"]+=(t2-t1)
+            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
 
         alist.append(xo)
         ## final transform
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
         xo=xo.matmul(self.last_w.T)+self.last_b
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
         alist.append(xo)
 
         return xo,alist
@@ -148,7 +197,9 @@ class GPTBaseFlatten(nn.Module):
     def one_step(self,new_idx,past_states):
 
         new_idx=new_idx.unsqueeze(1)
+        
         xo=self.embeddings(new_idx) # shape should be: bs,1,d
+
         return self.feature_onestep(xo,past_states)
 
     # @pysnooper.snoop(watch=('xo.shape',))
@@ -174,17 +225,42 @@ class GPTBaseFlatten(nn.Module):
                     cat([past_states[i],xo], 1)
             # print("shape after cat: ",past_states[i].shape)
             
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
+
             xo=self.multiheadMut(past_states[i],
                                  self.M_mats[i][:,
                     :num_past_token+1,-1].unsqueeze(2))
 
             xo=xo.matmul(self.weight_mats[i].T)
             xo=xo+self.bias_mats[i]
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+
             xo=self.activation(xo)
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
+            
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+            self.timing["ActivTime"]+=(t2-t1)
+            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
         
         past_states[i+1]=past_states[i+1].\
             cat([past_states[i+1],xo], 1)
+
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
         xo=xo.matmul(self.last_w.T)+self.last_b
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
         past_states[i+2]=past_states[i+2].\
             cat([past_states[i+1],xo], 1)
 
@@ -218,10 +294,24 @@ class GPTBaseFlatten(nn.Module):
                 else idx[:, -self.config.max_position_embeddings:,:]
 
             feature,past_list = self.one_step(idx_cond[:,-1,:], past_list)
+            
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
             logits=self.lm_head(feature)
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
             probs = self.smax(logits)
             idx_next = maximum.argmax(probs, dim=-1)
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
+            self.timing["SMAMTime"]+=(t2-t1)
+            self.timing["SMAMCommTime"]+=(c2['time']-c1['time'])
+            self.timing["SMAMCommByte"]+=(c2['bytes']-c1['bytes'])
+
             idx = self.cat([idx, idx_next])
         return idx
 
@@ -235,10 +325,12 @@ class GPTBaseFlatten(nn.Module):
             idx=self.cat([idx,self.bos_one_hot])
 
         feature=self.embeddings(idx[:,-1,:].unsqueeze(1))
+        
         _,past_features=self.forward2(idx[:,:-1,:])
 
         prog=tqdm(total=self.config.sequence_length-\
                   self.config.prefix_length)
+        
         while True:
             prog.update(1)
             s=past_features[0].shape[1]+1
@@ -250,5 +342,15 @@ class GPTBaseFlatten(nn.Module):
                 else idx[:, -self.config.max_position_embeddings:,:]
             feature,past_features=self.feature_onestep(feature,
                                                        past_features)
-        return idx
+
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+        all_logits=self.lm_head(past_features[-1])
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+        
+        return all_logits
 

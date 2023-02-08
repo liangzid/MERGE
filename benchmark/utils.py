@@ -5,9 +5,10 @@ import crypten
 import crypten.communicator as comm
 import crypten.nn as cnn
 
-def encrypt_tensor(input):
+def encrypt_tensor(input,config):
     """input: the plaintext input tensor"""
     """Encrypt data tensor for multi-party setting"""
+    device=config.device
     # get rank of current process
     rank = comm.get().get_rank()
     # get world size
@@ -18,9 +19,9 @@ def encrypt_tensor(input):
     src_id = 1
 
     if rank == src_id:
-        input_upd = input.cuda()
+        input_upd = input.to(device)
     else:
-        input_upd = torch.empty(input.size()).cuda()
+        input_upd = torch.empty(input.size()).to(device)
     private_input = crypten.cryptensor(input_upd, src=src_id)
 #    print(private_input)
     return private_input
@@ -33,15 +34,16 @@ def encrypt_model(model, modelFunc, config, dummy_input):
     dummy_input: unused
     """
     rank = comm.get().get_rank()
+    device=config[0].device
     
     # assumes party 0 is the actual model provider
     if rank == 0:
-        model_upd = model.cuda()
+        model_upd = model.to(device)
     else:
         if isinstance(config, tuple):
-            model_upd = modelFunc(config[0], config[1]).cuda()
+            model_upd = modelFunc(config[0], config[1]).to(device)
         else:
-            model_upd = modelFunc(config).cuda()
+            model_upd = modelFunc(config).to(device)
 
     private_model = model_upd.encrypt(src=0)
     return private_model
