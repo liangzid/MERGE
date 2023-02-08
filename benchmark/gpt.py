@@ -313,6 +313,8 @@ class gptSelfAttention(cnn.Module):
         self.timing["SoftmaxCommByte"] += (comm1["bytes"] - comm0["bytes"])
 
         attention_probs = self.dropout(attention_probs)
+        # print(f"Attention shape: {attention_probs.shape}")
+        # print(f"Value shape: {value_layer.shape}")
         
         t0 = time.time()
         comm0 = comm.get().get_communication_stats()
@@ -323,6 +325,7 @@ class gptSelfAttention(cnn.Module):
         self.timing["LinearCommTime"] += (comm1["time"] - comm0["time"])
         self.timing["LinearCommByte"] += (comm1["bytes"] - comm0["bytes"])
 
+        # print(f"context shape{context_layer.shape}")
         context_layer = context_layer.permute(0, 2, 1, 3)#.contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.hidden_size,)
         context_layer = context_layer.reshape(new_context_layer_shape)

@@ -51,7 +51,7 @@ from tqdm import tqdm
 
 class BertFlattenForSeqCls(nn.Module):
     def __init__(self, config, position_embedding_type=None):
-        super().__init__()
+        super(BertFlattenForSeqCls,self).__init__()
 
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)

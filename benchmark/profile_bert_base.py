@@ -1,8 +1,23 @@
 """
-Encryption version BERT tiny with precomuption.
+======================================================================
+PROFILE_BERT_BASE ---
 
-Zi Liang, 0207
+encryption time test for bert-base
+
+    Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
+    Copyright © 2023, ZiLiang, all rights reserved.
+    Created:  7 二月 2023
+======================================================================
 """
+
+
+# ------------------------ Code --------------------------------------
+
+## normal import 
+import json
+from typing import List,Tuple,Dict
+import random
+from pprint import pprint as ppp
 
 import sys
 import os
@@ -20,23 +35,23 @@ from crypten.config import cfg
 from utils import encrypt_tensor, encrypt_model
 
 from models import Bert
-from encryp_bert_tiny import BertTinyFlatten
+from encryp_bert_base import BertBaseFlatten
 from models import BertEmbeddings
 
 # Inference arguments
 class config():
    def __init__(self):
        self.batch_size = 1
-       self.num_hidden_layers = 2
-       self.hidden_size =128 
-       self.intermediate_size =512 
+       self.num_hidden_layers = 12
+       self.hidden_size = 768
+       self.intermediate_size = 3072
        self.sequence_length = 512
        self.max_position_embeddings = 512
        self.hidden_act = "quad"
        self.softmax_act = "softmax_2RELU"
        self.layer_norm_eps = 1e-12
-       self.num_attention_heads = 2
-       self.vocab_size = 30522
+       self.num_attention_heads = 12
+       self.vocab_size = 28996
        self.hidden_dropout_prob = 0.1
        self.attention_probs_dropout_prob = 0.1
 
@@ -52,7 +67,8 @@ os.environ["MASTER_PORT"] = "29500"
 os.environ["RENDEZVOUS"] = "env://"
 
 # eval_type="VanillaBert"
-eval_type="FastBert"
+# eval_type="FastBert"
+eval_type="testlinearlayer"
 
 crypten.init()
 # show details of the communication procedure
@@ -72,10 +88,18 @@ avg_t = defaultdict(float)
 if eval_type=="VanillaBert":
     m = Bert(config, timing)
     model = encrypt_model(m, Bert, (config, timing), input_ids).eval()
-else:
-    m = BertTinyFlatten(config, timing)
-    model = encrypt_model(m, BertTinyFlatten,
+elif eval_type == "FastBert":
+    m = BertBaseFlatten(config, timing)
+    model = encrypt_model(m, BertBaseFlatten,
                           (config, timing), input_ids).eval()
+else:
+    # test the effort of the linear layer.
+    print("Open the Test Mode.")
+    from encryp_only_for_test import BertTest
+    m = BertTest(config, timing)
+    model = encrypt_model(m, BertTest,
+                          (config, timing), input_ids).eval()
+    
 
 model=model.to("cuda:0")
 
