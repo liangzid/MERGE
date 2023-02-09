@@ -253,7 +253,6 @@ class GPTBaseFlatten(nn.Module):
             self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
             self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
 
-        alist.append(xo)
         ## final transform
         t0=time.time()
         c0=comm.get().get_communication_stats()
@@ -301,7 +300,8 @@ class GPTBaseFlatten(nn.Module):
 
         xo=self.multiheadMut(past_states[0],
                                 self.bgin_M[:,
-                :num_past_token+1,-1].unsqueeze(2))
+                                            :num_past_token+1,
+                                num_past_token:num_past_token+1])
         xo=xo.matmul(self.bgin_w)
         xo=xo+self.bgin_b
 
@@ -339,7 +339,8 @@ class GPTBaseFlatten(nn.Module):
 
             xo=self.multiheadMut(past_states[i+1],
                                  self.M_mats[i][:,
-                    :num_past_token+1,-1].unsqueeze(2))
+                                    :num_past_token+1,
+                                    num_past_token:num_past_token+1])
 
             xo=xo.matmul(self.weight1_mats[i])
             xo=xo.matmul(self.weight2_mats[i])
@@ -359,9 +360,6 @@ class GPTBaseFlatten(nn.Module):
             self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
             self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
         
-        past_states[i+2]=past_states[i+2].\
-            cat([past_states[i+2],xo], 1)
-
         t0=time.time()
         c0=comm.get().get_communication_stats()
         xo=xo.matmul(self.last_w)+self.last_b
@@ -371,14 +369,15 @@ class GPTBaseFlatten(nn.Module):
         self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
         self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
-        past_states[i+3]=past_states[i+3].\
-            cat([past_states[i+3],xo], 1)
+        past_states[i+2]=past_states[i+2].\
+            cat([past_states[i+2],xo], 1)
 
         # print("--------")
         # print(xo)
         # print(xo.shape)
 
-        return xo,past_states
+        # return xo,past_states
+        return xo
         
             
     def generate_vanilla(self, idx):
@@ -427,31 +426,38 @@ class GPTBaseFlatten(nn.Module):
 
     def generate_ourmethod(self,idx):
         """fast forward inference proposed by our method."""
-        past_features = [[] for _ in range(self.config.num_hidden_layers+2)]
+        past_features = [[] for _ in range(self.config.num_hidden_layers+1)]
         generation_stage = False
 
         bs,sql,v=idx.shape
         if sql<1: # empty
             idx=self.cat([idx,self.bos_one_hot])
 
-        feature=self.embeddings(idx[:,-1,:].unsqueeze(1))
+        feature=self.embeddings(idx[:,-1:,:])
         
         _,past_features=self.forward2(idx[:,:-1,:])
 
         prog=tqdm(total=self.config.sequence_length-\
                   self.config.prefix_length)
         
-        while True:
+        for _ in range(self.config.gen_len):
             prog.update(1)
-            s=past_features[0].shape[1]+1
-            if s>=self.config.sequence_length:
-                break
+            # try:
+            #     print(past_features[0].shape)
+            # except:
+            #     print(past_features[0])
+
             # truncation
             idx_cond = idx if\
                 idx.size(1) <= self.config.max_position_embeddings\
                 else idx[:, -self.config.max_position_embeddings:,:]
-            feature,past_features=self.feature_onestep(feature,
-                                                       past_features)
+            # feature,past_features=self.feature_onestep(feature,
+                                                       # past_features)
+            ## note:
+            # HERE WE USE THE REFERNCE-TRANSMIT INSEATED OF VALUE-TRANSMIT.
+            # 此处使用引用传递而非值传递
+            feature=self.feature_onestep(feature,
+                                         past_features)
 
         t0=time.time()
         c0=comm.get().get_communication_stats()
@@ -464,3 +470,74 @@ class GPTBaseFlatten(nn.Module):
         
         return all_logits
 
+    # def generate_migrate(self, idx, max_new_tokens,
+    #         temperature=1.0, do_sample=False, top_k=None):
+    #     """
+    #     Take a conditioning sequence of indices idx
+    #     (LongTensor of shape (b,s,v)) and complete
+    #     the sequence max_new_tokens times, feeding
+    #     the predictions back into the model each time.
+
+    #     Most likely you'll want to make sure to be in
+    #     model.eval() mode of operation for this.
+    #     """
+    #     generation_time = {}
+    #     past_list = [[] for _ in range(self.config.num_hidden_layers)]
+    #     generation_stage = False
+    #     for token_id in range(max_new_tokens):
+    #         b, s, _ = idx.shape
+    #         time_s = time.time()
+    #         # if the sequence context is growing too long we must crop it at block_size
+    #         idx_cond = idx if idx.size(1) <= self.config.max_position_embeddings else idx[:, -self.config.max_position_embeddings:,:]
+    #         # forward the model to get the logits for the index in the sequence
+    #         #print(idx_cond.shape)
+    #         if not generation_stage:
+    #             features = self.forward_migrate(idx_cond, past_list)
+    #             generation_stage = True
+    #         else:
+    #             features = self.forward_migrate(idx_cond[:, -1:, :],
+    #                                     past_list)
+    #         #!TODO: waiting to change.
+    #         t0 = time.time()
+    #         comm0 = comm.get().get_communication_stats()
+    #         logits = logits[:, -1:, :] / temperature
+    #         probs = self.smax(logits)
+    #         idx_next = maximum.argmax(probs, dim=-1)
+    #         idx = self.cat([idx, idx_next])
+    #         comm1 = comm.get().get_communication_stats()
+    #         t1 = time.time()
+    #         time_e = time.time()
+    #         generation_time.update({(b, s): time_e - time_s})
+    #         self.timing["GenerateOtherTime"] += (t1-t0)
+    #         self.timing["GenerateOtherCommTime"] +=\
+    #             (comm1["time"] - comm0["time"])
+    #         self.timing["GenerateOtherCommByte"] +=\
+    #             (comm1["bytes"] - comm0["bytes"])
+    #         print(generation_time)
+    #     return idx
+
+    # def forward_migrate(self, input_ids, past_list):
+    #     output = self.embeddings(input_ids)
+    #     for layer_id, layer in enumerate(self.encoder):
+    #         # pass in a past key/value of shape [[b, s, h], [b, s, h]] !!not tuple, it will get deep copied..!!
+    #         if len(past_list[layer_id]) == 0:
+    #             print("input to layer None")
+    #         else:
+    #             print("input to layer size: ",
+    #                   past_list[layer_id][0].shape,
+    #                   past_list[layer_id][1].shape)
+    #         #output, past = layer(output, past_list[layer_id])
+    #         output = layer(output, past_list[layer_id])
+    #         #past_list[layer_id].append()
+    #     t0 = time.time()
+    #     comm0 = comm.get().get_communication_stats()
+    #     output = self.lm_head(output)
+    #     comm1 = comm.get().get_communication_stats()
+    #     t1 = time.time()
+    #     self.timing["LinearTime"] += (t1-t0)
+    #     self.timing["LinearCommTime"] += (comm1["time"] - comm0["time"])
+    #     self.timing["LinearCommByte"] += (comm1["bytes"] - comm0["bytes"])
+    #     self.timing["lmHeadTime"] += (t1-t0)
+    #     self.timing["lmHeadCommTime"] += (comm1["time"] - comm0["time"])
+    #     self.timing["lmHeadCommByte"] += (comm1["bytes"] - comm0["bytes"])
+    #     return output#, past
