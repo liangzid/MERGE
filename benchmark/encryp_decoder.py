@@ -46,11 +46,13 @@ class GPTBaseFlatten(nn.Module):
         # self.config.num_labels=2
         # print(config.device)
         self.device=torch.device(config.device)
+        device=self.device
 
         self.bos_one_hot=F.one_hot(torch.randint(low=0,
             high=config.vocab_size,
             size=(1,)),
             config.vocab_size).float().to(self.device)
+        self.bos_one_hot=crypten.cryptensor(self.bos_one_hot)
 
         self.embeddings=gptEmbeddings(config,timing)
         self.embeddings.cuda()
@@ -65,21 +67,47 @@ class GPTBaseFlatten(nn.Module):
         else:
             self.msl=128
 
-        self.weight_mats=[]
+        self.weight1_mats=[]
+        self.weight2_mats=[]
         self.bias_mats=[]
         self.M_mats=[]
+        self.d=config.hidden_size
+        self.I=config.intermediate_size
         ## ========================= precomputed matrix
-        for num_layer in range(self.config.num_hidden_layers):
-            self.weight_mats.append(torch.ones((config.hidden_size,
-                                                config.hidden_size)).to(self.device))
-            self.bias_mats.append(torch.ones(config.hidden_size).to(self.device))
-            self.M_mats.append(torch.ones(self.num_attention_heads,
-                                          self.msl,self.msl).to(self.device))
-        self.last_w=torch.ones((config.hidden_size,config.hidden_size)).to(self.device)
-        self.last_b=torch.ones((config.hidden_size)).to(self.device)
+        self.bgin_layer=nn.Linear(config.hidden_size,self.I)
+        self.bgin_w=torch.ones((self.I,config.hidden_size)).to(device).T
+        self.bgin_b=torch.ones(self.I).to(device)
+        self.bgin_M=torch.ones(self.num_attention_heads,
+                               self.msl,self.msl).to(device)
+        self.bgin_w=crypten.cryptensor(self.bgin_w,src=0)
+        self.bgin_b=crypten.cryptensor(self.bgin_b,src=0)
+        self.bgin_M=crypten.cryptensor(self.bgin_M,src=0)
         
-        # self.activation=activation_quad()
-        self.activation=nn.ReLU()
+        for num_layer in range(self.config.num_hidden_layers-1):
+            self.weight1_mats.append(torch.ones((self.d,
+                                    self.I)).to(self.device).T)
+            self.weight2_mats.append(torch.ones((self.I,
+                                    self.d)).to(self.device).T)
+            self.bias_mats.append(torch.ones(self.I)\
+                                  .to(self.device))
+            self.M_mats.append(torch.ones(self.num_attention_heads,
+                            self.msl,self.msl).to(self.device))
+        self.last_w=torch.ones((self.d,self.I)).to(self.device).T
+        self.last_b=torch.ones((config.hidden_size)).to(self.device)
+
+        # incryption
+        for i in range(self.config.num_hidden_layers-1):
+            self.weight1_mats[i]=crypten.cryptensor(self.weight1_mats[i],
+                                                src=0)
+            self.weight2_mats[i]=crypten.cryptensor(self.weight2_mats[i],
+                                                src=0)
+            self.bias_mats[i]=crypten.cryptensor(self.bias_mats[i],
+                                                src=0)
+            self.M_mats[i]=crypten.cryptensor(self.M_mats[i],
+                                                src=0)
+        
+        self.activation=activation_quad()
+        # self.activation=nn.ReLU()
 
         self.lm_head=cnn.Linear(config.hidden_size,
                                 config.vocab_size,bias=False)
@@ -111,11 +139,36 @@ class GPTBaseFlatten(nn.Module):
         # print(x.shape)
         xo=self.embeddings(x)
 
-        for i in range(self.config.num_hidden_layers):
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
+        xo=xo.matmul(self.bgin_w)
+        xo=self.multiheadMut(xo,self.bgin_M)
+        xo=xo+self.bgin_b
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+
+        xo=self.activation(xo)
+
+        c2=comm.get().get_communication_stats()
+        t2=time.time()
+
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+        self.timing["ActivTime"]+=(t2-t1)
+        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+        
+
+        for i in range(self.config.num_hidden_layers-1):
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
-            xo=xo.matmul(self.weight_mats[i].T)
+            xo=xo.matmul(self.weight1_mats[i])
+            xo=xo.matmul(self.weight2_mats[i])
             xo=self.multiheadMut(xo,self.M_mats[i])
             xo=xo+self.bias_mats[i]
             
@@ -138,7 +191,7 @@ class GPTBaseFlatten(nn.Module):
         ## final transform
         t0=time.time()
         c0=comm.get().get_communication_stats()
-        xo=xo.matmul(self.last_w.T)+self.last_b
+        xo=xo.matmul(self.last_w)+self.last_b
         c1=comm.get().get_communication_stats()
         t1=time.time()
         self.timing["LinearTime"]+=(t1-t0)
@@ -149,16 +202,40 @@ class GPTBaseFlatten(nn.Module):
     def forward2(self,x):
         xo=self.embeddings(x)
 
-        alist=[]
+        alist=[xo]
         sl=xo.shape[1]
 
-        for i in range(self.config.num_hidden_layers):
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
+        xo=xo.matmul(self.bgin_w)
+        xo=self.multiheadMut(xo,self.bgin_M[:,:sl,:sl])
+        xo=xo+self.bgin_b
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+
+        xo=self.activation(xo)
+
+        c2=comm.get().get_communication_stats()
+        t2=time.time()
+
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+        self.timing["ActivTime"]+=(t2-t1)
+        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+
+        for i in range(self.config.num_hidden_layers-1):
             alist.append(xo)
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
             xo=self.multiheadMut(xo,self.M_mats[i][:,:sl,:sl])
-            xo=xo.matmul(self.weight_mats[i].T)
+            xo=xo.matmul(self.weight1_mats[i])
+            xo=xo.matmul(self.weight2_mats[i])
             xo=xo+self.bias_mats[i]
 
             c1=comm.get().get_communication_stats()
@@ -180,7 +257,7 @@ class GPTBaseFlatten(nn.Module):
         ## final transform
         t0=time.time()
         c0=comm.get().get_communication_stats()
-        xo=xo.matmul(self.last_w.T)+self.last_b
+        xo=xo.matmul(self.last_w)+self.last_b
         c1=comm.get().get_communication_stats()
         t1=time.time()
         self.timing["LinearTime"]+=(t1-t0)
@@ -213,26 +290,59 @@ class GPTBaseFlatten(nn.Module):
             num_past_token=past_states[0].shape[1] # i.e. sequence length
 
         xo=new_feature
-        L=self.config.num_hidden_layers
+        if len(past_states[0])==0:
+            past_states[0]=xo
+        else:
+            past_states[0]=past_states[0].\
+                cat([past_states[0],xo], 1)
+
+        t0=time.time()
+        c0=comm.get().get_communication_stats()
+
+        xo=self.multiheadMut(past_states[0],
+                                self.bgin_M[:,
+                :num_past_token+1,-1].unsqueeze(2))
+        xo=xo.matmul(self.bgin_w)
+        xo=xo+self.bgin_b
+
+        c1=comm.get().get_communication_stats()
+        t1=time.time()
+
+        xo=self.activation(xo)
+
+        c2=comm.get().get_communication_stats()
+        t2=time.time()
+
+        self.timing["LinearTime"]+=(t1-t0)
+        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+
+        self.timing["ActivTime"]+=(t2-t1)
+        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
+        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+        
+        
+        L=self.config.num_hidden_layers-1
         for i in range(L):
             # the outputs of previous layer
             # print("xo type and shape",type(xo),xo.shape)
             # print("shape before cat: ",past_states[i].shape)
-            if len(past_states[i])==0:
-                past_states[i]=xo
+            if len(past_states[i+1])==0:
+                past_states[i+1]=xo
             else:
-                past_states[i]=past_states[i].\
-                    cat([past_states[i],xo], 1)
+                past_states[i+1]=past_states[i+1].\
+                    cat([past_states[i+1],xo], 1)
             # print("shape after cat: ",past_states[i].shape)
             
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
-            xo=self.multiheadMut(past_states[i],
+            xo=self.multiheadMut(past_states[i+1],
                                  self.M_mats[i][:,
                     :num_past_token+1,-1].unsqueeze(2))
 
-            xo=xo.matmul(self.weight_mats[i].T)
+            xo=xo.matmul(self.weight1_mats[i])
+            xo=xo.matmul(self.weight2_mats[i])
             xo=xo+self.bias_mats[i]
             c1=comm.get().get_communication_stats()
             t1=time.time()
@@ -249,20 +359,20 @@ class GPTBaseFlatten(nn.Module):
             self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
             self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
         
-        past_states[i+1]=past_states[i+1].\
-            cat([past_states[i+1],xo], 1)
+        past_states[i+2]=past_states[i+2].\
+            cat([past_states[i+2],xo], 1)
 
         t0=time.time()
         c0=comm.get().get_communication_stats()
-        xo=xo.matmul(self.last_w.T)+self.last_b
+        xo=xo.matmul(self.last_w)+self.last_b
         c1=comm.get().get_communication_stats()
         t1=time.time()
         self.timing["LinearTime"]+=(t1-t0)
         self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
         self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
-        past_states[i+2]=past_states[i+2].\
-            cat([past_states[i+1],xo], 1)
+        past_states[i+3]=past_states[i+3].\
+            cat([past_states[i+3],xo], 1)
 
         # print("--------")
         # print(xo)

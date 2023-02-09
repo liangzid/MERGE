@@ -43,9 +43,9 @@ export head=12
 # 	$layer $d $msl $prefix $head $method $gen_type >./res/ourvanilla.txt & 
 
 echo ">> 2. evaluate mpcformer"
-# export method="our"
-export method="MPCformer"
-export gen_type="vanilla"
+export method="our"
+# export method="MPCformer"
+export gen_type="embedReSend"
 export device=7
 export port="3933"
 
