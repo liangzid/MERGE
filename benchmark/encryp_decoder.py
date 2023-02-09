@@ -402,7 +402,8 @@ class GPTBaseFlatten(nn.Module):
                 idx.size(1) <= self.config.max_position_embeddings\
                 else idx[:, -self.config.max_position_embeddings:,:]
 
-            feature,past_list = self.one_step(idx_cond[:,-1,:], past_list)
+            feature = self.one_step(idx_cond[:,-1,:], past_list)
+            # print(past_list[0].shape)
             
             t0=time.time()
             c0=comm.get().get_communication_stats()

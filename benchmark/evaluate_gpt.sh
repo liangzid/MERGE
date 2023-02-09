@@ -45,7 +45,8 @@ export head=12
 echo ">> 2. evaluate mpcformer"
 export method="our"
 # export method="MPCformer"
-export gen_type="embedReSend"
+# export gen_type="embedReSend"
+export gen_type="vanilla"
 export device=7
 export port="3933"
 
