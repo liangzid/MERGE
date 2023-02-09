@@ -54,6 +54,7 @@ class config():
        self.vocab_size = 28996
        self.hidden_dropout_prob = 0.1
        self.attention_probs_dropout_prob = 0.1
+       self.device="cuda:0"
 
    def __display__(self):
       t=""
@@ -72,12 +73,12 @@ rank = sys.argv[1]
 os.environ["RANK"] = str(rank)
 os.environ["WORLD_SIZE"] = str(2)
 os.environ["MASTER_ADDR"] = "219.245.186.45"
-os.environ["MASTER_PORT"] = "29500"
+os.environ["MASTER_PORT"] = "10001"
 os.environ["RENDEZVOUS"] = "env://"
 
 # eval_type="VanillaBert"
-# eval_type="FastBert"
-eval_type="testlinearlayer"
+eval_type="FastBert"
+# eval_type="testlinearlayer"
 
 crypten.init()
 # show details of the communication procedure
@@ -85,7 +86,7 @@ cfg.communicator.verbose = True
 
 # setup fake data for timing purpose
 commInit = crypten.communicator.get().get_communication_stats()
-input_ids = F.one_hot(torch.randint(low=0, high=config.vocab_size, size=(config.batch_size, config.sequence_length)), config.vocab_size).float().to("cuda:0")
+input_ids = F.one_hot(torch.randint(low=0, high=config.vocab_size, size=(config.batch_size, config.sequence_length)), config.vocab_size).float().to(config.device)
 
 # input_ids = torch.zeros((config.batch_size,
 #                          config.sequence_length,
@@ -110,10 +111,10 @@ else:
                           (config, timing), input_ids).eval()
     
 
-model=model.to("cuda:0")
+model=model.to(config.device)
 
 # encrpy inputs
-input_ids = encrypt_tensor(input_ids)
+input_ids = encrypt_tensor(input_ids,config)
 
 num=10
 for i in range(num):

@@ -18,6 +18,7 @@ class gpt(cnn.Module):
 
         # No need to init weight for timing purpose
         self.embeddings = gptEmbeddings(config, timing)
+        self.embeddings.cuda()
         self.encoder = cnn.ModuleList([gptLayer(config, timing) for _ in range(config.num_hidden_layers)])
         self.lm_head = cnn.Linear(config.hidden_size, config.vocab_size, bias=False)
         self.smax = cnn.Softmax(dim=-1)

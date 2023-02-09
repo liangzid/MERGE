@@ -16,6 +16,7 @@ class Bert(cnn.Module):
         self.config = config
 
         self.embeddings = BertEmbeddings(config, timing)
+        self.embeddings.cuda()
         self.encoder = cnn.ModuleList([BertLayer(config, timing) for _ in range(config.num_hidden_layers)])
         self.timing = timing
    

@@ -27,7 +27,7 @@ echo "================================"
 
 export layer=12
 export d=768
-export msl=128
+export msl=512
 export prefix=4
 export head=12
 
@@ -44,17 +44,17 @@ export head=12
 
 echo ">> 2. evaluate mpcformer"
 # export method="our"
-export method="MPCformer"
-export gen_type="vanilla"
-export device=7
-export port="3933"
+export method="our"
+export gen_type="embedReSend"
+export device=3
+export port="5008"
 
 $python profile_gpt.py 0 $device\
 	$layer $d $msl $prefix $head $method $gen_type $port &
 	
 nohup $python profile_gpt.py 1 $device\
       $layer $d $msl $prefix $head $method $gen_type $port\
-      >./res/$method$gen_type$device$layer$d$msl$prefix$head.txt &
+      >./res/$method$gen_type$device$layer$d$msl$prefix$head$port.txt &
 
 # echo "================================"
 # echo "Evaluate for vanilla GPT-2"
@@ -98,6 +98,10 @@ nohup $python profile_gpt.py 1 $device\
 	
 # $python profile_gpt.py 1 $device\
 # 	$layer $d $msl $prefix $head $method $gen_type &
+
+
+
+
 
 
 echo "RUNNING evaluate_gpt.sh DONE."
