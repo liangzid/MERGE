@@ -18,7 +18,7 @@ export d_ls=(768)
 export msl_ls=(128 256 512)
 export p_ls=(4 8 16)
 export head_ls=(12)
-export method_ls=("MPCformer" "our")
+export method_ls=("MPCformer" "our" "vanillaGPT","thex")
 export genmethod_ls=("vanilla" "embedReSend")
 
 echo "================================"
@@ -43,12 +43,14 @@ export head=12
 # 	$layer $d $msl $prefix $head $method $gen_type >./res/ourvanilla.txt & 
 
 echo ">> 2. evaluate mpcformer"
-export method="our"
+# export method="our"
+# export method="thex"
+export method="vanillaGPT"
 # export method="MPCformer"
 # export gen_type="embedReSend"
 export gen_type="vanilla"
-export device=7
-export port="3933"
+export device=6
+export port="3934"
 
 $python profile_gpt.py 0 $device\
 	$layer $d $msl $prefix $head $method $gen_type $port &
