@@ -186,17 +186,6 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     model.train()
     return losses
 
-## TODO: MOVE these functions to =inference.py=
-# def infer_vanilla(test_loader,model,task,DEVICE="cpu"):
-#     model.eval()
-
-#     evaluate_dict={"GEM/web_nlg":["bleu","meteor","chrf","TER",
-#                                   "bertscore","bleurt"],
-#                    "ele_nlg":["bleu","NIST","METEOR","ROUGE_L","CIDEr"]}
-
-# def infer_reSend(test_loader,model,task,DEVICE="cpu"):
-#     pass
-
 def main():
     EPOCH = 5
     # LR = 5e-5 
@@ -217,8 +206,8 @@ def main():
     model_name="gpt2/"
     frmpth=prefix_path+model_name
     
-    model = BFSCNew.from_pretrained(frmpth)
-    # model = AutoModelForCausalLM.from_pretrained(frmpth)
+    # model = BFSCNew.from_pretrained(frmpth)
+    model = AutoModelForCausalLM.from_pretrained(frmpth)
     tokenizer = AutoTokenizer.from_pretrained(frmpth)
     tokenizer.pad_token="<|pad|>"
     tokenizer.sep_token="<|sep|>"
@@ -240,13 +229,13 @@ def main():
                             shuffle=True,drop_last=True)
 
     #============================================
-    trainConditional(model, optimizer,
-                     trloader,valoader,
-                     task,
-                     PATH,
-                     batch_size=BATCH_SIZE,
-          EPOCH=EPOCH,LR=LR,
-          DEVICE=DEVICE,)
+    # trainConditional(model, optimizer,
+    #                  trloader,valoader,
+    #                  task,
+    #                  PATH,
+    #                  batch_size=BATCH_SIZE,
+    #       EPOCH=EPOCH,LR=LR,
+    #       DEVICE=DEVICE,)
     tokenizer.save_pretrained(PATH)
     #============================================
 
@@ -257,8 +246,9 @@ def main():
     # test(test_loader=val_loader,model=model,task=task,
     #      batch_size=BATCH_SIZE,DEVICE=DEVICE)
 
-    test(test_loader=test_loader,model=model,task=task,
+    res=test(test_loader=valoader,model=model,task=task,
          batch_size=BATCH_SIZE,DEVICE=DEVICE)
+    print(res)
 
 
 ## running entry
