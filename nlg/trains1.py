@@ -24,6 +24,8 @@ from tqdm import tqdm
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 
+from transformersV4251.models.gpt2.gpt2_new import \
+    GPT2LMHeadModel as BFSCNew
 from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
 from transformers import AutoTokenizer
@@ -81,7 +83,7 @@ def get_pretrained_dataset(tokenizer,
                       truncation=True,
                     max_length=1024,return_tensors="pt")
         dset=TensorDataset(res.input_ids,
-                        res.attention_mask)
+                        )
         return dset
     return getSet("train"),getSet("validation"),getSet("test")
 
@@ -113,7 +115,7 @@ def getFinetunedSet(tokenizer,
                     max_length=max_sentence_length,return_tensors="pt")
 
         dset=TensorDataset(outss.input_ids,
-                           outss.attention_mask)
+                           )
         return dset
     return getSet("train"),getSet("validation"),getSet("test")
     
@@ -128,18 +130,18 @@ def trainConditional(model,
           ):
 
     ii=0
-    past_ppl=10000
+    past_losses=10000
     tqdm1=tqdm(total=EPOCH)
     for epoch in range(EPOCH):
         tqdm1.update(1)
 
         print(f"-------EPOCH {epoch}-------------")
-        for i,(inps,atts) in enumerate(train_loader):
+        for i,(inps,) in enumerate(train_loader):
+            print(ii)
             ii+=1
-            inps,atts=inps.to(DEVICE),\
-                atts.to(DEVICE)
+            inps,=inps.to(DEVICE),
 
-            outputs = model(inps,attention_mask=atts,
+            outputs = model(inps,
                             labels=inps)
 
             loss = outputs.loss
@@ -152,13 +154,14 @@ def trainConditional(model,
             if ii%300==0:
                 print(f"loss:{loss.item()}")
 
-            if ii%500==0:
+            if ii%10000==0:
                 print("Run Validating...")
                 losses=test(test_loader=val_loader,
                          model=model,
                          task=task,
                          batch_size=batch_size,
                          DEVICE=DEVICE)
+                print(f">>Val Loss: {losses}")
 
                 if losses<past_losses:
                     model.save_pretrained(save_path)
@@ -170,13 +173,13 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     model.eval()
     losses=0.
 
-    for i,(inps,atts) in enumerate(test_loader):
-        inps,atts=inps.to(DEVICE),\
-            atts.to(DEVICE)
+    with torch.no_grad():
+        for i,(inps,) in enumerate(test_loader):
+            inps,=inps.to(DEVICE),
 
-        outputs = model(inps,attention_mask=atts,labels=inps)
-        loss = outputs.loss
-        losses+=loss
+            outputs = model(inps,labels=inps)
+            loss = outputs.loss
+            losses+=loss
 
     losses/=((i+1)*batch_size)
         
@@ -198,7 +201,7 @@ def main():
     EPOCH = 5
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:7")
+    DEVICE = torch.device("cuda:5")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
@@ -214,7 +217,8 @@ def main():
     model_name="gpt2/"
     frmpth=prefix_path+model_name
     
-    model = AutoModelForCausalLM.from_pretrained(frmpth)
+    model = BFSCNew.from_pretrained(frmpth)
+    # model = AutoModelForCausalLM.from_pretrained(frmpth)
     tokenizer = AutoTokenizer.from_pretrained(frmpth)
     tokenizer.pad_token="<|pad|>"
     tokenizer.sep_token="<|sep|>"
@@ -222,8 +226,12 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
     model = model.to(DEVICE)
 
-    trs,vas,tes=getFinetunedSet(tokenizer,256,task,subtask)
+    trs,vas,tes=getFinetunedSet(tokenizer,128,task,subtask)
+    print(f"train set len: {len(trs)}")
+    print(f"validation set len: {len(vas)}")
+    print(f"test set len: {len(tes)}")
 
+    print(f"batch_size: {batch_size}")
     trloader=DataLoader(trs,batch_size=batch_size,
                             shuffle=True,drop_last=False)
     valoader=DataLoader(vas,batch_size=batch_size,

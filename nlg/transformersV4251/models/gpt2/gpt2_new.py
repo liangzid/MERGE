@@ -162,6 +162,16 @@ class GPT2Attention(nn.Module):
         self.attn_dropout = nn.Dropout(config.attn_pdrop)
         self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
+        ## ======================
+        if hasattr(config,"msl"):
+            self.msl=config.msl
+        else:
+            self.msl=128
+        self.M = nn.Parameter(torch.ones(config.num_attention_heads,
+                                          self.msl,
+                                          self.msl))
+        ## ======================
+
         self.pruned_heads = set()
 
     def prune_heads(self, heads):
@@ -207,7 +217,36 @@ class GPT2Attention(nn.Module):
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
+        # shape of attn_weights: bs, num_heads,msl,msl
+
+        # print("-----------")
+        # print("Shape of Attention Weights:",attn_weights.shape)
+
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
+        attn_weights = attn_weights.type(value.dtype)
+        attn_weights = self.attn_dropout(attn_weights)
+
+        # Mask heads if we want to
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
+
+        attn_output = torch.matmul(attn_weights, value)
+
+        return attn_output, attn_weights
+
+    def _attnConstant(self, value, attention_mask=None, head_mask=None):
+
+        # shape of attn_weights: bs, num_heads,msl,msl
+
+        # print("-----------")
+        # print("Shape of Attention Weights:",attn_weights.shape)
+
+        # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
+
+        bs=value.shape[0]
+        attn_weights = self.M.unsqueeze(0)
+        if bs!=1:
+            attn_weights.repeat(bs,1,1,1)
         attn_weights = attn_weights.type(value.dtype)
         attn_weights = self.attn_dropout(attn_weights)
 
@@ -328,7 +367,9 @@ class GPT2Attention(nn.Module):
         if self.reorder_and_upcast_attn:
             attn_output, attn_weights = self._upcast_and_reordered_attn(query, key, value, attention_mask, head_mask)
         else:
-            attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
+            # attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
+            attn_output, attn_weights = self._attnConstant(value,
+                                attention_mask, head_mask)
 
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         attn_output = self.c_proj(attn_output)

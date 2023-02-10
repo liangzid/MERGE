@@ -25,9 +25,8 @@ from pprint import pprint as ppp
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 
-# todo: need to changed it.
-from transformersV4251.models.bert.modeling_bert_new import \
-    BertForSequenceClassification as BFSCNew
+from transformersV4251.models.gpt2.gpt2_new import \
+    GPT2LMHeadModel as BFSCNew
 
 from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
@@ -202,7 +201,9 @@ def main1():
     smodel = smodel.to(DEVICE)
     tmodel = tmodel.to(DEVICE)
 
-    trs,vas,tes=getFinetunedSet(tokenizer,256,task,subtask)
+    print(f"max sequence length: {args.max_seq_length}")
+    trs,vas,tes=getFinetunedSet(tokenizer,args.max_seq_length,
+                                task,subtask)
 
     trloader=DataLoader(trs,batch_size=batch_size,
                             shuffle=True,drop_last=False)
