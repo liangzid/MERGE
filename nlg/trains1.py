@@ -31,6 +31,7 @@ from transformers import AutoModelForCausalLM
 from transformers import AutoTokenizer
 
 from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import accuracy_score
 
 import torch
@@ -79,7 +80,7 @@ def get_pretrained_dataset(tokenizer,
     def getSet(split="train"):
         train_set=load_dataset(task,subset,split=split)
         train_t=[x["text"] for x in train_set]
-        res=tokenizer(train_t,padding="max_length",
+        res=tokenizer(train_t,padding="longest",
                       truncation=True,
                     max_length=1024,return_tensors="pt")
         dset=TensorDataset(res.input_ids,
@@ -110,13 +111,47 @@ def getFinetunedSet(tokenizer,
         outs=[inps[i]+sep_token+outs[i]+eos_token\
               for i in range(len(train_set))]
 
-        outss=tokenizer(outs,padding="max_length",
-                      truncation=True,
+        outss=tokenizer(outs,padding="longest",
+                        truncation=True,
                     max_length=max_sentence_length,return_tensors="pt")
 
         dset=TensorDataset(outss.input_ids,
                            )
         return dset
+    return getSet("train"),getSet("validation"),getSet("test")
+
+def getTestDataSet(tokenizer,
+                    max_sentence_length=128,
+                    task="GEM/web_nlg",subset="en"):
+    """
+    For Downstream Tasks based on Conditional Generation.
+    task and subtask enums:
+    + GEM/web_nlg
+        + en
+        + ru
+    + e2e_nlg, subset:none
+    """
+    sep_token="<|sep|>"
+    # sep_token=tokenizer.sep_token
+    eos_token=tokenizer.eos_token
+
+    def getSet(split="train"):
+        train_set=load_dataset(task,subset,split=split)
+        inps=[x["input"] for x in train_set]
+        inps=[";".join(x)+sep_token for x in inps]
+        outs=inps
+        labels=[x["target"] for x in train_set]
+
+        prefix_id_ls=[]
+        for text in outs:
+            ou=tokenizer(text,padding="longest",
+                        truncation=True,
+                        max_length=max_sentence_length,
+                            return_tensors="pt")
+            # print("ou shape: ",ou)
+            prefix_id_ls.append(ou.input_ids)
+
+        return prefix_id_ls,labels
     return getSet("train"),getSet("validation"),getSet("test")
     
 def trainConditional(model,
@@ -126,20 +161,26 @@ def trainConditional(model,
           task,
           save_path,
           EPOCH,LR,DEVICE,
+        tokenizer,
           batch_size=32,
           ):
 
+    tb_writer = SummaryWriter(log_dir="./logs/stage1train/1")
+    board_name="train_stage1_somethingtemp"
     ii=0
     past_losses=10000
     tqdm1=tqdm(total=EPOCH)
     for epoch in range(EPOCH):
         tqdm1.update(1)
+        tqdm2=tqdm(total=len(train_loader))
 
         print(f"-------EPOCH {epoch}-------------")
         for i,(inps,) in enumerate(train_loader):
-            print(ii)
+            tqdm2.update(1)
+            # print(ii)
             ii+=1
             inps,=inps.to(DEVICE),
+            # print(tokenizer.decode(inps[0]))
 
             outputs = model(inps,
                             labels=inps)
@@ -151,10 +192,12 @@ def trainConditional(model,
             loss.backward()
             optimizer.step()
 
+            tb_writer.add_scalar(board_name+"loss",loss.item(),ii)
+
             if ii%300==0:
                 print(f"loss:{loss.item()}")
 
-            if ii%10000==0:
+            if ii%1000==0:
                 print("Run Validating...")
                 losses=test(test_loader=val_loader,
                          model=model,
@@ -162,8 +205,14 @@ def trainConditional(model,
                          batch_size=batch_size,
                          DEVICE=DEVICE)
                 print(f">>Val Loss: {losses}")
+                tb_writer.add_scalar(board_name+"valloss",
+                                     losses.item(),ii)
 
                 if losses<past_losses:
+                    print(" -->now save a better model.")
+                    print(f"in epoch {epoch}, step {i}.")
+
+                    tokenizer.save_pretrained(save_path)
                     model.save_pretrained(save_path)
                     past_losses=losses
 
@@ -187,10 +236,10 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     return losses
 
 def main():
-    EPOCH = 5
+    EPOCH = 2
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:5")
+    DEVICE = torch.device("cuda:2")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
@@ -209,8 +258,9 @@ def main():
     # model = BFSCNew.from_pretrained(frmpth)
     model = AutoModelForCausalLM.from_pretrained(frmpth)
     tokenizer = AutoTokenizer.from_pretrained(frmpth)
-    tokenizer.pad_token="<|pad|>"
+    tokenizer.pad_token=tokenizer.eos_token
     tokenizer.sep_token="<|sep|>"
+    model.resize_token_embeddings(len(tokenizer))
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
     model = model.to(DEVICE)
@@ -229,14 +279,15 @@ def main():
                             shuffle=True,drop_last=True)
 
     #============================================
-    # trainConditional(model, optimizer,
-    #                  trloader,valoader,
-    #                  task,
-    #                  PATH,
-    #                  batch_size=BATCH_SIZE,
-    #       EPOCH=EPOCH,LR=LR,
-    #       DEVICE=DEVICE,)
-    tokenizer.save_pretrained(PATH)
+    trainConditional(model, optimizer,
+                     trloader,valoader,
+                     task,
+                     PATH,
+                     batch_size=BATCH_SIZE,
+          EPOCH=EPOCH,LR=LR,
+                     DEVICE=DEVICE,tokenizer=tokenizer)
+    tokenizer.save_pretrained(PATH+"fianlly")
+    model.save_pretrained(PATH+"fianlly")
     #============================================
 
     model=model.from_pretrained(PATH)
@@ -247,6 +298,11 @@ def main():
     #      batch_size=BATCH_SIZE,DEVICE=DEVICE)
 
     res=test(test_loader=valoader,model=model,task=task,
+         batch_size=BATCH_SIZE,DEVICE=DEVICE)
+    print(res)
+
+    # todo: 为什么在测试集上的loss这么高？
+    res=test(test_loader=teloader,model=model,task=task,
          batch_size=BATCH_SIZE,DEVICE=DEVICE)
     print(res)
 

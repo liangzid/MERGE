@@ -21,6 +21,7 @@ import json
 from typing import List,Tuple,Dict
 import random
 from pprint import pprint as ppp
+from tqdm import tqdm
 
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -36,6 +37,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 from torch import tensor
 
 import json
@@ -82,6 +84,12 @@ def setup_train_args():
                         type=int, required=False,)
     parser.add_argument('--root_dir', default='/home/liangzi/he_transformer/newglue/',
                         type=str, required=False,)
+    parser.add_argument('--writer_dir',
+                        type=str, required=False,default="./logs/1")
+    parser.add_argument('--board_name',
+                        type=str, required=True,)
+    parser.add_argument('--max_grad_norm', default=1.0,
+                        type=float, required=False,)
     return parser.parse_args()
 
 
@@ -92,21 +100,28 @@ def train(args, tmodel, smodel,
           batch_size=32,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
+    tb_writer = SummaryWriter(log_dir=args.writer_dir)
 
     ii=0
+    overall_step=0.
+    tqdm1=tqdm(total=EPOCH)
     for epoch in range(EPOCH):
         ii+=1
+        tqdm1.update(1)
+        tqdm2=tqdm(total=len(train_loader))
 
         print(f"-------EPOCH {epoch}-------------")
-        for i,(inps,atts) in enumerate(train_loader):
-            inps,atts=inps.to(DEVICE),\
-                atts.to(DEVICE)
+        for i,(inps,) in enumerate(train_loader):
+            overall_step+=1
+            tqdm2.update(1)
+            bs,msl=inps.shape
+            inps,=inps.to(DEVICE),
 
-            toutputs=tmodel(inps,attention_mask=atts,labels=inps,
+            toutputs=tmodel(inps,labels=inps,
                             output_hidden_states=True)
             teacher_logits=toutputs.logits
 
-            outputs = smodel(inps,attention_mask=atts,
+            outputs = smodel(inps,
                              labels=inps,
                              output_hidden_states=True)
 
@@ -124,14 +139,26 @@ def train(args, tmodel, smodel,
 
                 # print("tau",type(args.tau),args.tau)
 
-                new_stu_logits=F.softmax(outputs.logits/args.tau,dim=1)
-                new_tea_logits=F.softmax(teacher_logits/args.tau,dim=1)
-                # print("newloss",new_stu_logits[0])
+                # print(f"teacher logitis: {teacher_logits.shape}")
+                new_stu_logits=F.softmax(outputs.logits/args.tau,dim=2)
+                # new_stu_logits+=1e-4
+                new_tea_logits=F.softmax(teacher_logits/args.tau,dim=2)
+                # print("stu logits:",new_stu_logits[0])
 
-                # print(new_stu_logits.shape,new_tea_logits.shape)
-                softlabel_loss=kl_loss(new_stu_logits.log(),
-                                new_tea_logits,
-                                )
+                if bs==1:
+                    new_stu_logits=new_stu_logits.squeeze(0)
+                    new_tea_logits=new_tea_logits.squeeze(0)
+                    # print(new_stu_logits.shape,new_tea_logits.shape)
+                    softlabel_loss=kl_loss(new_stu_logits.log(),
+                                    new_tea_logits,
+                                    )
+                    # softlabel_loss/=msl
+                else:
+                    softlabel_loss=0.
+                    for bsi in range(bs):
+                        softlabel_loss+=kl_loss(new_stu_logits[bsi].log(),
+                                                new_tea_logits[bsi],)
+
                 # print("softlabelLoss",softlabel_loss)
                 softlabel_loss*=args.tau**2
 
@@ -139,37 +166,51 @@ def train(args, tmodel, smodel,
                 ## we use MSE loss for that.
                 mse_loss=0.
                 lens=len(toutputs.hidden_states)
+                # print(f"length of hidden states layers: {lens}")
                 for j in range(lens):
                     mse_loss+=F.mse_loss(toutputs.hidden_states[j],
-                               outputs.hidden_states[j],reduction="mean")
+                               outputs.hidden_states[j],
+                                reduction="mean")
                 mse_loss/=lens
 
-            # todo
+            # todo: frozon the lm head, to the embeddings
             if args.using_wordEmbedMSE==1:
+                ## assert the 
                 wordEmMSE_loss=0.
             
-            a1,a2,a3=0.25,0.25,0.25
-            a4=1-a1-a2-a3
-            loss = a1*entropy_loss + a2*softlabel_loss +\
-                a3*inter_loss + a4*wordEmMSE_loss
+            # a1,a2,a3=0.25,0.25,0.25
+            # a4=1-a1-a2-a3
+            # loss = a1*entropy_loss + a2*softlabel_loss +\
+            #     a3*inter_loss + a4*wordEmMSE_loss
+            loss=0.33*entropy_loss+0.33*softlabel_loss+0.33*inter_loss
 
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                smodel.parameters(), args.max_grad_norm)
             optimizer.step()
 
-            if i%300==0:
+            if i%1==0:
                 # print(f"loss:{loss.item()}")
                 print(f"Loss:{loss}\tEntropy:{entropy_loss}\
                 \tDistill:{softlabel_loss}\tInter:{inter_loss}\
-                \twordEmbed{wordEmMSE_loss}")
+                \twordEmbed:{wordEmMSE_loss}")
 
-            if ii%500==0:
+                tb_writer.add_scalar(args.board_name+"--LOSS",loss.item(),overall_step)
+                tb_writer.add_scalar(args.board_name+"--SoftLabelOSS",softlabel_loss.item(),overall_step)
+                tb_writer.add_scalar(args.board_name+"--CElOSS",entropy_loss.item(),overall_step)
+                tb_writer.add_scalar(args.board_name+"--interLOSS",inter_loss,overall_step)
+
+
+            if ii%1000==0:
                 print("Run Validating...")
                 losses=test(test_loader=val_loader,
                          model=smodel,
                          task=task,
                          batch_size=batch_size,
                          DEVICE=DEVICE)
+                tb_writer.add_scalar(args.board_name+"--valLOSS",
+                                     losses,overall_step)
 
                 if losses<past_losses:
                     smodel.save_pretrained(args.stu_save_ckpt)
@@ -179,6 +220,7 @@ def train(args, tmodel, smodel,
 
 def main1():
     args=setup_train_args()
+    torch.autograd.set_detect_anomaly(True)
     
     EPOCH = args.epochs
     LR = args.lr
@@ -187,15 +229,46 @@ def main1():
     else:
         DEVICE = torch.device(f"cuda:{args.cuda_num}")
     BATCH_SIZE =args.batch_size
+    batch_size=args.batch_size
     task=args.task
+    if task=="GEM/web_nlg":
+        subtask="en"
+    elif task=="e2d_nlg":
+        subtask=None
+    else:
+        subtask=None
     
     tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
+    print("TRA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
     ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt)
+    tmodel.resize_token_embeddings(len(ttokenizer))
 
-    ## TODO: change the name of self-defined class.
     smodel = BFSCNew.from_pretrained(args.stu_ckpt)
+    print("STU Original embedding size: ",smodel.get_input_embeddings().weight.shape[0])
     stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer
+    smodel.resize_token_embeddings(len(tokenizer))
+    print("length of vocab in tokenizer: ",len(tokenizer))
+
+    if args.using_wordEmbedMSE==1:
+        ## using the embedding representation as the classifier params.
+        embedding_weight=smodel.get_input_embeddings().weight.T
+        d,v=embedding_weight.shape
+        print(f"V: {v}\td: {d}")
+        newlm=nn.Linear(d,v,bias=False)
+        newlm.weight=nn.Parameter(embedding_weight.T)
+        for param in newlm.parameters():
+            param.requires_grad = False
+        smodel.set_output_embeddings(newlm)
+        print("whether the last linear map has grad: ",
+              smodel.lm_head.weight.requires_grad)
+        for name,param in smodel.named_parameters():
+            if "wte" in name:
+                print("find word embedding layer,\
+                now set the grad to false.")
+                param.required_grad=False
+        print("whether the embedding layer has grad: ",
+              False)
 
     optimizer = torch.optim.AdamW(smodel.parameters(), lr=LR)
     smodel = smodel.to(DEVICE)
@@ -242,7 +315,7 @@ def main1():
 
 ## running entry
 if __name__=="__main__":
-    main()
+    main1()
     print("EVERYTHING DONE.")
 
 

@@ -55,7 +55,8 @@ class Inference:
         bla_tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.tokenizer = bla_tokenizer
         print("tokenizer loading done...")
-        eos_token=self.tokenizer.eos_token
+        self.eos_token=self.tokenizer.eos_token
+        self.sep_token=self.tokenizer.sep_token
         print("INFERENCE-MODEL-PATH: {}".format(model_path))
         self.decoder=AutoModelForCausalLM\
             .from_pretrained(model_path)
@@ -88,17 +89,17 @@ class Inference:
                    "nist_mt","meteor","rouge"]
         self.multi_ref_ls=["bleu","ter","nist_mt"]
 
-        self.metrics_dict={}
+        
+        self.metricsModel_ls=[]
         for metric in self.metrics_ls:
             if metric=="bleurt":
-                self.metrics_dict[metric]=evaluate.load(metric,
-                                    module_type="metric")
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    module_type="metric"))
             elif metric=="chrf":
-                self.metrics_dict[metric]=evaluate.load(metric,
-                                    word_order=2)
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    word_order=2))
             else:
-                self.metrics_dict[metric]=evaluate.load(metric)
-            
+                self.metricsModel_ls.append(evaluate.load(metric))
         
     def inference(self, sequence, generate_mode_test="greedy"):
         new_sent = []
@@ -106,19 +107,27 @@ class Inference:
         print('==========starting testing==========')
         for seq in sequence:
             # print("input: {}".format(seq))
-            input_ids = self.tokenizer.encode(seq, return_tensors="pt")
+            # input_ids = self.tokenizer.encode(seq, return_tensors="pt")
+            input_ids=seq.unsqueeze(0)
             input_ids = input_ids.to(self.device)
             try:
                 if generate_mode_test == "greedy":
-                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=2.5,no_repeat_ngram_size=3,)
+                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=2.5,no_repeat_ngram_size=3,
+                                                  pad_token_id=self.tokenizer.eos_token_id)
                 else:
-                    outputs=self.gen_embedResend(seq[0])
+                    outputs=self.gen_embedResend(input_ids)
 
                 sentence=self.tokenizer.decode(outputs[0],
-                                skip_special_tokens=True)
-                print("sentence: {}".format(sentence))
+                                skip_special_tokens=False)
+                p=self.tokenizer.decode(seq,skip_special_tokens=False)
+                print("raw prefix: {}".format(p))
+                print("raw prefix id: {}".format(seq))
+                print("raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
+                if self.sep_token in sentence:
+                    sentence=sentence.split(self.sep_token)[1]
+                print("post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
 
@@ -140,24 +149,27 @@ class Inference:
         """
         Both `hyps` and `refs` are one-array lists.
         """
+        refss=[[x] for x in refs]
         big_res_dict={}
-        for m in self.metrics_ls:
-            if m in self.multi_ref_ls:
-                big_res_dict[m]=self.metrics_dict[m]\
-                                    .compute(hyps,[[x] for x in refs])
-            else:
-                big_res_dict[m]=self.metrics_dict[m]\
-                                    .compute(hyps,refs)
+        for i,m in enumerate(self.metrics_ls):
+            print(f"metrics: {m}")
+            try:
+                if m in self.multi_ref_ls:
+                    big_res_dict[m]=self.metricsModel_ls[i]\
+                                        .compute(predictions=hyps,
+                                                    references=refss)
+                else:
+                    big_res_dict[m]=self.metricsModel_ls[i]\
+                                        .compute(predictions=hyps,
+                                                 references=refs)
+            except:
+                big_res_dict[m]={"res":"empty, with error."}
         return big_res_dict
         
-    def gen_embedResend(self,prefix:str):
+    def gen_embedResend(self,prefix_ids):
         """
         Embedding resend style sentence generation.
         """
-        
-        # 1.1 first translate prefix to tensor indexes.
-        prefix_ids=self.tokenizer.encode([prefix],
-                                return_tensors="pt")
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,
@@ -193,9 +205,12 @@ class Inference:
         return decoder_input_ids
 
 def main():
-    inputt="Hello world."
-    inferenceModel=Inference(model_path="lalala",cuda_num=0)
-    xxx=inferenceModel.inference([inputt])
+    inputt="Aarhus | leader | Jacob_Bundsgaard<|sep|>"
+    inferenceModel=Inference(model_path="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1/",cuda_num=7)
+
+    inputt_id=inferenceModel.tokenizer(inputt)
+
+    xxx=inferenceModel.inference([inputt_id[0]])
     print(xxx)
 
 if __name__=="__main__":

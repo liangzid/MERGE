@@ -10,27 +10,33 @@
 ######################################################################
 
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
-export root_dir="/home/liangzi/mpcGen/nlu/"
+export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=30
+export epochs=3
 export lr=3e-5
-export device="6"
-export batch_size=32
+# export device="6"
+export device="cpu"
+export batch_size=1
 export task="GEM/web_nlg"
 export max_seq_length=128
 
 # export teach_ckpt=${root_dir}/save_models/saved_bert-base-uncased_taskcola-epoch30-lr3e-05-bs32
-export teach_ckpt="/home/liangzi/models/gpt2/"
+# export teach_ckpt="/home/liangzi/models/gpt2/"
+# export teach_ckpt="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1/"
+export teach_ckpt="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1"
 export stu_ckpt=${teach_ckpt}___withConstantMatrix
 
 export using_entropy=1
 export using_softLabel=1
-export tau=1
+export tau=4
 export using_interKL=1
-export using_wordEmbedMSE=1
+# export using_wordEmbedMSE=1
+export using_wordEmbedMSE=0
 export stu_save_ckpt=${stu_ckpt}Distilled${using_entropy}${using_softLabel}${using_interKL}${tau}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
+
+export board_name=$stu_save_ckpt
 
 # export models=("bert-base-uncased")
 # export devices=(1 2 3 4 5 6 7 0)
@@ -56,6 +62,7 @@ ${python} trains2.py \
 	--using_interKL=${using_interKL}\
 	--using_wordEmbedMSE=${using_wordEmbedMSE}\
 	--tau=${tau}\
+	--board_name=${board_name}\
 	--root_dir=$root_dir
 
 
