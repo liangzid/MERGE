@@ -158,6 +158,7 @@ def trainConditional(model,
           optimizer,
           train_loader,
           val_loader,
+          test_loader,
           task,
           save_path,
           EPOCH,LR,DEVICE,
@@ -207,6 +208,14 @@ def trainConditional(model,
                 print(f">>Val Loss: {losses}")
                 tb_writer.add_scalar(board_name+"valloss",
                                      losses.item(),ii)
+                losses=test(test_loader=test_loader,
+                         model=model,
+                         task=task,
+                         batch_size=batch_size,
+                         DEVICE=DEVICE)
+                print(f">>Test Loss: {losses}")
+                tb_writer.add_scalar(board_name+"testloss",
+                                     losses.item(),ii)
 
                 if losses<past_losses:
                     print(" -->now save a better model.")
@@ -236,10 +245,10 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     return losses
 
 def main():
-    EPOCH = 2
+    EPOCH = 6
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:2")
+    DEVICE = torch.device("cuda:7")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
@@ -280,7 +289,7 @@ def main():
 
     #============================================
     trainConditional(model, optimizer,
-                     trloader,valoader,
+                     trloader,valoader,teloader,
                      task,
                      PATH,
                      batch_size=BATCH_SIZE,

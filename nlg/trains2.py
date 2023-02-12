@@ -32,6 +32,7 @@ from transformersV4251.models.gpt2.gpt2_new import \
 from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
 from transformers import AutoTokenizer
+from transformers import AutoConfig
 from torch.utils.data import DataLoader, TensorDataset
 
 import torch
@@ -82,6 +83,10 @@ def setup_train_args():
                         type=int, required=False,)
     parser.add_argument('--using_wordEmbedMSE', default=0,
                         type=int, required=False,)
+    parser.add_argument('--using_quadacti', default=0,
+                        type=int, required=False,)
+    parser.add_argument('--using_simLN', default=0,
+                        type=int, required=False,)
     parser.add_argument('--root_dir', default='/home/liangzi/he_transformer/newglue/',
                         type=str, required=False,)
     parser.add_argument('--writer_dir',
@@ -100,7 +105,7 @@ def train(args, tmodel, smodel,
           batch_size=32,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
-    tb_writer = SummaryWriter(log_dir=args.writer_dir)
+    tb_writer = SummaryWriter(log_dir=args.writer_dir+args.board_name)
 
     ii=0
     overall_step=0.
@@ -164,14 +169,22 @@ def train(args, tmodel, smodel,
 
             if args.using_interKL==1:
                 ## we use MSE loss for that.
-                mse_loss=0.
                 lens=len(toutputs.hidden_states)
                 # print(f"length of hidden states layers: {lens}")
                 for j in range(lens):
-                    mse_loss+=F.mse_loss(toutputs.hidden_states[j],
+                    # print(toutputs.hidden_states[j])
+                    # print(outputs.hidden_states[j])
+
+                    # assert (toutputs.hidden_states[j]==\
+                    #        outputs.hidden_states[j]).all()
+
+                    templ=F.mse_loss(toutputs.hidden_states[j],
                                outputs.hidden_states[j],
                                 reduction="mean")
-                mse_loss/=lens
+                    # print(f"this part mse loss: {templ}")
+                    inter_loss+=templ
+
+                inter_loss/=lens
 
             # todo: frozon the lm head, to the embeddings
             if args.using_wordEmbedMSE==1:
@@ -202,7 +215,7 @@ def train(args, tmodel, smodel,
                 tb_writer.add_scalar(args.board_name+"--interLOSS",inter_loss,overall_step)
 
 
-            if ii%1000==0:
+            if ii%100==0:
                 print("Run Validating...")
                 losses=test(test_loader=val_loader,
                          model=smodel,
@@ -239,11 +252,16 @@ def main1():
         subtask=None
     
     tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
-    print("TRA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
+    print("TEA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
     ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt)
     tmodel.resize_token_embeddings(len(ttokenizer))
 
-    smodel = BFSCNew.from_pretrained(args.stu_ckpt)
+    config=AutoConfig.from_pretrained(args.stu_ckpt)
+    if args.using_quadacti==1:
+        config.activation_function="quad" # set to quad activation
+    if args.using_simLN==1:
+        config.layerNormType="sim" # set to quad activation
+    smodel = BFSCNew.from_pretrained(args.stu_ckpt,config=config)
     print("STU Original embedding size: ",smodel.get_input_embeddings().weight.shape[0])
     stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer

@@ -141,6 +141,27 @@ class LinearActivation(nn.Module):
     def forward(self, input: Tensor) -> Tensor:
         return input
 
+## this implementation is comming from `MPCformer`
+class QuadActivation(nn.Module):
+    """
+    Applies the quadratic activation function, i.e. forwarding input directly to output.
+    """
+
+    def forward(self, input: Tensor) -> Tensor:
+        return 0.125*torch.square(input) + 0.25*input + 0.5
+
+def softmax_2relu(scores, dim, eps=1e-12):
+    relu = torch.nn.functional.relu(scores)
+    reduce_dim = scores.shape[dim]
+    out = (relu + eps/reduce_dim) / (torch.sum(relu, dim=dim, keepdims=True)+eps)
+    #print(torch.isnan(out).any(), out.shape)
+    return out
+
+def softmax_2quad(scores, attention_mask_zero_one, dim):
+    scores =  (scores + 5) ** 2
+    scores *= attention_mask_zero_one
+    scores = scores / torch.sum(scores, dim=dim, keepdims=True)
+    return scores
 
 class ClassInstantier(OrderedDict):
     def __getitem__(self, key):
@@ -154,6 +175,7 @@ ACT2CLS = {
     "gelu_10": (ClippedGELUActivation, {"min": -10, "max": 10}),
     "gelu_fast": FastGELUActivation,
     "gelu_new": NewGELUActivation,
+    "quad": QuadActivation,
     "gelu_python": (GELUActivation, {"use_gelu_python": True}),
     "linear": LinearActivation,
     "mish": MishActivation,

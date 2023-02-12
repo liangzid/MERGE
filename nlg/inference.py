@@ -108,25 +108,28 @@ class Inference:
         for seq in sequence:
             # print("input: {}".format(seq))
             # input_ids = self.tokenizer.encode(seq, return_tensors="pt")
-            input_ids=seq.unsqueeze(0)
+            # print("sequence: ",seq)
+            input_ids=seq
+            # input_ids=seq.unsqueeze(0)
             input_ids = input_ids.to(self.device)
             try:
                 if generate_mode_test == "greedy":
-                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=2.5,no_repeat_ngram_size=3,
+                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=3.0,no_repeat_ngram_size=2,
                                                   pad_token_id=self.tokenizer.eos_token_id)
                 else:
                     outputs=self.gen_embedResend(input_ids)
 
                 sentence=self.tokenizer.decode(outputs[0],
                                 skip_special_tokens=False)
-                p=self.tokenizer.decode(seq,skip_special_tokens=False)
+                p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
                 print("raw prefix: {}".format(p))
-                print("raw prefix id: {}".format(seq))
+                # print("raw prefix id: {}".format(seq))
                 print("raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
+
                 if self.sep_token in sentence:
-                    sentence=sentence.split(self.sep_token)[1]
+                    sentence=sentence.split(self.sep_token)[-1]
                 print("post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
@@ -205,12 +208,13 @@ class Inference:
         return decoder_input_ids
 
 def main():
-    inputt="Aarhus | leader | Jacob_Bundsgaard<|sep|>"
-    inferenceModel=Inference(model_path="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1/",cuda_num=7)
+    inputt=["Aarhus | leader | Jacob_Bundsgaard<|sep|>"]
+    inferenceModel=Inference(model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1/",cuda_num=7)
 
-    inputt_id=inferenceModel.tokenizer(inputt)
+    inputt_id=inferenceModel.tokenizer(inputt,
+                    return_tensors="pt").input_ids
 
-    xxx=inferenceModel.inference([inputt_id[0]])
+    xxx=inferenceModel.inference([inputt_id])
     print(xxx)
 
 if __name__=="__main__":

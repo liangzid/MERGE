@@ -19,6 +19,8 @@ export device="cpu"
 export batch_size=1
 export task="GEM/web_nlg"
 export max_seq_length=128
+export using_quadacti=1
+export using_simLN=1
 
 # export teach_ckpt=${root_dir}/save_models/saved_bert-base-uncased_taskcola-epoch30-lr3e-05-bs32
 # export teach_ckpt="/home/liangzi/models/gpt2/"
@@ -32,7 +34,7 @@ export tau=4
 export using_interKL=1
 # export using_wordEmbedMSE=1
 export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}Distilled${using_entropy}${using_softLabel}${using_interKL}${tau}
+export stu_save_ckpt=${stu_ckpt}Distilled${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -62,6 +64,8 @@ ${python} trains2.py \
 	--using_interKL=${using_interKL}\
 	--using_wordEmbedMSE=${using_wordEmbedMSE}\
 	--tau=${tau}\
+	--using_quadacti=${using_quadacti}\
+	--using_simLN=${using_simLN}\
 	--board_name=${board_name}\
 	--root_dir=$root_dir
 

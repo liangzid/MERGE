@@ -192,6 +192,7 @@ class GPT2Attention(nn.Module):
     def _attn(self, query, key, value, attention_mask=None, head_mask=None):
         attn_weights = torch.matmul(query, key.transpose(-1, -2))
 
+        print("Warning: You are using vanilla attention.")
         if self.scale_attn_weights:
             attn_weights = attn_weights / torch.full(
                 [], value.size(-1) ** 0.5, dtype=attn_weights.dtype, device=attn_weights.device

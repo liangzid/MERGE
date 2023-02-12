@@ -17,7 +17,9 @@ from trains1 import getFinetunedSet,getTestDataSet
 
 def eval_vanilla_gpt2():
     # model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1/"
-    model_path="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1/"
+    # model_path="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1/"
+    # model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1fianlly/"
+    model_path="./stage1_ckpts/GEM/web_nlg-epoch2-lr5e-05-bs1fianlly/"
     cuda_num=5
     infermodel=Inference(model_path,cuda_num)
 
@@ -26,18 +28,19 @@ def eval_vanilla_gpt2():
                              task="GEM/web_nlg",subset="en")
     va,valabels=va
     # using validation dataset to test.
-    seqls=[x[0] for x in va]
-    seqls=seqls[:5]
-    valabels=valabels[:5]
+    # seqls=[x[0] for x in va]
+    seqls=va
+    seqls=seqls[:100]
+    valabels=valabels[:100]
     # print(seqls[0])
     newseqls=infermodel.inference(seqls)
     res=infermodel.evaluate(newseqls,valabels)
     print("----Vanilla Greedy Search Results----")
     print(res)
-    newseqls=infermodel.inference(seqls)
-    res=infermodel.evaluate(newseqls,valabels)
-    print("----Embedding Resend Results----")
-    print(res)
+    # newseqls=infermodel.inference(seqls)
+    # res=infermodel.evaluate(newseqls,valabels)
+    # print("----Embedding Resend Results----")
+    # print(res)
 
 
 def main():
