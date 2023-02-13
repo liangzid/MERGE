@@ -14,8 +14,8 @@ export root_dir="/home/liangzi/mpcGen/nlg/"
 
 export epochs=3
 export lr=3e-5
-# export device="6"
-export device="cpu"
+export device="6"
+# export device="cpu"
 export batch_size=1
 export task="GEM/web_nlg"
 export max_seq_length=128

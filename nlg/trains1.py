@@ -36,6 +36,7 @@ from sklearn.metrics import accuracy_score
 
 import torch
 import torch.nn as nn
+from torch.nn import CrossEntropyLoss
 import torch.nn.functional as F
 from torch import tensor
 
@@ -106,7 +107,7 @@ def getFinetunedSet(tokenizer,
     def getSet(split="train"):
         train_set=load_dataset(task,subset,split=split)
         inps=[x["input"] for x in train_set]
-        inps=[";".join(x) for x in inps]
+        inps=[" ; ".join(x) for x in inps]
         outs=[x["target"] for x in train_set]
         outs=[inps[i]+sep_token+outs[i]+eos_token\
               for i in range(len(train_set))]
@@ -114,8 +115,13 @@ def getFinetunedSet(tokenizer,
         outss=tokenizer(outs,padding="longest",
                         truncation=True,
                     max_length=max_sentence_length,return_tensors="pt")
+        # print("--------------------")
+        # print(outs[0])
+        # print(tokenizer.encode("<|sep|>"))
+        # print(outss.input_ids[0])
+        # print(outss.attention_mask[0])
 
-        dset=TensorDataset(outss.input_ids,
+        dset=TensorDataset(outss.input_ids,outss.attention_mask,
                            )
         return dset
     return getSet("train"),getSet("validation"),getSet("test")
@@ -138,7 +144,7 @@ def getTestDataSet(tokenizer,
     def getSet(split="train"):
         train_set=load_dataset(task,subset,split=split)
         inps=[x["input"] for x in train_set]
-        inps=[";".join(x)+sep_token for x in inps]
+        inps=[" ; ".join(x)+sep_token for x in inps]
         outs=inps
         labels=[x["target"] for x in train_set]
 
@@ -171,19 +177,23 @@ def trainConditional(model,
     ii=0
     past_losses=10000
     tqdm1=tqdm(total=EPOCH)
+    eos_token_id=tokenizer.eos_token_id
+    loss_func=CrossEntropyLoss(ignore_index=eos_token_id)
     for epoch in range(EPOCH):
         tqdm1.update(1)
         tqdm2=tqdm(total=len(train_loader))
 
         print(f"-------EPOCH {epoch}-------------")
-        for i,(inps,) in enumerate(train_loader):
+        for i,(inps,atts) in enumerate(train_loader):
             tqdm2.update(1)
             # print(ii)
             ii+=1
             inps,=inps.to(DEVICE),
+            atts,=atts.to(DEVICE),
             # print(tokenizer.decode(inps[0]))
 
             outputs = model(inps,
+                            attention_mask=atts,
                             labels=inps)
 
             loss = outputs.loss
@@ -232,10 +242,13 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     losses=0.
 
     with torch.no_grad():
-        for i,(inps,) in enumerate(test_loader):
+        for i,(inps,atts) in enumerate(test_loader):
             inps,=inps.to(DEVICE),
+            atts,=atts.to(DEVICE),
 
-            outputs = model(inps,labels=inps)
+            outputs = model(inps,
+                            attention_mask=atts,
+                            labels=inps)
             loss = outputs.loss
             losses+=loss
 
@@ -245,10 +258,10 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     return losses
 
 def main():
-    EPOCH = 6
+    EPOCH = 1
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:7")
+    DEVICE = torch.device("cuda:1")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
@@ -268,6 +281,7 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(frmpth)
     tokenizer = AutoTokenizer.from_pretrained(frmpth)
     tokenizer.pad_token=tokenizer.eos_token
+    tokenizer.add_tokens(["<|sep|>",],special_tokens=True)
     tokenizer.sep_token="<|sep|>"
     model.resize_token_embeddings(len(tokenizer))
 
@@ -279,13 +293,20 @@ def main():
     print(f"validation set len: {len(vas)}")
     print(f"test set len: {len(tes)}")
 
+
     print(f"batch_size: {batch_size}")
     trloader=DataLoader(trs,batch_size=batch_size,
                             shuffle=True,drop_last=False)
     valoader=DataLoader(vas,batch_size=batch_size,
-                            shuffle=True,drop_last=True)
+                            shuffle=False,drop_last=True)
     teloader=DataLoader(tes,batch_size=batch_size,
-                            shuffle=True,drop_last=True)
+                            shuffle=False,drop_last=True)
+
+    # print("--------------------------------------------------------")
+    # for tt, in teloader:
+    #     print(tt)
+    #     print("test dataset", tokenizer.decode(tt[0]))
+    # print("--------------------------------------------------------")
 
     #============================================
     trainConditional(model, optimizer,
