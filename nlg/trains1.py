@@ -139,7 +139,11 @@ def getFinetunedSet(tokenizer,
         dset=TensorDataset(outss.input_ids,outss.attention_mask,
                            )
         return dset
-    return getSet("train"),getSet("dev"),getSet("test")
+    if "web_nlg" in task:
+        names=["train","dev","test"]
+    elif "e2e_nlg" in task:
+        names=["train","validation","test"]
+    return getSet(names[0]),getSet(names[1]),getSet(names[2])
 
 def getTestDataSet(tokenizer,
                     max_sentence_length=128,
@@ -185,7 +189,11 @@ def getTestDataSet(tokenizer,
             prefix_id_ls.append(ou.input_ids)
 
         return prefix_id_ls,labels
-    return getSet("train"),getSet("validation"),getSet("test")
+    if "web_nlg" in task:
+        names=["train","dev","test"]
+    elif "e2e_nlg" in task:
+        names=["train","validation","test"]
+    return getSet(names[0]),getSet(names[1]),getSet(names[2])
     
 def trainConditional(model,
           optimizer,
@@ -285,7 +293,7 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     return losses
 
 def main():
-    EPOCH = 6
+    EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
     DEVICE = torch.device("cuda:2")
@@ -361,7 +369,6 @@ def main():
          batch_size=BATCH_SIZE,DEVICE=DEVICE)
     print(res)
 
-    # todo: 为什么在测试集上的loss这么高？
     res=test(test_loader=teloader,model=model,task=task,
          batch_size=BATCH_SIZE,DEVICE=DEVICE)
     print(res)
