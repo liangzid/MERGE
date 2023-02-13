@@ -91,7 +91,8 @@ def get_pretrained_dataset(tokenizer,
 
 def getFinetunedSet(tokenizer,
                     max_sentence_length=256,
-                    task="GEM/web_nlg",subset="en"):
+                    task="GEM/web_nlg",subset="en",
+                    only_decoder=True):
     """
     For Downstream Tasks based on Conditional Generation.
     task and subtask enums:
@@ -124,21 +125,29 @@ def getFinetunedSet(tokenizer,
                 inps.append(x["meaning_representation"])
                 outs.append(x["human_reference"])
         
-        outs=[inps[i]+sep_token+outs[i]+eos_token\
-              for i in range(len(train_set))]
+        if only_decoder:
+            outs=[inps[i]+sep_token+outs[i]+eos_token\
+                for i in range(len(train_set))]
 
-        outss=tokenizer(outs,padding="longest",
-                        truncation=True,
-                    max_length=max_sentence_length,return_tensors="pt")
-        # print("--------------------")
-        # print(outs[0])
-        # print(tokenizer.encode("<|sep|>"))
-        # print(outss.input_ids[0])
-        # print(outss.attention_mask[0])
-
-        dset=TensorDataset(outss.input_ids,outss.attention_mask,
-                           )
+            outss=tokenizer(outs,padding="longest",
+                            truncation=True,
+                        max_length=max_sentence_length,return_tensors="pt")
+            dset=TensorDataset(outss.input_ids,outss.attention_mask,
+                            )
+        else:
+            inps=tokenizer(inps,padding="longest",truncation=True,
+                           max_length=max_sentence_length,
+                           return_tensors="pt")
+            outs=[x+eos_token for x in outs]
+            outs=tokenizer(outs,padding="longest",truncation=True,
+                           max_length=max_sentence_length,
+                           return_tensors="pt")
+            dset=TensorDataset(inps.input_ids,
+                               inps.attention_mask,
+                               outs.input_ids,
+                            )
         return dset
+
     if "web_nlg" in task:
         names=["train","dev","test"]
     elif "e2e_nlg" in task:
@@ -205,10 +214,11 @@ def trainConditional(model,
           EPOCH,LR,DEVICE,
         tokenizer,
           batch_size=32,
+        only_decoder=True,
           ):
 
-    tb_writer = SummaryWriter(log_dir="./logs/stage1train/1")
-    board_name="train_stage1_somethingtemp"
+    tb_writer = SummaryWriter(log_dir=f"./logs/stage1train/{task}")
+    board_name=f"{task}_"
     ii=0
     past_losses=10000
     tqdm1=tqdm(total=EPOCH)
@@ -219,7 +229,12 @@ def trainConditional(model,
         tqdm2=tqdm(total=len(train_loader))
 
         print(f"-------EPOCH {epoch}-------------")
-        for i,(inps,atts) in enumerate(train_loader):
+        for i,x in enumerate(train_loader):
+            if only_decoder:
+                inps,atts=x
+            else:
+                inps,atts,outs=x
+                outs=outs.to(DEVICE)
             tqdm2.update(1)
             # print(ii)
             ii+=1
@@ -227,9 +242,16 @@ def trainConditional(model,
             atts,=atts.to(DEVICE),
             # print(tokenizer.decode(inps[0]))
 
-            outputs = model(inps,
-                            attention_mask=atts,
-                            labels=inps)
+            if only_decoder:
+                outputs = model(inps,
+                                attention_mask=atts,
+                                labels=inps)
+            else:
+                # todo: fix the encoder decoder writing.
+                outputs = model(inps,
+                                attention_mask=atts,
+                                decoder_input_ids=outs
+                                labels=outs)
 
             loss = outputs.loss
             logits=outputs.logits
@@ -314,6 +336,14 @@ def main():
     prefix_path="/home/liangzi/models/"
     model_name="gpt2/"
     frmpth=prefix_path+model_name
+
+    if "gpt" in frmpth:
+        only_decoder=True
+    elif "t5" in frmpth or "bart" in frmpth:
+        only_decoder=False
+    else:
+        only_decoder=True
+    print(f"The Backbone is Only a Decoder: {only_decoder}.")
     
     # model = BFSCNew.from_pretrained(frmpth)
     model = AutoModelForCausalLM.from_pretrained(frmpth)
@@ -326,7 +356,8 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
     model = model.to(DEVICE)
 
-    trs,vas,tes=getFinetunedSet(tokenizer,128,task,subtask)
+    trs,vas,tes=getFinetunedSet(tokenizer,128,task,
+                    subtask,only_decoder)
     print(f"train set len: {len(trs)}")
     print(f"validation set len: {len(vas)}")
     print(f"test set len: {len(tes)}")
@@ -353,7 +384,8 @@ def main():
                      PATH,
                      batch_size=BATCH_SIZE,
           EPOCH=EPOCH,LR=LR,
-                     DEVICE=DEVICE,tokenizer=tokenizer)
+                     DEVICE=DEVICE,tokenizer=tokenizer,
+                     only_decoder=only_decoder)
     tokenizer.save_pretrained(PATH+"fianlly")
     model.save_pretrained(PATH+"fianlly")
     #============================================

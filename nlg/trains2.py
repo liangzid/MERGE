@@ -103,6 +103,7 @@ def train(args, tmodel, smodel,
           task,
           EPOCH,LR,DEVICE,
           batch_size=32,
+          only_decoder=True,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
     tb_writer = SummaryWriter(log_dir=args.writer_dir+args.board_name)
@@ -116,19 +117,37 @@ def train(args, tmodel, smodel,
         tqdm2=tqdm(total=len(train_loader))
 
         print(f"-------EPOCH {epoch}-------------")
-        for i,(inps,) in enumerate(train_loader):
+        for i,x in enumerate(train_loader):
+            if only_decoder:
+                inps,atts=x
+            else:
+                inps,atts,outs=x
+                outs=outs.to(DEVICE)
+
             overall_step+=1
             tqdm2.update(1)
             bs,msl=inps.shape
             inps,=inps.to(DEVICE),
+            atts,=atts.to(DEVICE),
 
-            toutputs=tmodel(inps,labels=inps,
-                            output_hidden_states=True)
+            if only_decoder:
+                toutputs=tmodel(inps,attention_mask=atts,
+                                labels=inps,
+                                output_hidden_states=True)
+                outputs = smodel(inps,attention_mask=atts,
+                                labels=inps,
+                                output_hidden_states=True)
+            else:
+                toutputs=tmodel(inps,attention_mask=atts,
+                                decoder_input_ids=outs,
+                                labels=outs,
+                                output_hidden_states=True)
+                outputs = smodel(inps,attention_mask=atts,
+                                decoder_input_ids=outs,
+                                labels=outs,
+                                output_hidden_states=True)
+
             teacher_logits=toutputs.logits
-
-            outputs = smodel(inps,
-                             labels=inps,
-                             output_hidden_states=True)
 
             entropy_loss=0.
             softlabel_loss=0.
@@ -244,12 +263,21 @@ def main1():
     BATCH_SIZE =args.batch_size
     batch_size=args.batch_size
     task=args.task
-    if task=="GEM/web_nlg":
-        subtask="en"
+    if task=="web_nlg":
+        subtask="release_v2"
     elif task=="e2d_nlg":
         subtask=None
     else:
         subtask=None
+
+    frmpth=args.teach_ckpt
+    if "gpt" in frmpth:
+        only_decoder=True
+    elif "t5" in frmpth or "bart" in frmpth:
+        only_decoder=False
+    else:
+        only_decoder=True
+    print(f"The Backbone is Only a Decoder: {only_decoder}.")
     
     tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
     print("TEA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
@@ -294,7 +322,7 @@ def main1():
 
     print(f"max sequence length: {args.max_seq_length}")
     trs,vas,tes=getFinetunedSet(tokenizer,args.max_seq_length,
-                                task,subtask)
+                                task,subtask,only_decoder)
 
     trloader=DataLoader(trs,batch_size=batch_size,
                             shuffle=True,drop_last=False)
@@ -310,7 +338,8 @@ def main1():
               task=task,
               batch_size=BATCH_SIZE,
               EPOCH=EPOCH,LR=LR,
-              DEVICE=DEVICE,)
+              DEVICE=DEVICE,
+              only_decoder=only_decoder)
         # model.save_pretrained(PATH)
         tokenizer.save_pretrained(args.stu_save_ckpt)
         #============================================
