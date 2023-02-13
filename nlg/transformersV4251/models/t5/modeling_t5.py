@@ -27,6 +27,8 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.checkpoint import checkpoint
 
 from ...activations import ACT2FN
+from ...newlayerNorm import SimpleLayerNorm
+
 from ...modeling_outputs import (
     BaseModelOutput,
     BaseModelOutputWithPastAndCrossAttentions,
@@ -320,7 +322,10 @@ class T5LayerFF(nn.Module):
         else:
             self.DenseReluDense = T5DenseActDense(config)
 
-        self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
+        if config.layerNormType=="sim":
+            self.layer_norm = SimpleLayerNorm(config.d_model,)
+        else:
+            self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
 
     def forward(self, hidden_states):
@@ -353,6 +358,17 @@ class T5Attention(nn.Module):
             self.relative_attention_bias = nn.Embedding(self.relative_attention_num_buckets, self.n_heads)
         self.pruned_heads = set()
         self.gradient_checkpointing = False
+
+        ## new added by myself.
+        if hasattr(config,"msl"):
+            self.msl=config.msl
+        elif hasattr(config,"sequence_length"):
+            self.msl=config.msl
+        else:
+            self.msl=128
+        self.M = nn.Parameter(torch.ones(config.num_attention_heads,
+                                          self.msl,
+                                          self.msl))
 
     def prune_heads(self, heads):
         if len(heads) == 0:
@@ -539,6 +555,19 @@ class T5Attention(nn.Module):
         attn_weights = nn.functional.softmax(scores.float(), dim=-1).type_as(
             scores
         )  # (batch_size, n_heads, seq_length, key_length)
+
+        #----------------- ends here ---------------------
+        ## DONE. add the constant attention, instead of the \
+        # dynamic attentions
+
+        bs=attn_weights.shape[0]
+        attn_weights=self.M.unsqueeze(0)
+        if bs!=1:
+            attn_weights.repeat(bs,1,1,1)
+        attn_weights = attn_weights.type(value.dtype)
+
+        #----------------- ends here ---------------------
+        
         attn_weights = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
         )  # (batch_size, n_heads, seq_length, key_length)
@@ -562,7 +591,10 @@ class T5LayerSelfAttention(nn.Module):
     def __init__(self, config, has_relative_attention_bias=False):
         super().__init__()
         self.SelfAttention = T5Attention(config, has_relative_attention_bias=has_relative_attention_bias)
-        self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
+        if config.layerNormType=="sim":
+            self.layer_norm = SimpleLayerNorm(config.d_model,)
+        else:
+            self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
 
     def forward(
@@ -594,7 +626,10 @@ class T5LayerCrossAttention(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.EncDecAttention = T5Attention(config, has_relative_attention_bias=False)
-        self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
+        if config.layerNormType=="sim":
+            self.layer_norm = SimpleLayerNorm(config.d_model,)
+        else:
+            self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
 
     def forward(
@@ -768,6 +803,9 @@ class T5PreTrainedModel(PreTrainedModel):
         factor = self.config.initializer_factor  # Used for testing weights initialization
         if isinstance(module, T5LayerNorm):
             module.weight.data.fill_(factor * 1.0)
+        elif isinstance(module, SimpleLayerNorm):
+            module.weight.data.fill_(factor * 1.0)
+            module.bias.data.fill_(factor * 0.0)
         elif isinstance(module, (T5Model, T5ForConditionalGeneration, T5EncoderModel)):
             # Mesh TensorFlow embeddings initialization
             # See https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/layers.py#L1624
@@ -847,7 +885,10 @@ class T5Stack(T5PreTrainedModel):
         self.block = nn.ModuleList(
             [T5Block(config, has_relative_attention_bias=bool(i == 0)) for i in range(config.num_layers)]
         )
-        self.final_layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
+        if config.layerNormType=="sim":
+            self.final_layer_norm=SimpleLayerNorm(config.d_model)
+        else:
+            self.final_layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
 
         # Initialize weights and apply final processing

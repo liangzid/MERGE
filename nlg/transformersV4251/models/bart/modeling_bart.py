@@ -25,6 +25,8 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from ...activations import ACT2FN
+from ...newlayerNorm import SimpleLayerNorm
+
 from ...modeling_outputs import (
     BaseModelOutput,
     BaseModelOutputWithPastAndCrossAttentions,
@@ -295,13 +297,19 @@ class BartEncoderLayer(nn.Module):
             num_heads=config.encoder_attention_heads,
             dropout=config.attention_dropout,
         )
-        self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
+        if config.layerNormType=="sim":
+            self.self_attn_layer_norm = SimpleLayerNorm(self.embed_dim)
+        else:
+            self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
         self.dropout = config.dropout
         self.activation_fn = ACT2FN[config.activation_function]
         self.activation_dropout = config.activation_dropout
         self.fc1 = nn.Linear(self.embed_dim, config.encoder_ffn_dim)
         self.fc2 = nn.Linear(config.encoder_ffn_dim, self.embed_dim)
-        self.final_layer_norm = nn.LayerNorm(self.embed_dim)
+        if config.layerNormType=="sim":
+            self.final_layer_norm = SimpleLayerNorm(self.embed_dim)
+        else:
+            self.final_layer_norm = nn.LayerNorm(self.embed_dim)
 
     def forward(
         self,
@@ -369,17 +377,26 @@ class BartDecoderLayer(nn.Module):
         self.activation_fn = ACT2FN[config.activation_function]
         self.activation_dropout = config.activation_dropout
 
-        self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
+        if config.layerNormType=="sim":
+            self.self_attn_layer_norm = SimpleLayerNorm(self.embed_dim)
+        else:
+            self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
         self.encoder_attn = BartAttention(
             self.embed_dim,
             config.decoder_attention_heads,
             dropout=config.attention_dropout,
             is_decoder=True,
         )
-        self.encoder_attn_layer_norm = nn.LayerNorm(self.embed_dim)
+        if config.layerNormType=="sim":
+            self.self_attn_layer_norm = SimpleLayerNorm(self.embed_dim)
+        else:
+            self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
         self.fc1 = nn.Linear(self.embed_dim, config.decoder_ffn_dim)
         self.fc2 = nn.Linear(config.decoder_ffn_dim, self.embed_dim)
-        self.final_layer_norm = nn.LayerNorm(self.embed_dim)
+        if config.layerNormType=="sim":
+            self.self_attn_layer_norm = SimpleLayerNorm(self.embed_dim)
+        else:
+            self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
 
     def forward(
         self,
@@ -512,6 +529,9 @@ class BartPretrainedModel(PreTrainedModel):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.padding_idx is not None:
                 module.weight.data[module.padding_idx].zero_()
+        elif isinstance(module,SimpleLayerNorm):
+            module.weight.data.fill_(factor * 1.0)
+            module.bias.data.fill_(factor * 0.0)
 
     def _set_gradient_checkpointing(self, module, value=False):
         if isinstance(module, (BartDecoder, BartEncoder)):
@@ -723,7 +743,10 @@ class BartEncoder(BartPretrainedModel):
             embed_dim,
         )
         self.layers = nn.ModuleList([BartEncoderLayer(config) for _ in range(config.encoder_layers)])
-        self.layernorm_embedding = nn.LayerNorm(embed_dim)
+        if config.layerNormType=="sim":
+            self.layernorm_embedding = SimpleLayerNorm(embed_dim)
+        else:
+            self.layernorm_embedding = nn.LayerNorm(embed_dim)
 
         self.gradient_checkpointing = False
         # Initialize weights and apply final processing
@@ -896,7 +919,10 @@ class BartDecoder(BartPretrainedModel):
             config.d_model,
         )
         self.layers = nn.ModuleList([BartDecoderLayer(config) for _ in range(config.decoder_layers)])
-        self.layernorm_embedding = nn.LayerNorm(config.d_model)
+        if config.layerNormType=="sim":
+            self.layernorm_embedding = SimpleLayerNorm(config.d_model)
+        else:
+            self.layernorm_embedding = nn.LayerNorm(config.d_model)
 
         self.gradient_checkpointing = False
         # Initialize weights and apply final processing
