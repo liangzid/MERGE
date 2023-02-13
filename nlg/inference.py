@@ -29,6 +29,13 @@ import transformers
 from transformers import AutoTokenizer,AutoModelForCausalLM 
 from transformers import pipeline
 
+from transformersV4251.models.gpt2.gpt2_new import \
+    GPT2LMHeadModel as BFSCNew
+from transformersV4251.models.t5.modeling_t5 import \
+    T5ForConditionalGeneration as T5New
+from transformersV4251.models.bart.modeling_bart import \
+    BartForConditionalGeneration as BartNew
+
 import numpy as np
 
 import torch
@@ -38,6 +45,9 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn import CrossEntropyLoss
 import torch.nn as nn
 
+from transformers import T5ForConditionalGeneration
+from transformers import BartForConditionalGeneration
+
 import evaluate
 
 class Inference:
@@ -45,6 +55,7 @@ class Inference:
                  model_path="data/helloworld",
                  cuda_num=6,
                  seed=3933, cuda=True,
+                 approximation=False,
                  ):
 
         device = 'cuda:{}'.format(cuda_num) if cuda else 'cpu'
@@ -55,11 +66,43 @@ class Inference:
         bla_tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.tokenizer = bla_tokenizer
         print("tokenizer loading done...")
+
+        only_decoder=True
+        if "gpt" in model_path:
+            if not approximation:
+                self.decoder=AutoModelForCausalLM\
+                    .from_pretrained(model_path)
+            else:
+                self.decoder=BFSCNew\
+                    .from_pretrained(model_path)
+            
+        elif "bart" in model_path or "t5" in model_path:
+            only_decoder=False
+            if "bart" in model_path:
+                if not approximation:
+                    self.decoder=BartForConditionalGeneration\
+                        .from_pretrained(model_path)
+                else:
+                    self.decoder=BartNew\
+                        .from_pretrained(model_path)
+            elif "t5" in model_path:
+                if not approximation:
+                    self.decoder=T5ForConditionalGeneration\
+                        .from_pretrained(model_path)
+                else:
+                    self.decoder=T5New\
+                        .from_pretrained(model_path)
+        else:
+            self.decoder=AutoModelForCausalLM\
+                .from_pretrained(model_path)
+
+        self.only_decoder=only_decoder
+
         self.eos_token=self.tokenizer.eos_token
-        self.sep_token=self.tokenizer.sep_token
+        if only_decoder:
+            self.sep_token=self.tokenizer.sep_token
         print("INFERENCE-MODEL-PATH: {}".format(model_path))
-        self.decoder=AutoModelForCausalLM\
-            .from_pretrained(model_path)
+
         self.decoder.resize_token_embeddings(len(bla_tokenizer))
         self.embedds=self.decoder.get_input_embeddings()
         print("model loading done...")
@@ -157,6 +200,8 @@ class Inference:
         for i,m in enumerate(self.metrics_ls):
             print(f"metrics: {m}")
             try:
+                if m=="bleurt":
+                    continue
                 if m in self.multi_ref_ls:
                     big_res_dict[m]=self.metricsModel_ls[i]\
                                         .compute(predictions=hyps,
@@ -181,13 +226,29 @@ class Inference:
         print(f"embeddings shape: {embeddings.shape}")
         bs,sl,d=embeddings.shape
 
+        first_token=0
+        decoder_input_embedds=torch.tensor(bs,0,d)
         # 2 greedy forward generation
         with torch.no_grad():
             for _ in range(self.msl):
-                output=self.decoder.forward(
-                    inputs_embeds=embeddings,
-                    output_hidden_states=True,
-                    )
+                first_token+=1
+                if self.only_decoder:
+                    output=self.decoder.forward(
+                        inputs_embeds=embeddings,
+                        output_hidden_states=True,
+                        )
+                else:
+                    if first_token==1: # first input
+                        output=self.decoder.forward(
+                            prefix_ids,
+                            output_hidden_states=True,
+                            )
+                    else:
+                        output=self.decoder.forward(
+                            prefix_ids,
+                            decoder_inputs_embeds=decoder_input_embedds,
+                            output_hidden_states=True,
+                            )
                 
                 next_token_logits=output.logits[0,-1,:]
                 next_token_distribution=F.softmax(next_token_logits,dim=-1)
@@ -200,7 +261,11 @@ class Inference:
 
                 # get new embeddings for next step's input.
                 sl+=1
-                embeddings=output.hidden_states[-1][:,:sl,:]
+                if self.only_decoder:
+                    embeddings=output.hidden_states[-1][:,:sl,:]
+                else:
+                    decoder_input_embedds=\
+                        output.decoder_hidden_states[-1][:,:sl,:]
 
                 # print(decoder_input_ids)
                 if decoder_input_ids[0,-1]==self.eos_token_id:

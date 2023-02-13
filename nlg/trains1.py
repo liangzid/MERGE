@@ -28,6 +28,8 @@ from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
 from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
+from transformers import T5ForConditionalGeneration
+from transformers import BartForConditionalGeneration
 from transformers import AutoTokenizer
 
 from torch.utils.data import DataLoader, TensorDataset
@@ -175,6 +177,8 @@ def getTestDataSet(tokenizer,
         else:
             train_set=load_dataset(task,split=split)
 
+        inps=[]
+        outs=[]
         if "web_nlg" in task:
             for x in train_set:
                 inps.append(" ; ".join(x["modified_triple_sets"]\
@@ -190,7 +194,7 @@ def getTestDataSet(tokenizer,
 
         prefix_id_ls=[]
         for text in outs:
-            ou=tokenizer(text+sep_token,padding="longest",
+            ou=tokenizer(text,padding="longest",
                         truncation=True,
                         max_length=max_sentence_length,
                             return_tensors="pt")
@@ -250,7 +254,7 @@ def trainConditional(model,
                 # todo: fix the encoder decoder writing.
                 outputs = model(inps,
                                 attention_mask=atts,
-                                decoder_input_ids=outs
+                                decoder_input_ids=outs,
                                 labels=outs)
 
             loss = outputs.loss
@@ -271,7 +275,9 @@ def trainConditional(model,
                          model=model,
                          task=task,
                          batch_size=batch_size,
-                         DEVICE=DEVICE)
+                            DEVICE=DEVICE,
+                        only_decoder=only_decoder
+                            )
                 print(f">>Val Loss: {losses}")
                 tb_writer.add_scalar(board_name+"valloss",
                                      losses.item(),ii)
@@ -279,7 +285,9 @@ def trainConditional(model,
                          model=model,
                          task=task,
                          batch_size=batch_size,
-                         DEVICE=DEVICE)
+                             DEVICE=DEVICE,
+                        only_decoder=only_decoder
+                             )
                 print(f">>Test Loss: {lossess}")
                 tb_writer.add_scalar(board_name+"testloss",
                                      lossess.item(),ii)
@@ -294,18 +302,31 @@ def trainConditional(model,
 
     print("End Training.")
             
-def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
+def test(test_loader,model,task,batch_size=32,
+         DEVICE="cpu",only_decoder=True):
     model.eval()
     losses=0.
 
     with torch.no_grad():
-        for i,(inps,atts) in enumerate(test_loader):
+        for i,x in enumerate(test_loader):
+            if only_decoder:
+                inps,atts=x
+            else:
+                inps,atts,outs=x
+                outs=outs.to(DEVICE)
+
             inps,=inps.to(DEVICE),
             atts,=atts.to(DEVICE),
 
-            outputs = model(inps,
-                            attention_mask=atts,
-                            labels=inps)
+            if only_decoder:
+                outputs = model(inps,
+                                attention_mask=atts,
+                                labels=inps)
+            else:
+                outputs = model(inps,
+                                attention_mask=atts,
+                                decoder_input_ids=outs,
+                                labels=outs)
             loss = outputs.loss
             losses+=loss
 
@@ -318,7 +339,7 @@ def main():
     EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:2")
+    DEVICE = torch.device("cuda:6")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
@@ -331,10 +352,11 @@ def main():
     task="e2e_nlg"
     subtask=None
 
-    PATH = f'./stage1_ckpts/{task}-epoch{EPOCH}-lr{LR}-bs{BATCH_SIZE}'
 
     prefix_path="/home/liangzi/models/"
-    model_name="gpt2/"
+    # model_name="gpt2/"
+    model_name="t5-small/"
+    # model_name="bart-base/"
     frmpth=prefix_path+model_name
 
     if "gpt" in frmpth:
@@ -345,12 +367,24 @@ def main():
         only_decoder=True
     print(f"The Backbone is Only a Decoder: {only_decoder}.")
     
+    PATH = f'./stage1_ckpts/{task}-epoch{EPOCH}-lr{LR}-bs{BATCH_SIZE}{model_name}'
+
     # model = BFSCNew.from_pretrained(frmpth)
-    model = AutoModelForCausalLM.from_pretrained(frmpth)
+    if only_decoder:
+        model = AutoModelForCausalLM.from_pretrained(frmpth)
+    else:
+        if "t5" in frmpth:
+            model = T5ForConditionalGeneration.from_pretrained(frmpth)
+        elif "bart" in frmpth:
+            model = BartForConditionalGeneration.from_pretrained(frmpth)
+        else:
+            model = AutoModelForCausalLM.from_pretrained(frmpth)
+            
     tokenizer = AutoTokenizer.from_pretrained(frmpth)
     tokenizer.pad_token=tokenizer.eos_token
-    tokenizer.add_tokens(["<|sep|>",],special_tokens=True)
-    tokenizer.sep_token="<|sep|>"
+    if only_decoder:
+        tokenizer.add_tokens(["<|sep|>",],special_tokens=True)
+        tokenizer.sep_token="<|sep|>"
     model.resize_token_embeddings(len(tokenizer))
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
@@ -371,19 +405,13 @@ def main():
     teloader=DataLoader(tes,batch_size=batch_size,
                             shuffle=False,drop_last=True)
 
-    # print("--------------------------------------------------------")
-    # for tt, in teloader:
-    #     print(tt)
-    #     print("test dataset", tokenizer.decode(tt[0]))
-    # print("--------------------------------------------------------")
-
     #============================================
     trainConditional(model, optimizer,
                      trloader,valoader,teloader,
                      task,
                      PATH,
                      batch_size=BATCH_SIZE,
-          EPOCH=EPOCH,LR=LR,
+                     EPOCH=EPOCH,LR=LR,
                      DEVICE=DEVICE,tokenizer=tokenizer,
                      only_decoder=only_decoder)
     tokenizer.save_pretrained(PATH+"fianlly")
@@ -398,11 +426,13 @@ def main():
     #      batch_size=BATCH_SIZE,DEVICE=DEVICE)
 
     res=test(test_loader=valoader,model=model,task=task,
-         batch_size=BATCH_SIZE,DEVICE=DEVICE)
+             batch_size=BATCH_SIZE,DEVICE=DEVICE,
+             only_decoder=only_decoder)
     print(res)
 
     res=test(test_loader=teloader,model=model,task=task,
-         batch_size=BATCH_SIZE,DEVICE=DEVICE)
+             batch_size=BATCH_SIZE,DEVICE=DEVICE,
+             only_decoder=only_decoder)
     print(res)
 
 

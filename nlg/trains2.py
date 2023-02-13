@@ -28,9 +28,15 @@ from torch.utils.data import DataLoader
 
 from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
+from transformersV4251.models.t5.modeling_t5 import \
+    T5ForConditionalGeneration as T5New
+from transformersV4251.models.bart.modeling_bart import \
+    BartForConditionalGeneration as BartNew
 
 from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
+from transformers import T5ForConditionalGeneration
+from transformers import BartForConditionalGeneration
 from transformers import AutoTokenizer
 from transformers import AutoConfig
 from torch.utils.data import DataLoader, TensorDataset
@@ -279,7 +285,14 @@ def main1():
         only_decoder=True
     print(f"The Backbone is Only a Decoder: {only_decoder}.")
     
-    tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
+    if "t5" in args.teach_ckpt:
+        tmodel = T5ForConditionalGeneration.\
+            from_pretrained(args.teach_ckpt)
+    elif "bart" in args.teach_ckpt:
+        tmodel = BartForConditionalGeneration.\
+            from_pretrained(args.teach_ckpt)
+    else:
+        tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
     print("TEA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
     ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt)
     tmodel.resize_token_embeddings(len(ttokenizer))
@@ -289,7 +302,15 @@ def main1():
         config.activation_function="quad" # set to quad activation
     if args.using_simLN==1:
         config.layerNormType="sim" # set to quad activation
-    smodel = BFSCNew.from_pretrained(args.stu_ckpt,config=config)
+    
+    if "t5" in args.teach_ckpt:
+        smodel = T5New.\
+            from_pretrained(args.teach_ckpt)
+    elif "bart" in args.teach_ckpt:
+        smodel = BartNew.\
+            from_pretrained(args.teach_ckpt)
+    else:
+        smodel = BFSCNew.from_pretrained(args.teach_ckpt)
     print("STU Original embedding size: ",smodel.get_input_embeddings().weight.shape[0])
     stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer

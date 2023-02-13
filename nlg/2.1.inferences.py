@@ -16,25 +16,25 @@ from inference import Inference
 from trains1 import getFinetunedSet,getTestDataSet
 
 def eval_vanilla_gpt2():
-    # model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1/"
-    # model_path="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1/"
-    # model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1fianlly/"
-    # model_path="./stage1_ckpts/GEM/web_nlg-epoch6-lr5e-05-bs1fianlly/"
-    # model_path="./stage1_ckpts/GEM/web_nlg-epoch6-lr5e-05-bs1/"
-    model_path="./stage1_ckpts/GEM/web_nlg-epoch1-lr5e-05-bs1/"
+    
+    model_path="./stage1_ckpts/web_nlg-epoch6-lr5e-05-bs1fianlly/"
+    model_path="./stage1_ckpts/web_nlg-epoch1-lr5e-05-bs1/"
+
+    task="web_nlg"
+    subset="release_v2"
 
     cuda_num=5
     infermodel=Inference(model_path,cuda_num)
 
     tr,va,te=getTestDataSet(infermodel.tokenizer,
                              max_sentence_length=infermodel.msl//2,
-                             task="GEM/web_nlg",subset="en")
-    va,valabels=va
+                             task=task,subset=subset)
+    va,valabels=te
     # using validation dataset to test.
     # seqls=[x[0] for x in va]
     seqls=va
-    # seqls=seqls[:100]
-    # valabels=valabels[:100]
+    seqls=seqls[:100]
+    valabels=valabels[:100]
 
     # print(seqls[0])
     newseqls=infermodel.inference(seqls)
