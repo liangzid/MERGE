@@ -19,8 +19,10 @@ def eval_vanilla_gpt2():
     # model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1/"
     # model_path="./stage1_ckpts/GEM/web_nlg-epoch3-lr5e-05-bs1/"
     # model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1fianlly/"
-    model_path="./stage1_ckpts/GEM/web_nlg-epoch6-lr5e-05-bs1fianlly/"
+    # model_path="./stage1_ckpts/GEM/web_nlg-epoch6-lr5e-05-bs1fianlly/"
     # model_path="./stage1_ckpts/GEM/web_nlg-epoch6-lr5e-05-bs1/"
+    model_path="./stage1_ckpts/GEM/web_nlg-epoch1-lr5e-05-bs1/"
+
     cuda_num=5
     infermodel=Inference(model_path,cuda_num)
 

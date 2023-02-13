@@ -105,10 +105,25 @@ def getFinetunedSet(tokenizer,
     eos_token=tokenizer.eos_token
 
     def getSet(split="train"):
-        train_set=load_dataset(task,subset,split=split)
-        inps=[x["input"] for x in train_set]
-        inps=[" ; ".join(x) for x in inps]
-        outs=[x["target"] for x in train_set]
+        if subset is not None:
+            train_set=load_dataset(task,subset,split=split)
+        else:
+            train_set=load_dataset(task,split=split)
+        # print(train_set)
+
+        inps=[]
+        outs=[]
+        if "web_nlg" in task:
+            for x in train_set:
+                inps.append(" ; ".join(x["modified_triple_sets"]\
+                                       ["mtriple_set"][0]))
+                outs.append(x["lex"]["text"][0])
+
+        elif "e2e_nlg" in task:
+            for x in train_set:
+                inps.append(x["meaning_representation"])
+                outs.append(x["human_reference"])
+        
         outs=[inps[i]+sep_token+outs[i]+eos_token\
               for i in range(len(train_set))]
 
@@ -124,7 +139,7 @@ def getFinetunedSet(tokenizer,
         dset=TensorDataset(outss.input_ids,outss.attention_mask,
                            )
         return dset
-    return getSet("train"),getSet("validation"),getSet("test")
+    return getSet("train"),getSet("dev"),getSet("test")
 
 def getTestDataSet(tokenizer,
                     max_sentence_length=128,
@@ -142,15 +157,27 @@ def getTestDataSet(tokenizer,
     eos_token=tokenizer.eos_token
 
     def getSet(split="train"):
-        train_set=load_dataset(task,subset,split=split)
-        inps=[x["input"] for x in train_set]
-        inps=[" ; ".join(x)+sep_token for x in inps]
+        if subset is not None:
+            train_set=load_dataset(task,subset,split=split)
+        else:
+            train_set=load_dataset(task,split=split)
+
+        if "web_nlg" in task:
+            for x in train_set:
+                inps.append(" ; ".join(x["modified_triple_sets"]\
+                                       ["mtriple_set"][0]))
+                outs.append(x["lex"]["text"][0])
+        elif "e2e_nlg" in task:
+            for x in train_set:
+                inps.append(x["meaning_representation"])
+                outs.append(x["human_reference"])
+            
         outs=inps
-        labels=[x["target"] for x in train_set]
+        labels=outs
 
         prefix_id_ls=[]
         for text in outs:
-            ou=tokenizer(text,padding="longest",
+            ou=tokenizer(text+sep_token,padding="longest",
                         truncation=True,
                         max_length=max_sentence_length,
                             return_tensors="pt")
@@ -218,14 +245,14 @@ def trainConditional(model,
                 print(f">>Val Loss: {losses}")
                 tb_writer.add_scalar(board_name+"valloss",
                                      losses.item(),ii)
-                losses=test(test_loader=test_loader,
+                lossess=test(test_loader=test_loader,
                          model=model,
                          task=task,
                          batch_size=batch_size,
                          DEVICE=DEVICE)
-                print(f">>Test Loss: {losses}")
+                print(f">>Test Loss: {lossess}")
                 tb_writer.add_scalar(board_name+"testloss",
-                                     losses.item(),ii)
+                                     lossess.item(),ii)
 
                 if losses<past_losses:
                     print(" -->now save a better model.")
@@ -258,18 +285,21 @@ def test(test_loader,model,task,batch_size=32,DEVICE="cpu"):
     return losses
 
 def main():
-    EPOCH = 1
+    EPOCH = 6
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:1")
+    DEVICE = torch.device("cuda:2")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
-    task_ls=["GEM/web_nlg","e2e_nlg"]
-    subtaskls=["en",None]
+    task_ls=["web_nlg","e2e_nlg"]
+    subtaskls=["release_v2",None]
 
-    task="GEM/web_nlg"
-    subtask="en"
+    # task="web_nlg"
+    # subtask="release_v2"
+
+    task="e2e_nlg"
+    subtask=None
 
     PATH = f'./stage1_ckpts/{task}-epoch{EPOCH}-lr{LR}-bs{BATCH_SIZE}'
 
