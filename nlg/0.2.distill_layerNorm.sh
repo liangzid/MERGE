@@ -1,12 +1,16 @@
 #!/bin/bash
 ######################################################################
-#0.1.DISTILL_TRAIN ---
+#0.2.DISTILL_LAYERNORM ---
 
-# RUNNING NLG DISTILLATION TRAINING FOR GPT2
+# Further distill based on the first step KD.
 
 # Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
 # Copyright © 2023, ZiLiang, all rights reserved.
-# Created: 10 二月 2023
+# Created: 14 二月 2023
+######################################################################
+
+######################### Commentary ##################################
+##  
 ######################################################################
 
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
@@ -20,8 +24,8 @@ export batch_size=1
 export task="web_nlg"
 export max_seq_length=128
 
-export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
-export stu_ckpt=${teach_ckpt}___withConstantMatrix
+export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
+export stu_ckpt=${teach_ckpt}
 
 export using_entropy=1
 export using_softLabel=1
@@ -31,10 +35,10 @@ export using_wordEmbedMSE=1
 export using_quadacti=1
 
 export using_simLN=0
-export weight_decay=0.01
+export weight_decay=0.1
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}Distilled${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}
+export stu_save_ckpt=${stu_ckpt}LayerNorm${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${weight_decay}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -71,5 +75,5 @@ ${python} trains2.py \
 	--root_dir=$root_dir
 
 
-echo "RUNNING 0.1.distill_train.sh DONE."
-# 0.1.distill_train.sh ends here
+echo "RUNNING 0.2.distill_layerNorm.sh DONE."
+# 0.2.distill_layerNorm.sh ends here

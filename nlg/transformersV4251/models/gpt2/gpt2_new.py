@@ -250,6 +250,7 @@ class GPT2Attention(nn.Module):
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
         attn_weights = attn_weights.type(value.dtype)
+        # print(attn_weights)
         attn_weights = self.attn_dropout(attn_weights)
 
         # Mask heads if we want to
@@ -257,6 +258,7 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights * head_mask
 
         attn_output = torch.matmul(attn_weights, value)
+        # print(attn_output)
 
         return attn_output, attn_weights
 
@@ -411,7 +413,9 @@ class GPT2Block(nn.Module):
             self.ln_1 = SimpleLayerNorm(hidden_size)
         else:
             self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+
         self.attn = GPT2Attention(config, layer_idx=layer_idx)
+
         if config.layerNormType=="sim":
             self.ln_2 = SimpleLayerNorm(hidden_size)
         else:
@@ -438,7 +442,9 @@ class GPT2Block(nn.Module):
         output_attentions: Optional[bool] = False,
     ) -> Union[Tuple[torch.Tensor], Optional[Tuple[torch.Tensor, Tuple[torch.FloatTensor, ...]]]]:
         residual = hidden_states
+        # print("residual ",residual)
         hidden_states = self.ln_1(hidden_states)
+        # print("hidden states ",hidden_states)
         attn_outputs = self.attn(
             hidden_states,
             layer_past=layer_past,
@@ -1602,3 +1608,4 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
             hidden_states=transformer_outputs.hidden_states,
             attentions=transformer_outputs.attentions,
         )
+

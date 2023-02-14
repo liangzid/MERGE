@@ -112,6 +112,7 @@ class Inference:
         print("INFERENCE-MODEL-PATH: {}".format(model_path))
 
         self.decoder.resize_token_embeddings(len(bla_tokenizer))
+        
         self.embedds=self.decoder.get_input_embeddings()
         print("model loading done...")
 
@@ -190,8 +191,9 @@ class Inference:
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
 
-                if self.sep_token in sentence:
-                    sentence=sentence.split(self.sep_token)[-1]
+                if self.only_decoder:
+                    if self.sep_token in sentence:
+                        sentence=sentence.split(self.sep_token)[-1]
                 # print("post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
@@ -243,7 +245,7 @@ class Inference:
         """
         Embedding resend style sentence generation.
         """
-        print(">>> USING EMBEDRESEND GENERATION.")
+        # print(">>> USING EMBEDRESEND GENERATION.")
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,
@@ -255,13 +257,15 @@ class Inference:
             gen_len=self.msl-sl
         else:
             bs,sl,d=embeddings.shape
-            sl=0
-            gen_len=self.msl
+            decoder_input_ids=self.tokenizer([" "],return_tensors="pt").input_ids
+            decoder_input_ids=decoder_input_ids.to(self.device)
+            decoder_input_embedds=self.embedds(decoder_input_ids)
+            # print("decoder embedds shape: ",decoder_input_embedds.shape)
+            sl=1
+            gen_len=self.msl-sl
             
 
         first_token=0
-        decoder_input_embedds=torch.tensor((bs,0,d))
-        decoder_input_ids=torch.tensor((bs,0),dtype=torch.long)
         # 2 greedy forward generation
         with torch.no_grad():
             for _ in range(gen_len):
@@ -275,6 +279,7 @@ class Inference:
                     if first_token==1: # first input
                         output=self.decoder.forward(
                             prefix_ids,
+                            decoder_inputs_embeds=decoder_input_embedds,
                             output_hidden_states=True,
                             )
                     else:
@@ -331,7 +336,8 @@ class Inference:
 
 def main():
     inputt=["Aarhus | leader | Jacob_Bundsgaard<|sep|>"]
-    inferenceModel=Inference(model_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1/",cuda_num=7)
+    inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small",
+                             cuda_num=7)
 
     inputt_id=inferenceModel.tokenizer(inputt,
                     return_tensors="pt").input_ids

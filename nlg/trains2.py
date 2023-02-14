@@ -101,6 +101,9 @@ def setup_train_args():
                         type=str, required=True,)
     parser.add_argument('--max_grad_norm', default=1.0,
                         type=float, required=False,)
+    parser.add_argument('--weight_decay', default=0.01,
+                        type=float, required=False,
+                        )
     return parser.parse_args()
 
 
@@ -117,6 +120,7 @@ def train(args, tmodel, smodel,
     ii=0
     overall_step=0.
     tqdm1=tqdm(total=EPOCH)
+    past_losses=10000
     for epoch in range(EPOCH):
         ii+=1
         tqdm1.update(1)
@@ -197,6 +201,7 @@ def train(args, tmodel, smodel,
                 lens=len(toutputs.hidden_states)
                 # print(f"length of hidden states layers: {lens}")
                 for j in range(lens):
+                    # print("========================")
                     # print(toutputs.hidden_states[j])
                     # print(outputs.hidden_states[j])
 
@@ -240,17 +245,20 @@ def train(args, tmodel, smodel,
                 tb_writer.add_scalar(args.board_name+"--interLOSS",inter_loss,overall_step)
 
 
-            if ii%100==0:
+            if overall_step%100==0:
                 print("Run Validating...")
                 losses=test(test_loader=val_loader,
                          model=smodel,
                          task=task,
                          batch_size=batch_size,
-                         DEVICE=DEVICE)
+                            DEVICE=DEVICE,
+                            only_decoder=only_decoder)
                 tb_writer.add_scalar(args.board_name+"--valLOSS",
                                      losses,overall_step)
+                print(f">>>VAL loss: {losses}")
 
                 if losses<past_losses:
+                    print(f"find a better model, in epoch {epoch} step {i}")
                     smodel.save_pretrained(args.stu_save_ckpt)
                     past_losses=losses
 
@@ -300,9 +308,14 @@ def main1():
     config=AutoConfig.from_pretrained(args.stu_ckpt)
     if args.using_quadacti==1:
         config.activation_function="quad" # set to quad activation
+    else:
+        config.activation_function="gelu_new" # set to quad activation
     if args.using_simLN==1:
         config.layerNormType="sim" # set to quad activation
+    else:
+        config.layerNormType="no-sim" # set to quad activation
     config.save_pretrained(args.stu_ckpt)
+    config.save_pretrained(args.stu_save_ckpt)
     
     if "t5" in args.teach_ckpt:
         smodel = T5New.\
@@ -313,6 +326,9 @@ def main1():
     else:
         smodel = BFSCNew.from_pretrained(args.stu_ckpt)
     print("STU Original embedding size: ",smodel.get_input_embeddings().weight.shape[0])
+
+    # print(smodel.transformer.h[2].attn.M)
+
     stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer
     smodel.resize_token_embeddings(len(tokenizer))
@@ -338,7 +354,8 @@ def main1():
         print("whether the embedding layer has grad: ",
               False)
 
-    optimizer = torch.optim.AdamW(smodel.parameters(), lr=LR)
+    optimizer = torch.optim.AdamW(smodel.parameters(), lr=LR,
+                                  weight_decay=args.weight_decay,)
     smodel = smodel.to(DEVICE)
     tmodel = tmodel.to(DEVICE)
 

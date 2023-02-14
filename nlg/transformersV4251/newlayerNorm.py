@@ -26,11 +26,12 @@ import torch.nn as nn
 class SimpleLayerNorm(nn.Module):
     def __init__(self,d):
         super(SimpleLayerNorm,self).__init__()
-        self.weight=nn.Parameter(torch.tensor(d,d))
-        self.bias=nn.Parameter(torch.tensor(d))
+        self.weight=nn.Parameter(torch.tensor((d),dtype=torch.float))
+        self.bias=nn.Parameter(torch.tensor((d),dtype=torch.float))
 
     def forward(self,x):
-        return x*self.weight+self.bias
+        x=x*self.weight+self.bias
+        return x
 
 
 ## running entry
