@@ -156,9 +156,9 @@ def getFinetunedSet(tokenizer,
         names=["train","validation","test"]
     return getSet(names[0]),getSet(names[1]),getSet(names[2])
 
-def getTestDataSet(tokenizer,
+def getTestDataSet(tokenizer,split="test",
                     max_sentence_length=128,
-                    task="GEM/web_nlg",subset="en"):
+                    task="web_nlg",subset="release_v2",withsep=False):
     """
     For Downstream Tasks based on Conditional Generation.
     task and subtask enums:
@@ -167,7 +167,10 @@ def getTestDataSet(tokenizer,
         + ru
     + e2e_nlg, subset:none
     """
-    sep_token="<|sep|>"
+    if withsep:
+        sep_token="<|sep|>"
+    else:
+        sep_token=""
     # sep_token=tokenizer.sep_token
     eos_token=tokenizer.eos_token
 
@@ -183,18 +186,18 @@ def getTestDataSet(tokenizer,
             for x in train_set:
                 inps.append(" ; ".join(x["modified_triple_sets"]\
                                        ["mtriple_set"][0]))
-                outs.append(x["lex"]["text"][0])
+                outs.append(x["lex"]["text"])
         elif "e2e_nlg" in task:
             for x in train_set:
                 inps.append(x["meaning_representation"])
                 outs.append(x["human_reference"])
             
-        outs=inps
         labels=outs
+        outs=inps
 
         prefix_id_ls=[]
         for text in outs:
-            ou=tokenizer(text,padding="longest",
+            ou=tokenizer(text+sep_token,padding="longest",
                         truncation=True,
                         max_length=max_sentence_length,
                             return_tensors="pt")
@@ -202,11 +205,12 @@ def getTestDataSet(tokenizer,
             prefix_id_ls.append(ou.input_ids)
 
         return prefix_id_ls,labels
-    if "web_nlg" in task:
-        names=["train","dev","test"]
-    elif "e2e_nlg" in task:
-        names=["train","validation","test"]
-    return getSet(names[0]),getSet(names[1]),getSet(names[2])
+    # if "web_nlg" in task:
+    #     names=["train","dev","test"]
+    # elif "e2e_nlg" in task:
+    #     names=["train","validation","test"]
+    # return getSet(names[0]),getSet(names[1]),getSet(names[2])
+    return getSet(split)
     
 def trainConditional(model,
           optimizer,
@@ -339,24 +343,26 @@ def main():
     EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:6")
+    DEVICE = torch.device("cuda:7")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =1
     batch_size=BATCH_SIZE
     task_ls=["web_nlg","e2e_nlg"]
     subtaskls=["release_v2",None]
 
-    # task="web_nlg"
-    # subtask="release_v2"
+    task="web_nlg"
+    subtask="release_v2"
 
-    task="e2e_nlg"
-    subtask=None
+    # task="e2e_nlg"
+    # subtask=None
 
 
     prefix_path="/home/liangzi/models/"
+
     # model_name="gpt2/"
-    model_name="t5-small/"
-    # model_name="bart-base/"
+    # model_name="t5-small/"
+    model_name="bart-base/"
+    print(model_name)
     frmpth=prefix_path+model_name
 
     if "gpt" in frmpth:

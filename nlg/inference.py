@@ -24,10 +24,12 @@ from os.path import join, exists
 from itertools import zip_longest, chain
 from datetime import datetime
 import pickle
+import time
 
 import transformers
 from transformers import AutoTokenizer,AutoModelForCausalLM 
 from transformers import pipeline
+from transformers.generation.logits_process import  TemperatureLogitsWarper, RepetitionPenaltyLogitsProcessor,TopPLogitsWarper,TopKLogitsWarper,NoRepeatNGramLogitsProcessor,NoBadWordsLogitsProcessor
 
 from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
@@ -44,11 +46,16 @@ from torch.nn import DataParallel
 from torch.utils.data import Dataset, DataLoader
 from torch.nn import CrossEntropyLoss
 import torch.nn as nn
+import torch.nn.functional as F
 
 from transformers import T5ForConditionalGeneration
 from transformers import BartForConditionalGeneration
 
+# there might exist some bugs in the evaluate library
 import evaluate
+# as a replacement, we use nlg-metricverse as the evaluate metric.
+from nlgmetricverse import NLGMetricverse
+
 
 class Inference:
     def __init__(self,
@@ -99,6 +106,7 @@ class Inference:
         self.only_decoder=only_decoder
 
         self.eos_token=self.tokenizer.eos_token
+        self.eos_token_id=self.tokenizer.eos_token_id
         if only_decoder:
             self.sep_token=self.tokenizer.sep_token
         print("INFERENCE-MODEL-PATH: {}".format(model_path))
@@ -126,23 +134,34 @@ class Inference:
         self.max_target_length=128
         self.msl=self.max_target_length
 
-        ## calculate the running examples.
-        self.metrics_ls=["bleu","meteor","chrf","ter",
-                                  "bertscore","bleurt",
-                   "nist_mt","meteor","rouge"]
-        self.multi_ref_ls=["bleu","ter","nist_mt"]
+        repetition_penalty=2.5
+        self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
-        
-        self.metricsModel_ls=[]
-        for metric in self.metrics_ls:
-            if metric=="bleurt":
-                self.metricsModel_ls.append(evaluate.load(metric,
-                                    module_type="metric"))
-            elif metric=="chrf":
-                self.metricsModel_ls.append(evaluate.load(metric,
-                                    word_order=2))
-            else:
-                self.metricsModel_ls.append(evaluate.load(metric))
+        # print(">> Waiting the NLG metrics loading...")
+        # t1=time.time()
+        # ## calculate the running examples.
+        # self.metrics_ls=["bleu","meteor","chrf","ter",
+        #                           "bertscore","bleurt",
+        #            "nist_mt","meteor","rouge"]
+        # self.multi_ref_ls=["bleu","ter","nist_mt"]
+        # self.metricsModel_ls=[]
+        # for metric in self.metrics_ls:
+        #     if metric=="bleurt":
+        #         self.metricsModel_ls.append(evaluate.load(metric,
+        #                             module_type="metric"))
+        #     elif metric=="chrf":
+        #         self.metricsModel_ls.append(evaluate.load(metric,
+        #                             word_order=2))
+        #     else:
+        #         self.metricsModel_ls.append(evaluate.load(metric))
+        # t2=time.time()
+        # print(f"time cost in load original metrics: {t2-t1}")
+
+        # t1=time.time()
+        # self.metricModels=NLGMetricverse(metrics=["bleu","rouge","meteor","chrf",
+        #                                           "ter","bertscore","bleurt"])
+        # t2=time.time()
+        # print(f"time cost in load metrics: {t2-t1}")
         
     def inference(self, sequence, generate_mode_test="greedy"):
         new_sent = []
@@ -165,8 +184,8 @@ class Inference:
                 sentence=self.tokenizer.decode(outputs[0],
                                 skip_special_tokens=False)
                 p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
-                print("raw prefix: {}".format(p))
-                # print("raw prefix id: {}".format(seq))
+                # print("raw prefix: {}".format(p))
+                # # print("raw prefix id: {}".format(seq))
                 print("raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
@@ -195,42 +214,57 @@ class Inference:
         """
         Both `hyps` and `refs` are one-array lists.
         """
-        refss=[[x] for x in refs]
+        one_refs=[x[0] for x in refs]
         big_res_dict={}
         for i,m in enumerate(self.metrics_ls):
-            print(f"metrics: {m}")
             try:
-                if m=="bleurt":
-                    continue
+                # if m=="bleurt":
+                    # continue
                 if m in self.multi_ref_ls:
                     big_res_dict[m]=self.metricsModel_ls[i]\
                                         .compute(predictions=hyps,
-                                                    references=refss)
+                                                    references=refs)
                 else:
                     big_res_dict[m]=self.metricsModel_ls[i]\
                                         .compute(predictions=hyps,
-                                                 references=refs)
-            except:
+                                                 references=one_refs)
+            except Exception:
                 big_res_dict[m]={"res":"empty, with error."}
+                print("Error info:")
+                print(Exception)
+                print("------------------")
         return big_res_dict
+
+    def evaluate2(self,hyps,refs):
+        res=self.metricModels(predictions=hyps,references=refs)
+        return res
         
     def gen_embedResend(self,prefix_ids):
         """
         Embedding resend style sentence generation.
         """
+        print(">>> USING EMBEDRESEND GENERATION.")
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,
         # because the positional embedding can be added to, in models.
         embeddings=self.embedds(prefix_ids)
-        print(f"embeddings shape: {embeddings.shape}")
-        bs,sl,d=embeddings.shape
+        # print(f"embeddings shape: {embeddings.shape}")
+        if self.only_decoder:
+            bs,sl,d=embeddings.shape
+            gen_len=self.msl-sl
+        else:
+            bs,sl,d=embeddings.shape
+            sl=0
+            gen_len=self.msl
+            
 
         first_token=0
-        decoder_input_embedds=torch.tensor(bs,0,d)
+        decoder_input_embedds=torch.tensor((bs,0,d))
+        decoder_input_ids=torch.tensor((bs,0),dtype=torch.long)
         # 2 greedy forward generation
         with torch.no_grad():
-            for _ in range(self.msl):
+            for _ in range(gen_len):
                 first_token+=1
                 if self.only_decoder:
                     output=self.decoder.forward(
@@ -249,15 +283,38 @@ class Inference:
                             decoder_inputs_embeds=decoder_input_embedds,
                             output_hidden_states=True,
                             )
+                if self.only_decoder:
+                    decoder_input_ids=prefix_ids
                 
                 next_token_logits=output.logits[0,-1,:]
                 next_token_distribution=F.softmax(next_token_logits,dim=-1)
+
                 newdistribution=next_token_distribution
+
+                # Appendix: repetition control
+                newdistribution=self.repetition_processor(decoder_input_ids,
+                                                          newdistribution.unsqueeze(0))
+                # ## add temperature and subset sampling
+                # newdistribution=self.temp_warper(decoder_input_ids,
+                #                                    newdistribution)
+                # newdistribution=self.top_p_warpper(decoder_input_ids,
+                #                                    newdistribution)
+                # newdistribution=self.temp_peak_warper(decoder_input_ids,
+                #                                    newdistribution)
+                # newdistribution=self.topk_warpper(decoder_input_ids,
+                #                                   newdistribution)
+
                 sorted_ids = torch.argsort(newdistribution.squeeze(0),
                                         dim=-1, descending=True)
-                # here we just use the greedy search for generation
-                decoder_input_ids = torch.cat([decoder_input_ids,
-                                sorted_ids[None, 0, None]], dim=-1)
+                if self.only_decoder:
+                    # here we just use the greedy search for generation
+                    prefix_ids = torch.cat([prefix_ids,
+                                    sorted_ids[None, 0, None]], dim=-1)
+                    decoder_input_ids=prefix_ids
+                else:
+                    # here we just use the greedy search for generation
+                    decoder_input_ids = torch.cat([decoder_input_ids,
+                                    sorted_ids[None, 0, None]], dim=-1)
 
                 # get new embeddings for next step's input.
                 sl+=1
@@ -279,9 +336,20 @@ def main():
     inputt_id=inferenceModel.tokenizer(inputt,
                     return_tensors="pt").input_ids
 
-    xxx=inferenceModel.inference([inputt_id])
+    xxx=inferenceModel.inference([inputt_id],generate_mode_test="embedresend")
     print(xxx)
+
+def main1_testEval():
+    inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch6-lr5e-05-bs1fianlly",
+                    cuda_num=7)
+
+    hyps=[]
+    refs=[]
+    res=inferenceModel.evaluate(hyps,refs)
+    print(res)
+    
 
 if __name__=="__main__":
     main()
+    # main1_testEval()
 
