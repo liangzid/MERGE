@@ -331,6 +331,7 @@ def main1():
 
     stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer
+    tokenizer.save_pretrained(args.stu_save_ckpt)
     smodel.resize_token_embeddings(len(tokenizer))
     print("length of vocab in tokenizer: ",len(tokenizer))
 

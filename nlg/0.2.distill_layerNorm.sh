@@ -18,7 +18,7 @@ export root_dir="/home/liangzi/mpcGen/nlg/"
 
 export epochs=3
 export lr=3e-5
-export device="1"
+export device="7"
 # export device="cpu"
 export batch_size=1
 export task="web_nlg"
@@ -34,8 +34,8 @@ export using_interKL=1
 export using_wordEmbedMSE=1
 export using_quadacti=1
 
-export using_simLN=0
-export weight_decay=0.1
+export using_simLN=1
+export weight_decay=0.5
 
 # export using_wordEmbedMSE=0
 export stu_save_ckpt=${stu_ckpt}LayerNorm${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${weight_decay}
@@ -52,7 +52,7 @@ export board_name=$stu_save_ckpt
 # export tasks=(cola)
 # export time_list=(1)
 
-${python} trains2.py \
+${python} trains3.py \
 	--train=1 \
 	--epochs=${epochs} \
 	--lr=${lr} \

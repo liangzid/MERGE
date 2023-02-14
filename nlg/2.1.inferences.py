@@ -28,7 +28,7 @@ def eval_vanilla_gpt2():
     # task="e2e_nlg"
     # subtask=None
 
-    cuda_num=5
+    cuda_num=7
     infermodel=Inference(model_path,cuda_num)
 
     te=getTestDataSet(infermodel.tokenizer,split="test",
