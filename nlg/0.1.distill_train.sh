@@ -32,8 +32,8 @@ export using_entropy=1
 export using_softLabel=1
 export tau=4
 export using_interKL=1
-# export using_wordEmbedMSE=1
-export using_wordEmbedMSE=0
+export using_wordEmbedMSE=1
+# export using_wordEmbedMSE=0
 export stu_save_ckpt=${stu_ckpt}Distilled${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}
 
 export lonelyLongOverallPath="./distillModelResTest.log"

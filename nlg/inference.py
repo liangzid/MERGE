@@ -137,25 +137,25 @@ class Inference:
         repetition_penalty=2.5
         self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
-        # print(">> Waiting the NLG metrics loading...")
-        # t1=time.time()
-        # ## calculate the running examples.
-        # self.metrics_ls=["bleu","meteor","chrf","ter",
-        #                           "bertscore","bleurt",
-        #            "nist_mt","meteor","rouge"]
-        # self.multi_ref_ls=["bleu","ter","nist_mt"]
-        # self.metricsModel_ls=[]
-        # for metric in self.metrics_ls:
-        #     if metric=="bleurt":
-        #         self.metricsModel_ls.append(evaluate.load(metric,
-        #                             module_type="metric"))
-        #     elif metric=="chrf":
-        #         self.metricsModel_ls.append(evaluate.load(metric,
-        #                             word_order=2))
-        #     else:
-        #         self.metricsModel_ls.append(evaluate.load(metric))
-        # t2=time.time()
-        # print(f"time cost in load original metrics: {t2-t1}")
+        print(">> Waiting the NLG metrics loading...")
+        t1=time.time()
+        ## calculate the running examples.
+        self.metrics_ls=["bleu","meteor","chrf","ter",
+                                  "bertscore","bleurt",
+                   "nist_mt","meteor","rouge"]
+        self.multi_ref_ls=["bleu","ter","nist_mt"]
+        self.metricsModel_ls=[]
+        for metric in self.metrics_ls:
+            if metric=="bleurt":
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    module_type="metric"))
+            elif metric=="chrf":
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    word_order=2))
+            else:
+                self.metricsModel_ls.append(evaluate.load(metric))
+        t2=time.time()
+        print(f"time cost in load original metrics: {t2-t1}")
 
         # t1=time.time()
         # self.metricModels=NLGMetricverse(metrics=["bleu","rouge","meteor","chrf",
@@ -186,13 +186,13 @@ class Inference:
                 p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
                 # print("raw prefix: {}".format(p))
                 # # print("raw prefix id: {}".format(seq))
-                print("raw gen sent: {}".format(sentence))
+                # print("raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
 
                 if self.sep_token in sentence:
                     sentence=sentence.split(self.sep_token)[-1]
-                print("post process sent: {}".format(sentence))
+                # print("post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
 

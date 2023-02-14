@@ -302,15 +302,16 @@ def main1():
         config.activation_function="quad" # set to quad activation
     if args.using_simLN==1:
         config.layerNormType="sim" # set to quad activation
+    config.save_pretrained(args.stu_ckpt)
     
     if "t5" in args.teach_ckpt:
         smodel = T5New.\
-            from_pretrained(args.teach_ckpt)
+            from_pretrained(args.stu_ckpt)
     elif "bart" in args.teach_ckpt:
         smodel = BartNew.\
-            from_pretrained(args.teach_ckpt)
+            from_pretrained(args.stu_ckpt)
     else:
-        smodel = BFSCNew.from_pretrained(args.teach_ckpt)
+        smodel = BFSCNew.from_pretrained(args.stu_ckpt)
     print("STU Original embedding size: ",smodel.get_input_embeddings().weight.shape[0])
     stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer
@@ -373,7 +374,7 @@ def main1():
     #      batch_size=BATCH_SIZE,DEVICE=DEVICE)
 
     print("Now on Original Student Model.")
-    smodel=smodel.from_pretrained(args.stu_ckpt)
+    smodel=smodel.from_pretrained(args.stu_save_ckpt)
     smodel.to(DEVICE)
     smodel.eval()
     
