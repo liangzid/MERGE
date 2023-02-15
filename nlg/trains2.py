@@ -202,8 +202,8 @@ def train(args, tmodel, smodel,
                 # print(f"length of hidden states layers: {lens}")
                 for j in range(lens):
                     # print("========================")
-                    # print(toutputs.hidden_states[j])
-                    # print(outputs.hidden_states[j])
+                    # print("teacher: ",toutputs.hidden_states[j])
+                    # print("student: ",outputs.hidden_states[j])
 
                     # assert (toutputs.hidden_states[j]==\
                     #        outputs.hidden_states[j]).all()

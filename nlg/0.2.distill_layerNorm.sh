@@ -25,17 +25,17 @@ export task="web_nlg"
 export max_seq_length=128
 
 export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
-export stu_ckpt=${teach_ckpt}
+export stu_ckpt=${teach_ckpt}_Student
 
 export using_entropy=1
 export using_softLabel=1
 export tau=4
-export using_interKL=1
+export using_interKL=0
 export using_wordEmbedMSE=1
 export using_quadacti=1
 
 export using_simLN=1
-export weight_decay=0.5
+export weight_decay=0.1
 
 # export using_wordEmbedMSE=0
 export stu_save_ckpt=${stu_ckpt}LayerNorm${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${weight_decay}

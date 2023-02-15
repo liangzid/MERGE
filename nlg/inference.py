@@ -27,7 +27,7 @@ import pickle
 import time
 
 import transformers
-from transformers import AutoTokenizer,AutoModelForCausalLM 
+from transformers import AutoTokenizer,AutoModelForCausalLM,AutoConfig
 from transformers import pipeline
 from transformers.generation.logits_process import  TemperatureLogitsWarper, RepetitionPenaltyLogitsProcessor,TopPLogitsWarper,TopKLogitsWarper,NoRepeatNGramLogitsProcessor,NoBadWordsLogitsProcessor
 
@@ -73,6 +73,10 @@ class Inference:
         bla_tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.tokenizer = bla_tokenizer
         print("tokenizer loading done...")
+
+        config=AutoConfig.from_pretrained(model_path)
+        if config.activation_function=="quad":
+            approximation=True
 
         only_decoder=True
         if "gpt" in model_path:
@@ -139,24 +143,25 @@ class Inference:
         self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
         print(">> Waiting the NLG metrics loading...")
-        t1=time.time()
-        ## calculate the running examples.
-        self.metrics_ls=["bleu","meteor","chrf","ter",
-                                  "bertscore","bleurt",
-                   "nist_mt","meteor","rouge"]
-        self.multi_ref_ls=["bleu","ter","nist_mt"]
-        self.metricsModel_ls=[]
-        for metric in self.metrics_ls:
-            if metric=="bleurt":
-                self.metricsModel_ls.append(evaluate.load(metric,
-                                    module_type="metric"))
-            elif metric=="chrf":
-                self.metricsModel_ls.append(evaluate.load(metric,
-                                    word_order=2))
-            else:
-                self.metricsModel_ls.append(evaluate.load(metric))
-        t2=time.time()
-        print(f"time cost in load original metrics: {t2-t1}")
+        # t1=time.time()
+        # ## calculate the running examples.
+        # self.metrics_ls=["bleu","meteor","chrf","ter",
+        #                           "bertscore","bleurt",
+        #            "nist_mt","meteor","rouge"]
+        # self.multi_ref_ls=["bleu","ter","nist_mt"]
+        # self.metricsModel_ls=[]
+        # for metric in self.metrics_ls:
+        #     if metric=="bleurt":
+        #         self.metricsModel_ls.append(evaluate.load(metric,
+        #                             module_type="metric"))
+        #     elif metric=="chrf":
+        #         self.metricsModel_ls.append(evaluate.load(metric,
+        #                             word_order=2))
+        #     else:
+        #         self.metricsModel_ls.append(evaluate.load(metric))
+        # t2=time.time()
+        # print(f"time cost in load original metrics: {t2-t1}")
+
 
         # t1=time.time()
         # self.metricModels=NLGMetricverse(metrics=["bleu","rouge","meteor","chrf",
@@ -185,16 +190,16 @@ class Inference:
                 sentence=self.tokenizer.decode(outputs[0],
                                 skip_special_tokens=False)
                 p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
-                # print("raw prefix: {}".format(p))
+                print("raw prefix: {}".format(p))
                 # # print("raw prefix id: {}".format(seq))
-                # print("raw gen sent: {}".format(sentence))
+                print("raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
 
                 if self.only_decoder:
                     if self.sep_token in sentence:
                         sentence=sentence.split(self.sep_token)[-1]
-                # print("post process sent: {}".format(sentence))
+                print("post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
 
@@ -336,13 +341,14 @@ class Inference:
 
 def main():
     inputt=["Aarhus | leader | Jacob_Bundsgaard<|sep|>"]
-    inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small",
+    inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410",
                              cuda_num=7)
 
     inputt_id=inferenceModel.tokenizer(inputt,
                     return_tensors="pt").input_ids
 
-    xxx=inferenceModel.inference([inputt_id],generate_mode_test="embedresend")
+    xxx=inferenceModel.inference([inputt_id])
+    # xxx=inferenceModel.inference([inputt_id],generate_mode_test="embedresend")
     print(xxx)
 
 def main1_testEval():

@@ -245,7 +245,8 @@ class GPT2Attention(nn.Module):
 
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
 
-        bs=value.shape[0]
+        # print(f"value.shape: {value.shape}")
+        bs,num_head,sl,dperhead=value.shape
         attn_weights = self.M.unsqueeze(0)
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
@@ -257,7 +258,7 @@ class GPT2Attention(nn.Module):
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
-        attn_output = torch.matmul(attn_weights, value)
+        attn_output = torch.matmul(attn_weights[:,:,sl-1:sl,:sl],value)
         # print(attn_output)
 
         return attn_output, attn_weights
@@ -371,6 +372,9 @@ class GPT2Attention(nn.Module):
         if self.reorder_and_upcast_attn:
             attn_output, attn_weights = self._upcast_and_reordered_attn(query, key, value, attention_mask, head_mask)
         else:
+            # print("shape of query: ",query.shape)
+            # print("shape of key: ",key.shape)
+
             # attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
             attn_output, attn_weights = self._attnConstant(value,
                                 attention_mask, head_mask)
@@ -378,6 +382,7 @@ class GPT2Attention(nn.Module):
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         attn_output = self.c_proj(attn_output)
         attn_output = self.resid_dropout(attn_output)
+
 
         outputs = (attn_output, present)
         if output_attentions:
@@ -401,7 +406,10 @@ class GPT2MLP(nn.Module):
         hidden_states = self.c_proj(hidden_states)
         hidden_states = self.dropout(hidden_states)
         return hidden_states
-
+    # def constrain(self,x):
+    #     x[x>10]=10
+    #     x[x<-10]=-10
+    #     return x
 
 class GPT2Block(nn.Module):
     def __init__(self, config, layer_idx=None):
@@ -411,13 +419,17 @@ class GPT2Block(nn.Module):
 
         if config.layerNormType=="sim":
             self.ln_1 = SimpleLayerNorm(hidden_size)
+            # self.ln_1 = nn.LayerNorm(hidden_size,
+            #                          eps=config.layer_norm_epsilon)
         else:
-            self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+            self.ln_1 = nn.LayerNorm(hidden_size,eps=config.layer_norm_epsilon)
 
         self.attn = GPT2Attention(config, layer_idx=layer_idx)
 
         if config.layerNormType=="sim":
-            self.ln_2 = SimpleLayerNorm(hidden_size)
+            # self.ln_2 = SimpleLayerNorm(hidden_size)
+            self.ln_2 = nn.LayerNorm(hidden_size,
+                                     eps=config.layer_norm_epsilon)
         else:
             self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
@@ -425,6 +437,8 @@ class GPT2Block(nn.Module):
             self.crossattention = GPT2Attention(config, is_cross_attention=True, layer_idx=layer_idx)
             if config.layerNormType=="sim":
                 self.ln_cross_attn = SimpleLayerNorm(hidden_size)
+                # self.ln_cross_attn = nn.LayerNorm(hidden_size,
+                #                 eps=config.layer_norm_epsilon)
             else:
                 self.ln_cross_attn = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
@@ -741,7 +755,8 @@ class GPT2Model(GPT2PreTrainedModel):
         self.drop = nn.Dropout(config.embd_pdrop)
         self.h = nn.ModuleList([GPT2Block(config, layer_idx=i) for i in range(config.num_hidden_layers)])
         if config.layerNormType=="sim":
-            self.ln_f = SimpleLayerNorm(self.embed_dim)
+            # self.ln_f = SimpleLayerNorm(self.embed_dim)
+            self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
         else:
             self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
 

@@ -78,6 +78,10 @@ def main():
     else:
         only_decoder=True
     print(f"The Backbone is Only a Decoder: {only_decoder}.")
+
+    config=AutoConfig.from_pretrained(args.teach_ckpt)
+    config.layerNormType="no-sim" # set to quad activation
+    config.save_pretrained(args.teach_ckpt)
     
     if "t5" in args.teach_ckpt:
         tmodel = T5New.\
@@ -87,11 +91,12 @@ def main():
             from_pretrained(args.teach_ckpt)
     else:
         tmodel = BFSCNew.from_pretrained(args.teach_ckpt)
+    tmodel.save_pretrained(args.stu_ckpt)
     print("TEA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
     ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt)
     tmodel.resize_token_embeddings(len(ttokenizer))
 
-    config=AutoConfig.from_pretrained(args.stu_ckpt)
+    config=AutoConfig.from_pretrained(args.teach_ckpt)
     if args.using_quadacti==1:
         config.activation_function="quad" # set to quad activation
     else:
@@ -125,7 +130,7 @@ def main():
     #             if "bias" in k:
     #                 param=torch.zeros_like(param)
 
-    stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
+    stokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt)
     tokenizer=ttokenizer
     smodel.resize_token_embeddings(len(tokenizer))
     print("length of vocab in tokenizer: ",len(tokenizer))
@@ -142,11 +147,22 @@ def main():
         smodel.set_output_embeddings(newlm)
         print("whether the last linear map has grad: ",
               smodel.lm_head.weight.requires_grad)
+
         for name,param in smodel.named_parameters():
             if "wte" in name:
                 print("find word embedding layer,\
                 now set the grad to false.")
                 param.required_grad=False
+            # if "M" in name:
+            #     print("find the constant attention. now set the grad to false.")
+            #     param.required_grad=False
+            # if "ln_1" in name or "ln_cross_attn":
+            #     print("find the sim LN after RES,set grad to false.")
+            #     param.required_grad=False
+            # if "ln_2" in name:
+            #     print("find the original LN after RES,set grad to false.")
+            #     param.required_grad=False
+
         print("whether the embedding layer has grad: ",
               False)
 

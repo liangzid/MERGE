@@ -31,6 +31,8 @@ class SimpleLayerNorm(nn.Module):
 
     def forward(self,x):
         x=x*self.weight+self.bias
+        # print(self.weight)
+        # print(self.bias)
         return x
 
 

@@ -156,18 +156,19 @@ def calAttnMat(task,subset,ckpt_path,ckpt_save_p):
         kyname=f"transformer.h.{kk}.attn.M"
         old_state_dict[kyname]=final_atts[kk]
 
-    ## re-initialize the LayerNorm parameters.
-    for k in old_state_dict.keys():
-        if "ln_" in k or "layer_norm" in k\
-           or "layernorm" in k: # which means the layerNorm
-            if "weight" in k:
-                print("now reuse the weight")
-                old_state_dict[k]=torch.ones_like(old_state_dict[k])
-                print(f"new weight of LN layer: {old_state_dict[k]}")
-            if "bias" in k:
-                print("now reuse the bias")
-                old_state_dict[k]=torch.zeros_like(old_state_dict[k])
-                print(f"new weight of LN layer: {old_state_dict[k]}")
+    ## have no use.
+    # ## re-initialize the LayerNorm parameters.
+    # for k in old_state_dict.keys():
+    #     if "ln_" in k or "layer_norm" in k\
+    #        or "layernorm" in k: # which means the layerNorm
+    #         if "weight" in k:
+    #             print("now reuse the weight")
+    #             old_state_dict[k]=torch.ones_like(old_state_dict[k])
+    #             print(f"new weight of LN layer: {old_state_dict[k]}")
+    #         if "bias" in k:
+    #             print("now reuse the bias")
+    #             old_state_dict[k]=torch.zeros_like(old_state_dict[k])
+    #             print(f"new weight of LN layer: {old_state_dict[k]}")
                 
     
     print("new keys: ",old_state_dict.keys())
