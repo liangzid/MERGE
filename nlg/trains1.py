@@ -93,7 +93,7 @@ def get_pretrained_dataset(tokenizer,
 
 def getFinetunedSet(tokenizer,
                     max_sentence_length=256,
-                    task="GEM/web_nlg",subset="en",
+                    task="web_nlg",subset="release_v2",
                     only_decoder=True):
     """
     For Downstream Tasks based on Conditional Generation.
@@ -333,6 +333,7 @@ def test(test_loader,model,task,batch_size=32,
                                 decoder_input_ids=outs,
                                 labels=outs)
             loss = outputs.loss
+            # print(loss)
             losses+=loss
 
     losses/=((i+1)*batch_size)

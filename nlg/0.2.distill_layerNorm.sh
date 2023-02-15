@@ -16,8 +16,8 @@
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=3
-export lr=3e-5
+export epochs=1
+export lr=3e-4
 export device="7"
 # export device="cpu"
 export batch_size=1
@@ -35,7 +35,7 @@ export using_wordEmbedMSE=1
 export using_quadacti=1
 
 export using_simLN=1
-export weight_decay=0.1
+export weight_decay=0.01
 
 # export using_wordEmbedMSE=0
 export stu_save_ckpt=${stu_ckpt}LayerNorm${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${weight_decay}

@@ -225,7 +225,10 @@ def train(args, tmodel, smodel,
             # a4=1-a1-a2-a3
             # loss = a1*entropy_loss + a2*softlabel_loss +\
             #     a3*inter_loss + a4*wordEmMSE_loss
-            loss=0.33*entropy_loss+0.33*softlabel_loss+0.33*inter_loss
+                if inter_loss ==0.0:
+                    loss=0.5*entropy_loss+0.5*softlabel_loss
+                else:
+                    loss=0.33*entropy_loss+0.33*softlabel_loss+0.33*inter_loss
 
             optimizer.zero_grad()
             loss.backward()

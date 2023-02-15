@@ -236,7 +236,7 @@ class GPT2Attention(nn.Module):
 
         return attn_output, attn_weights
 
-    def _attnConstant(self, value, attention_mask=None, head_mask=None):
+    def _attnConstant(self, query, value, attention_mask=None, head_mask=None):
 
         # shape of attn_weights: bs, num_heads,msl,msl
 
@@ -245,8 +245,11 @@ class GPT2Attention(nn.Module):
 
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
 
-        # print(f"value.shape: {value.shape}")
-        bs,num_head,sl,dperhead=value.shape
+        print(f"query shape: {query.shape}")
+        print(f"value.shape: {value.shape}")
+
+        _,_,msl,_=query.shape
+        bs,num_head,sl,d_perhead=value.shape
         attn_weights = self.M.unsqueeze(0)
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
@@ -254,11 +257,27 @@ class GPT2Attention(nn.Module):
         # print(attn_weights)
         attn_weights = self.attn_dropout(attn_weights)
 
+        # print(msl,sl,msl==sl)
+        if sl==msl: # parallel forward
+            # print("the same, using parallel")
+            attn_weights=attn_weights[:,:,:sl,:sl]
+        elif msl==1:
+            print("generation Mode")
+            # attn_weights=attn_weights[:, :, sl-1:sl, :sl]
+            attn_weights=attn_weights[:,:,:sl,:sl]
+            attn_weights=attn_weights[:, :, -1:, :]
+
+        # else:
+        #     print("Unknown Error.")
+        #     assert 0==1
+
         # Mask heads if we want to
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
-        attn_output = torch.matmul(attn_weights[:,:,sl-1:sl,:sl],value)
+
+        attn_output = torch.matmul(attn_weights,value)
+
         # print(attn_output)
 
         return attn_output, attn_weights
@@ -376,7 +395,7 @@ class GPT2Attention(nn.Module):
             # print("shape of key: ",key.shape)
 
             # attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
-            attn_output, attn_weights = self._attnConstant(value,
+            attn_output, attn_weights = self._attnConstant(query,value,
                                 attention_mask, head_mask)
 
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)

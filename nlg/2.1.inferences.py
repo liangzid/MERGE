@@ -22,6 +22,7 @@ def eval_vanilla_gpt2():
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small/"
     model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114103e-50.01/"
 
     task="web_nlg"
     subset="release_v2"
@@ -29,19 +30,26 @@ def eval_vanilla_gpt2():
     # task="e2e_nlg"
     # subtask=None
 
-    cuda_num=6
-    infermodel=Inference(model_path,cuda_num)
+    cuda_num=2
+    infermodel=Inference(model_path,cuda_num,
+                         # approximation=True
+                         )
 
     te=getTestDataSet(infermodel.tokenizer,split="test",
                              max_sentence_length=infermodel.msl//2,
-                             task=task,subset=subset,withsep=False)
+                             task=task,subset=subset,withsep=True)
+    dev=getTestDataSet(infermodel.tokenizer,split="dev",
+                             max_sentence_length=infermodel.msl//2,
+                             task=task,subset=subset,withsep=True)
     va,valabels=te
+    # va,valabels=dev
+
     # using validation dataset to test.
     # seqls=[x[0] for x in va]
     seqls=va
 
-    # seqls=seqls[:3]
-    # valabels=valabels[:3]
+    seqls=seqls[:50]
+    valabels=valabels[:50]
 
     # print(seqls[0])
     newseqls=infermodel.inference(seqls)

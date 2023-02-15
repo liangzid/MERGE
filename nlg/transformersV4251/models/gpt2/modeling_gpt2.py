@@ -214,6 +214,12 @@ class GPT2Attention(nn.Module):
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
+        # print(f"shape of query: {query.shape}")
+        # print(f"shape of value: {value.shape}")
+        # # --------------------------
+        # print(f"shape of attn w: {attn_weights.shape}")
+        
+
         attn_output = torch.matmul(attn_weights, value)
 
         return attn_output, attn_weights

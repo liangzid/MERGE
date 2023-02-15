@@ -33,6 +33,9 @@ from transformers.generation.logits_process import  TemperatureLogitsWarper, Rep
 
 from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
+from transformersV4251.models.gpt2.modeling_gpt2 import \
+    GPT2LMHeadModel as OldGpt2
+
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
 from transformersV4251.models.bart.modeling_bart import \
@@ -78,12 +81,16 @@ class Inference:
         if config.activation_function=="quad":
             approximation=True
 
+
         only_decoder=True
         if "gpt" in model_path:
             if not approximation:
+                # self.decoder=OldGpt2\
+                #     .from_pretrained(model_path)
                 self.decoder=AutoModelForCausalLM\
                     .from_pretrained(model_path)
             else:
+                print("<<<<>>>>Using Self-customed GPT-2.")
                 self.decoder=BFSCNew\
                     .from_pretrained(model_path)
             
@@ -108,6 +115,8 @@ class Inference:
                 .from_pretrained(model_path)
 
         self.only_decoder=only_decoder
+        print(f"is approximation: {approximation}")
+        print(f"is only decoder: {only_decoder}")
 
         self.eos_token=self.tokenizer.eos_token
         self.eos_token_id=self.tokenizer.eos_token_id
@@ -143,24 +152,28 @@ class Inference:
         self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
         print(">> Waiting the NLG metrics loading...")
-        # t1=time.time()
-        # ## calculate the running examples.
-        # self.metrics_ls=["bleu","meteor","chrf","ter",
-        #                           "bertscore","bleurt",
-        #            "nist_mt","meteor","rouge"]
-        # self.multi_ref_ls=["bleu","ter","nist_mt"]
-        # self.metricsModel_ls=[]
-        # for metric in self.metrics_ls:
-        #     if metric=="bleurt":
-        #         self.metricsModel_ls.append(evaluate.load(metric,
-        #                             module_type="metric"))
-        #     elif metric=="chrf":
-        #         self.metricsModel_ls.append(evaluate.load(metric,
-        #                             word_order=2))
-        #     else:
-        #         self.metricsModel_ls.append(evaluate.load(metric))
-        # t2=time.time()
-        # print(f"time cost in load original metrics: {t2-t1}")
+        t1=time.time()
+        ## calculate the running examples.
+        self.metrics_ls=["bleu","meteor","chrf","ter",
+                                  "bertscore","bleurt",
+                   "nist_mt","meteor","rouge"]
+        self.metrics_ls=["bleu","meteor","chrf","ter",
+                   "nist_mt","meteor","rouge"]
+        self.multi_ref_ls=["bleu","ter","nist_mt"]
+        self.metricsModel_ls=[]
+        for metric in self.metrics_ls:
+            if metric=="bleurt":
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    module_type="metric"))
+            elif metric=="chrf":
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    word_order=2))
+            else:
+                self.metricsModel_ls.append(evaluate.load(metric))
+        t2=time.time()
+        print(f"time cost in load original metrics: {t2-t1}")
+
+        print(">> NLG metrics loading DONE.")
 
 
         # t1=time.time()
@@ -182,7 +195,7 @@ class Inference:
             input_ids = input_ids.to(self.device)
             try:
                 if generate_mode_test == "greedy":
-                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=3.0,no_repeat_ngram_size=2,
+                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=7.5,no_repeat_ngram_size=3,
                                                   pad_token_id=self.tokenizer.eos_token_id)
                 else:
                     outputs=self.gen_embedResend(input_ids)
@@ -190,16 +203,16 @@ class Inference:
                 sentence=self.tokenizer.decode(outputs[0],
                                 skip_special_tokens=False)
                 p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
-                print("raw prefix: {}".format(p))
+                print(">>>raw prefix: {}".format(p))
                 # # print("raw prefix id: {}".format(seq))
-                print("raw gen sent: {}".format(sentence))
+                print(">>>raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
                     sentence=sentence.split(self.eos_token)[0]
 
                 if self.only_decoder:
                     if self.sep_token in sentence:
                         sentence=sentence.split(self.sep_token)[-1]
-                print("post process sent: {}".format(sentence))
+                print(">>>post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
 
@@ -343,13 +356,46 @@ def main():
     inputt=["Aarhus | leader | Jacob_Bundsgaard<|sep|>"]
     inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410",
                              cuda_num=7)
-
     inputt_id=inferenceModel.tokenizer(inputt,
                     return_tensors="pt").input_ids
-
-    xxx=inferenceModel.inference([inputt_id])
+    jxxx=inferenceModel.inference([inputt_id])
     # xxx=inferenceModel.inference([inputt_id],generate_mode_test="embedresend")
     print(xxx)
+
+
+    DEVICE="cuda:6"
+    # pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
+    # pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114103e-50.01/"
+    pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
+
+    only_decoder=True
+    from trains1 import getFinetunedSet,test
+    # smodel=AutoModelForCausalLM.from_pretrained(pth)
+    smodel=BFSCNew.from_pretrained(pth)
+    tokenizer=AutoTokenizer.from_pretrained(pth)
+    smodel.to(DEVICE)
+    smodel.eval()
+    # smodel.train()
+
+    task="web_nlg"
+    subtask="release_v2"
+
+    trs,vas,tes=getFinetunedSet(tokenizer,128,
+                                task,subtask,only_decoder)
+
+    batch_size=1
+    # trloader=DataLoader(trs,batch_size=batch_size,
+    #                         shuffle=True,drop_last=False)
+    valoader=DataLoader(vas,batch_size=batch_size,
+                            shuffle=True,drop_last=True)
+    teloader=DataLoader(tes,batch_size=batch_size,
+                            shuffle=True,drop_last=True)
+
+    res=test(test_loader=teloader,model=smodel,task=task,batch_size=1,DEVICE=DEVICE,only_decoder=only_decoder)
+    print(f"test set res: {res}")
+    res=test(test_loader=valoader,model=smodel,task=task,batch_size=1,DEVICE=DEVICE,only_decoder=only_decoder)
+    print(f"validation set res: {res}")
+    
 
 def main1_testEval():
     inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch6-lr5e-05-bs1fianlly",
