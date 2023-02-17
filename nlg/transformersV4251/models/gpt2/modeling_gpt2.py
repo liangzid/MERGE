@@ -204,6 +204,7 @@ class GPT2Attention(nn.Module):
             # Apply the attention mask
             attn_weights = attn_weights + attention_mask
 
+        before_attn_weights=attn_weights
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
@@ -222,6 +223,7 @@ class GPT2Attention(nn.Module):
 
         attn_output = torch.matmul(attn_weights, value)
 
+        # return attn_output, before_attn_weights
         return attn_output, attn_weights
 
     def _upcast_and_reordered_attn(self, query, key, value, attention_mask=None, head_mask=None):

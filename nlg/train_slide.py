@@ -1,27 +1,23 @@
 """
 ======================================================================
-TRAINS2 ---
+TRAIN_SLIDE --- 
 
-After train teacher model with `trains1.py`, we should:
-1. Calculate the Constant Matrix, and load the modified GPT-2 model.
-2. Distill the modified version GPT-2 with the teacher model and the
-train set.
+windows slide embedding resend training.
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created:  9 二月 2023
+    Created: 16 二月 2023
 ======================================================================
 """
 
 
 # ------------------------ Code --------------------------------------
-
+from tqdm import tqdm
 ## normal import 
 import json
 from typing import List,Tuple,Dict
 import random
 from pprint import pprint as ppp
-from tqdm import tqdm
 
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -53,60 +49,7 @@ import numpy as np
 import argparse
 
 from trains1 import getFinetunedSet,test,testNew
-
-def setup_train_args():
-    """
-    设置训练参数
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', default=5, type=int,
-                        required=False,)
-    parser.add_argument('--lr', default=3e-4, type=float,
-                        required=False,)
-    parser.add_argument('--cuda_num', default='6', type=str, required=False)
-    parser.add_argument('--batch_size', default=4, type=int,
-                        required=False,)
-    parser.add_argument('--task', default="cola", type=str,
-                        required=True,)
-    parser.add_argument("--max_seq_length", default=128,
-                        type=int, required=False,)
-    parser.add_argument("--train", default=1, type=int,
-                        required=True,)
-
-    parser.add_argument('--teach_ckpt', default='bert-tiny',
-                        type=str, required=True,)
-    parser.add_argument('--stu_ckpt', default='bert-tiny',
-                        type=str, required=True,)
-    parser.add_argument('--stu_save_ckpt', default='bert-tiny',
-                        type=str, required=True,)
-
-    parser.add_argument('--using_entropy', default=1,
-                        type=int, required=False,)
-    parser.add_argument('--using_softLabel', default=0,
-                        type=int, required=False,)
-    parser.add_argument('--tau', default=1.,
-                        type=float, required=False,)
-    parser.add_argument('--using_interKL', default=0,
-                        type=int, required=False,)
-    parser.add_argument('--using_wordEmbedMSE', default=0,
-                        type=int, required=False,)
-    parser.add_argument('--using_quadacti', default=0,
-                        type=int, required=False,)
-    parser.add_argument('--using_simLN', default=0,
-                        type=int, required=False,)
-    parser.add_argument('--root_dir', default='/home/liangzi/he_transformer/newglue/',
-                        type=str, required=False,)
-    parser.add_argument('--writer_dir',
-                        type=str, required=False,default="./logs/1")
-    parser.add_argument('--board_name',
-                        type=str, required=True,)
-    parser.add_argument('--max_grad_norm', default=1.0,
-                        type=float, required=False,)
-    parser.add_argument('--weight_decay', default=0.01,
-                        type=float, required=False,
-                        )
-    return parser.parse_args()
-
+from trains2 import main1,setup_train_args
 
 def train(args, tmodel, smodel,prolayer,
           optimizer1,optimizer2, train_loader, val_loader,
@@ -116,7 +59,7 @@ def train(args, tmodel, smodel,prolayer,
           only_decoder=True,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
-    loss_func=CrossEntropyLoss(ignore_index=tokenizer.eos_token_id)
+    loss_func=CrossEntropyLoss(reduction="none")
     tb_writer = SummaryWriter(log_dir=args.writer_dir+args.board_name)
     no_save_差不多model=True
     ii=0
@@ -185,6 +128,12 @@ def train(args, tmodel, smodel,prolayer,
                 distri=outputs.logits # we cannot use SOFTMAX!
                 entropy_loss=loss_func(distri[:,:-1,:].reshape(bs*(msl-1),-1),
                                        inps[:,1:].reshape(-1))
+                entropy_loss=entropy_loss.reshape(bs,-1)
+                # print(entropy_loss)
+                weights=torch.linspace(1.,0.,steps=msl-1).to(DEVICE)
+                entropy_loss=torch.matmul(entropy_loss,weights)
+                entropy_loss=torch.mean(entropy_loss)
+                
                 # print(f"my CE loss: {entropy_loss}, hugging version: {entropy_loss1}")
             if args.using_softLabel==1:
                 # print("Original logits",teacher_logits[0])
@@ -282,8 +231,9 @@ def train(args, tmodel, smodel,prolayer,
             # loss=(wordEmMSE_loss+entropy_loss+softlabel_loss+inter_loss)/total_num
             total_num=4
             # loss=(wordEmMSE_loss+entropy_loss)/2
-            loss=(wordEmMSE_loss+entropy_loss+wordEmMSE_loss1)/3
+            # loss=(wordEmMSE_loss+entropy_loss+wordEmMSE_loss1)/3
             # loss=(wordEmMSE_loss+entropy_loss+wordEmMSE_loss1-nega_loss)/total_num
+            loss=(wordEmMSE_loss+entropy_loss)/2
 
             if loss<train_past_l and i%100==0:
                 print("SaveNewTrainModel")
@@ -337,7 +287,36 @@ def train(args, tmodel, smodel,prolayer,
 
     print("End Training.")
 
-def main1():
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def main():
     args=setup_train_args()
     torch.autograd.set_detect_anomaly(True)
     
@@ -513,7 +492,5 @@ def main1():
 
 ## running entry
 if __name__=="__main__":
-    main1()
+    main()
     print("EVERYTHING DONE.")
-
-

@@ -341,6 +341,50 @@ def test(test_loader,model,task,batch_size=32,
     model.train()
     return losses
 
+def testNew(test_loader,model,task,batch_size=32,
+         DEVICE="cpu",only_decoder=True):
+    """
+    calculate the loss based on self-defined forward function.
+    """
+    model.eval()
+    losses=0.
+
+    loss_func=CrossEntropyLoss(reduction="mean",
+                                )
+    with torch.no_grad():
+        for i,x in enumerate(test_loader):
+            if only_decoder:
+                inps,atts=x
+            else:
+                inps,atts,outs=x
+                outs=outs.to(DEVICE)
+
+            inps,=inps.to(DEVICE),
+            atts,=atts.to(DEVICE),
+
+            if only_decoder:
+                outputs = model(inps,
+                                attention_mask=atts,
+                                labels=inps)
+            else:
+                outputs = model(inps,
+                                attention_mask=atts,
+                                decoder_input_ids=outs,
+                                labels=outs)
+            logits=outputs.logits[:,:,:]
+            bs,msl,v=logits.shape
+            # print(f"logits shape: {logits.shape}")
+            # distri=F.softmax(logits,dim=-1)
+            distri=logits
+
+            loss1=loss_func(distri[:,:-1,:].reshape(-1,v),
+                           inps[:,1:].reshape(-1))
+            loss=loss1
+            losses+=loss
+    losses/=(i+1)
+    model.train()
+    return losses
+
 def main():
     EPOCH = 3
     # LR = 5e-5 

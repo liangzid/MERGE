@@ -1,42 +1,42 @@
 #!/bin/bash
 ######################################################################
-#0.1.DISTILL_TRAIN ---
+#0.3.ONLYEMBEDRESEND ---
 
-# RUNNING NLG DISTILLATION TRAINING FOR GPT2
+# NO constant mat, NO quad activation, ONLY embedresend
 
 # Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
 # Copyright © 2023, ZiLiang, all rights reserved.
-# Created: 10 二月 2023
+# Created: 16 二月 2023
 ######################################################################
 
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
+
 export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=2
+export epochs=5
 # export lr=3e-5
-# export lr=8e-6
-export lr=3e-4
-export device="2"
-# export device="cpu"
+export lr=8e-5
+# export lr=3e-4
+export device="1"
 export batch_size=4
 export task="web_nlg"
 export max_seq_length=128
 
 export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
-export stu_ckpt=${teach_ckpt}___withConstantMatrix
+export stu_ckpt=${teach_ckpt}
 
 export using_entropy=1
 export using_softLabel=1
 export tau=4
 export using_interKL=1
-export using_wordEmbedMSE=0
+export using_wordEmbedMSE=1
 export using_quadacti=0
 
 export using_simLN=0
 export weight_decay=0.01
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}Distilled${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}
+export stu_save_ckpt=${stu_ckpt}WithEmbedResendDistilled${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}_testdropout
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -72,6 +72,5 @@ ${python} trains2.py \
 	--weight_decay=${weight_decay}\
 	--root_dir=$root_dir
 
-
-echo "RUNNING 0.1.distill_train.sh DONE."
-# 0.1.distill_train.sh ends here
+echo "RUNNING 0.3.onlyEmbedResend.sh DONE."
+# 0.3.onlyEmbedResend.sh ends here

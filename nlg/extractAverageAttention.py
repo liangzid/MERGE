@@ -37,6 +37,8 @@ from tqdm import tqdm
 from trains1 import getFinetunedSet
 from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
+from transformersV4251.models.gpt2.modeling_gpt2 import \
+    GPT2LMHeadModel as forGetAttention
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
 from transformersV4251.models.bart.modeling_bart import \
@@ -64,7 +66,8 @@ def calAttnMat(task,subset,ckpt_path,ckpt_save_p):
     config.save_pretrained(ckpt_path)
 
     if only_decoder:
-        model = AutoModelForCausalLM.from_pretrained(ckpt_path)
+        # model = AutoModelForCausalLM.from_pretrained(ckpt_path)
+        model = forGetAttention.from_pretrained(ckpt_path)
     else:
         if "t5" in ckpt_path:
             model = T5ForConditionalGeneration.from_pretrained(ckpt_path)
@@ -214,7 +217,6 @@ def main():
     # ckpt_save_p=ckpt_path+"___withConstantMatrixInitLN"
     ckpt_save_p=ckpt_path+"___withConstantMatrix"
     calAttnMat(task,subset,ckpt_path,ckpt_save_p)
-        
 
 ## running entry
 if __name__=="__main__":

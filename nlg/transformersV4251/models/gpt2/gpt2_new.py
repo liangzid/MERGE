@@ -191,6 +191,7 @@ class GPT2Attention(nn.Module):
         self.pruned_heads = self.pruned_heads.union(heads)
 
     def _attn(self, query, key, value, attention_mask=None, head_mask=None):
+
         attn_weights = torch.matmul(query, key.transpose(-1, -2))
 
         print("Warning: You are using vanilla attention.")
@@ -236,7 +237,7 @@ class GPT2Attention(nn.Module):
 
         return attn_output, attn_weights
 
-    def _attnConstant(self, query, value, attention_mask=None, head_mask=None):
+    def _attnConstant(self, query,key,value, attention_mask=None, head_mask=None):
 
         # shape of attn_weights: bs, num_heads,msl,msl
 
@@ -245,36 +246,59 @@ class GPT2Attention(nn.Module):
 
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
 
-        print(f"query shape: {query.shape}")
-        print(f"value.shape: {value.shape}")
+        # print(f"query shape: {query.shape}")
+        # print(f"value.shape: {value.shape}")
+
+        # if attention_mask is not None:
+        #     # Apply the attention mask
+        #     attn_weights = attn_weights + attention_mask
 
         _,_,msl,_=query.shape
         bs,num_head,sl,d_perhead=value.shape
         attn_weights = self.M.unsqueeze(0)
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
-        attn_weights = attn_weights.type(value.dtype)
-        # print(attn_weights)
-        attn_weights = self.attn_dropout(attn_weights)
 
-        # print(msl,sl,msl==sl)
-        if sl==msl: # parallel forward
-            # print("the same, using parallel")
-            attn_weights=attn_weights[:,:,:sl,:sl]
-        elif msl==1:
-            print("generation Mode")
-            # attn_weights=attn_weights[:, :, sl-1:sl, :sl]
-            attn_weights=attn_weights[:,:,:sl,:sl]
-            attn_weights=attn_weights[:, :, -1:, :]
+        attn_weights=attn_weights[:,:,:sl,:sl]
 
-        # else:
-        #     print("Unknown Error.")
-        #     assert 0==1
+        # print(f"Attn before: {attn_weights}")
+        if not self.is_cross_attention:
+            # if only "normal" attention layer implements causal mask
+            query_length, key_length = query.size(-2), key.size(-2)
+            # print(f"q length: {query_length}")
+            # print(f"k length: {key_length}")
+            causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length].to(torch.bool)
+            mask_value = torch.finfo(attn_weights.dtype).min
+            # mask_value = 0.
+
+            # Need to be a tensor, otherwise we get error: `RuntimeError: expected scalar type float but found double`.
+            # Need to be on the same device, otherwise `RuntimeError: ..., x and y to be on the same device`
+            mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(attn_weights.device)
+            attn_weights = torch.where(causal_mask, attn_weights, mask_value)
+        # print(f"Attn after: {attn_weights}")
 
         # Mask heads if we want to
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+
+        attn_weights = attn_weights.type(value.dtype)
+        # print(attn_weights)
+        attn_weights = self.attn_dropout(attn_weights)
+
+        # # print(msl,sl,msl==sl)
+        # if sl==msl: # parallel forward
+        #     # print("the same, using parallel")
+        #     attn_weights=attn_weights[:,:,:sl,:sl]
+        # else:
+        #     print("Unimplements for `generate` function supports.")
+        #     assert 1==0
+        #     # print("generation Mode")
+
+        #     # attn_weights=attn_weights[:, :, sl-1:sl, :sl]
+        #     attn_weights=attn_weights[:,:,:sl,:sl]
+        #     attn_weights=attn_weights[:, :, -1:, :]
 
         attn_output = torch.matmul(attn_weights,value)
 
@@ -395,7 +419,7 @@ class GPT2Attention(nn.Module):
             # print("shape of key: ",key.shape)
 
             # attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
-            attn_output, attn_weights = self._attnConstant(query,value,
+            attn_output, attn_weights = self._attnConstant(query,key,value,
                                 attention_mask, head_mask)
 
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
@@ -856,6 +880,9 @@ class GPT2Model(GPT2PreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPastAndCrossAttentions]:
+
+        # print(f"input ids: {input_ids}")
+
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states

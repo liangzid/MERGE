@@ -148,7 +148,9 @@ class Inference:
         self.max_target_length=128
         self.msl=self.max_target_length
 
-        repetition_penalty=2.5
+        # repetition_penalty=2.5
+        repetition_penalty=0.01
+        # repetition_penalty=2.5
         self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
         print(">> Waiting the NLG metrics loading...")
@@ -195,8 +197,11 @@ class Inference:
             input_ids = input_ids.to(self.device)
             try:
                 if generate_mode_test == "greedy":
-                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=7.5,no_repeat_ngram_size=3,
-                                                  pad_token_id=self.tokenizer.eos_token_id)
+                    # outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=7.5,no_repeat_ngram_size=3,
+                    ## using self-defined forward function
+                    # outputs=self.gen_greedyUgly(input_ids)
+                    # outputs=self.gen_virtualEmbedReSend(input_ids)
+                    outputs=self.gen_embedResend(input_ids)
                 else:
                     outputs=self.gen_embedResend(input_ids)
 
@@ -340,12 +345,221 @@ class Inference:
                                     sorted_ids[None, 0, None]], dim=-1)
 
                 # get new embeddings for next step's input.
-                sl+=1
                 if self.only_decoder:
-                    embeddings=output.hidden_states[-1][:,:sl,:]
+                    newem=output.hidden_states[-1][:,-1:,:]
+                    # print(embeddings.shape)
+                    embeddings=torch.cat([embeddings,newem
+                                          ],dim=1) 
                 else:
                     decoder_input_embedds=\
                         output.decoder_hidden_states[-1][:,:sl,:]
+                sl+=1
+
+                # print(decoder_input_ids)
+                if decoder_input_ids[0,-1]==self.eos_token_id:
+                    break
+        return decoder_input_ids
+
+    def gen_greedyUgly(self,prefix_ids):
+        """
+        Embedding resend style sentence generation.
+        """
+        # print(">>> USING EMBEDRESEND GENERATION.")
+
+        self.decoder.train()
+        # attns=torch.ones_like(prefix_ids)
+        # attns=attns.to(self.device)
+
+        # 1.2 then get the embeddings of ids.
+        if self.only_decoder:
+            bs,sl=prefix_ids.shape
+            gen_len=self.msl-sl
+        else:
+            bs,sl=prefix_ids.shape
+            decoder_input_ids=self.tokenizer([" "],return_tensors="pt").input_ids
+            decoder_input_ids=decoder_input_ids.to(self.device)
+            sl=1
+            gen_len=self.msl-sl
+
+        first_token=0
+        # 2 greedy forward generation
+        with torch.no_grad():
+            for _ in range(gen_len):
+                first_token+=1
+                if self.only_decoder:
+                    output=self.decoder(
+                        prefix_ids,
+                        # attention_mask=attns,
+                        output_hidden_states=True,
+                        )
+                else:
+                    if first_token==1: # first input
+                        output=self.decoder.forward(
+                            prefix_ids,
+                            decoder_input_ids=decoder_input_ids,
+                            output_hidden_states=True,
+                            )
+                    else:
+                        output=self.decoder.forward(
+                            prefix_ids,
+                            decoder_inputs_ids=decoder_input_ids,
+                            output_hidden_states=True,
+                            )
+                if self.only_decoder:
+                    decoder_input_ids=prefix_ids
+                
+                next_token_logits=output.logits[0,-1,:]
+                next_token_distribution=F.softmax(next_token_logits,dim=-1)
+
+                newdistribution=next_token_distribution
+
+                # Appendix: repetition control
+                newdistribution=self.repetition_processor(decoder_input_ids,
+                                                          newdistribution.unsqueeze(0))
+                # ## add temperature and subset sampling
+                # newdistribution=self.temp_warper(decoder_input_ids,
+                #                                    newdistribution)
+                # newdistribution=self.top_p_warpper(decoder_input_ids,
+                #                                    newdistribution)
+                # newdistribution=self.temp_peak_warper(decoder_input_ids,
+                #                                    newdistribution)
+                # newdistribution=self.topk_warpper(decoder_input_ids,
+                #                                   newdistribution)
+
+                sorted_ids = torch.argsort(newdistribution.squeeze(0),
+                                        dim=-1, descending=True)
+                if self.only_decoder:
+                    # here we just use the greedy search for generation
+                    prefix_ids = torch.cat([prefix_ids,
+                                    sorted_ids[None, 0, None]], dim=-1)
+                    decoder_input_ids=prefix_ids
+                    # attns=torch.ones_like(prefix_ids)
+                    # attns=attns.to(self.device)
+                else:
+                    # here we just use the greedy search for generation
+                    decoder_input_ids = torch.cat([decoder_input_ids,
+                                    sorted_ids[None, 0, None]], dim=-1)
+
+                # hidden_sta=output.hidden_states[-1]
+                # print(f"raw hidden state shape: ", hidden_sta.shape)
+                # selected_sta=hidden_sta[0,-1,:]
+                # print(f"selected sates: {selected_sta}\n{selected_sta.shape}")
+                # # calculate similarity
+                # weights=self.embedds.weight
+                # print(f"embedding weight shape: {weights.shape}, expect:(v,d)")
+                # mylogits=torch.matmul(weights,selected_sta)
+                # print(f"mylogits.shape {mylogits.shape}")
+                # mse_logits=F.mse_loss(mylogits,next_token_logits)
+                # print(f"mse between two logits: {mse_logits}")
+                # idea_id=decoder_input_ids[0,-1:]
+                # print(f"ideal ids:{idea_id}")
+                # mse_embedds=F.mse_loss(self.embedds(idea_id)[0],selected_sta)
+                # print(f"mse between two embedds: {mse_embedds}")
+
+                # get new embeddings for next step's input.
+                sl+=1
+
+                # print(decoder_input_ids)
+                if decoder_input_ids[0,-1]==self.eos_token_id:
+                    break
+        return decoder_input_ids
+
+    def gen_virtualEmbedReSend(self,prefix_ids):
+        """
+        Embedding resend style sentence generation.
+        """
+        # print(">>> USING EMBEDRESEND GENERATION.")
+
+        # attns=torch.ones_like(prefix_ids)
+        # attns=attns.to(self.device)
+
+        embedds=self.embedds(prefix_ids)
+        # 1.2 then get the embeddings of ids.
+        if self.only_decoder:
+            bs,sl=prefix_ids.shape
+            gen_len=self.msl-sl
+        else:
+            bs,sl=prefix_ids.shape
+            decoder_input_ids=self.tokenizer([" "],return_tensors="pt").input_ids
+            decoder_input_ids=decoder_input_ids.to(self.device)
+            sl=1
+            gen_len=self.msl-sl
+
+        first_token=0
+        # 2 greedy forward generation
+        with torch.no_grad():
+            for _ in range(gen_len):
+                first_token+=1
+                if self.only_decoder:
+                    output=self.decoder(
+                        inputs_embeds=embedds,
+                        # attention_mask=attns,
+                        output_hidden_states=True,
+                        )
+                if self.only_decoder:
+                    decoder_input_ids=prefix_ids
+                
+                next_token_logits=output.logits[0,-1,:]
+                next_token_distribution=F.softmax(next_token_logits,dim=-1)
+
+                newdistribution=next_token_distribution
+
+                # Appendix: repetition control
+                # newdistribution=self.repetition_processor(decoder_input_ids,
+                #                                           newdistribution.unsqueeze(0))
+
+                sorted_ids = torch.argsort(newdistribution.squeeze(0),
+                                        dim=-1, descending=True)
+                if self.only_decoder:
+                    # here we just use the greedy search for generation
+                    prefix_ids = torch.cat([prefix_ids,
+                                    sorted_ids[None, 0, None]], dim=-1)
+                    decoder_input_ids=prefix_ids
+
+                    # newadded_embedd=self.embedds(prefix_ids[:,-1:])
+                    newadded_embedd=self.embedds(prefix_ids[:,-1:])
+
+                    embedds=torch.cat([embedds,newadded_embedd,
+                                       ],
+                                      dim=1)
+                    
+                    # print(embedds)
+                    # noise=(torch.rand(embedds.shape)-0.5)*2/14
+                    noise=(torch.rand(embedds.shape)-0.5)*2/4
+                    # mask p% noise
+                    p=0.25
+                    mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
+                    noise=noise*mask_noise
+                    # print("noise ",noise)
+                    noise=noise.to(embedds.device)
+                    new_embedds=embedds+noise
+
+                    mse_logits=F.mse_loss(embedds,new_embedds)
+                    if _%10==0:
+                        print(f"mse between two embedds: {mse_logits}")
+                    embedds=new_embedds
+                    
+                    
+                    # embedds=self.embedds(prefix_ids)
+
+                # hidden_sta=output.hidden_states[-1]
+                # print(f"raw hidden state shape: ", hidden_sta.shape)
+                # selected_sta=hidden_sta[0,-1,:]
+                # print(f"selected sates: {selected_sta}\n{selected_sta.shape}")
+                # # calculate similarity
+                # weights=self.embedds.weight
+                # print(f"embedding weight shape: {weights.shape}, expect:(v,d)")
+                # mylogits=torch.matmul(weights,selected_sta)
+                # print(f"mylogits.shape {mylogits.shape}")
+                # mse_logits=F.mse_loss(mylogits,next_token_logits)
+                # print(f"mse between two logits: {mse_logits}")
+                # idea_id=decoder_input_ids[0,-1:]
+                # print(f"ideal ids:{idea_id}")
+                # mse_embedds=F.mse_loss(self.embedds(idea_id)[0],selected_sta)
+                # print(f"mse between two embedds: {mse_embedds}")
+
+                # get new embeddings for next step's input.
+                sl+=1
 
                 # print(decoder_input_ids)
                 if decoder_input_ids[0,-1]==self.eos_token_id:
@@ -354,11 +568,12 @@ class Inference:
 
 def main():
     inputt=["Aarhus | leader | Jacob_Bundsgaard<|sep|>"]
-    inferenceModel=Inference(model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410",
+    pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114003e-40.01/"
+    inferenceModel=Inference(model_path=pth,
                              cuda_num=7)
     inputt_id=inferenceModel.tokenizer(inputt,
                     return_tensors="pt").input_ids
-    jxxx=inferenceModel.inference([inputt_id])
+    xxx=inferenceModel.inference([inputt_id])
     # xxx=inferenceModel.inference([inputt_id],generate_mode_test="embedresend")
     print(xxx)
 
@@ -366,7 +581,7 @@ def main():
     DEVICE="cuda:6"
     # pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
     # pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114103e-50.01/"
-    pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
+    pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114003e-40.01/"
 
     only_decoder=True
     from trains1 import getFinetunedSet,test
@@ -391,10 +606,13 @@ def main():
     teloader=DataLoader(tes,batch_size=batch_size,
                             shuffle=True,drop_last=True)
 
+    from trains1 import testNew
+    res=testNew(test_loader=teloader,model=smodel,task=task,batch_size=1,DEVICE=DEVICE,only_decoder=only_decoder)
+    print(f"self-defined CE loss res: {res}")
     res=test(test_loader=teloader,model=smodel,task=task,batch_size=1,DEVICE=DEVICE,only_decoder=only_decoder)
-    print(f"test set res: {res}")
-    res=test(test_loader=valoader,model=smodel,task=task,batch_size=1,DEVICE=DEVICE,only_decoder=only_decoder)
-    print(f"validation set res: {res}")
+    print(f"huggingface CE loss res: {res}")
+    # res=test(test_loader=valoader,model=smodel,task=task,batch_size=1,DEVICE=DEVICE,only_decoder=only_decoder)
+    # print(f"validation set res: {res}")
     
 
 def main1_testEval():
