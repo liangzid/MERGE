@@ -60,6 +60,7 @@ def train(args, tmodel, smodel,prolayer,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
     loss_func=CrossEntropyLoss(reduction="none")
+    drop_layer=nn.Dropout(p=0.7)
     tb_writer = SummaryWriter(log_dir=args.writer_dir+args.board_name)
     no_save_差不多model=True
     ii=0
@@ -80,7 +81,6 @@ def train(args, tmodel, smodel,prolayer,
             else:
                 inps,atts,outs=x
                 outs=outs.to(DEVICE)
-            # print(atts)
 
             overall_step+=1
             tqdm2.update(1)
@@ -90,13 +90,14 @@ def train(args, tmodel, smodel,prolayer,
 
             if only_decoder:
                 emd_inps=embedds(inps)
-                noise=(torch.rand(emd_inps.shape)-0.5)*2/(1/0.15)
+                noise=(torch.rand(emd_inps.shape)-0.5)*2/(1/0.2)
                 # mask p% noise
                 p=0.10
                 mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
                 noise=noise*mask_noise
                 noise=noise.to(emd_inps.device)
                 emd_inps=noise+emd_inps
+                emd_inps=drop_layer(emd_inps)
 
                 toutputs=tmodel(inps,
                                 # attention_mask=atts,
@@ -124,46 +125,31 @@ def train(args, tmodel, smodel,prolayer,
             wordEmMSE_loss=0.
             if args.using_entropy==1:
                 entropy_loss1 = outputs.loss
-                # distri=F.softmax(outputs.logits,dim=-1)
                 distri=outputs.logits # we cannot use SOFTMAX!
                 entropy_loss=loss_func(distri[:,:-1,:].reshape(bs*(msl-1),-1),
                                        inps[:,1:].reshape(-1))
                 entropy_loss=entropy_loss.reshape(bs,-1)
-                # print(entropy_loss)
-                weights=torch.linspace(1.,0.,steps=msl-1).to(DEVICE)
-                entropy_loss=torch.matmul(entropy_loss,weights)
+
+                # weights=torch.linspace(1.,0.,steps=msl-1).to(DEVICE)
+                # entropy_loss=torch.matmul(entropy_loss,weights)
                 entropy_loss=torch.mean(entropy_loss)
                 
-                # print(f"my CE loss: {entropy_loss}, hugging version: {entropy_loss1}")
             if args.using_softLabel==1:
-                # print("Original logits",teacher_logits[0])
-
-                # new_stu_logits=F.log_softmax(outputs.logits/args.tau,dim=1)
-                # new_tea_logits=F.log_softmax(teacher_logits/args.tau,dim=1)
-
-                # print("tau",type(args.tau),args.tau)
-
-                # print(f"teacher logitis: {teacher_logits.shape}")
                 new_stu_logits=F.softmax(outputs.logits/args.tau,dim=2)
-                # new_stu_logits+=1e-4
                 new_tea_logits=F.softmax(teacher_logits/args.tau,dim=2)
-                # print("stu logits:",new_stu_logits[0])
 
                 if bs==1:
                     new_stu_logits=new_stu_logits.squeeze(0)
                     new_tea_logits=new_tea_logits.squeeze(0)
-                    # print(new_stu_logits.shape,new_tea_logits.shape)
                     softlabel_loss=kl_loss(new_stu_logits.log(),
                                     new_tea_logits,
                                     )
-                    # softlabel_loss/=msl
                 else:
                     softlabel_loss=0.
                     for bsi in range(bs):
                         softlabel_loss+=kl_loss(new_stu_logits[bsi].log(),
                                                 new_tea_logits[bsi],)
 
-                # print("softlabelLoss",softlabel_loss)
                 softlabel_loss*=args.tau**2
 
             if args.using_interKL==1:
@@ -171,12 +157,6 @@ def train(args, tmodel, smodel,prolayer,
                 lens=len(toutputs.hidden_states)
                 # print(f"length of hidden states layers: {lens}")
                 for j in range(lens-1):
-                    # print("========================")
-                    # print("teacher: ",toutputs.hidden_states[j])
-                    # print("student: ",outputs.hidden_states[j])
-
-                    # assert (toutputs.hidden_states[j]==\
-                    #        outputs.hidden_states[j]).all()
 
                     templ=F.mse_loss(toutputs.hidden_states[j],
                                outputs.hidden_states[j],
@@ -198,6 +178,8 @@ def train(args, tmodel, smodel,prolayer,
 
                 # 1.1. output hidden states
                 states=outputs.hidden_states[-1]
+                if args.using_prolayer==1:
+                    states=prolayer(states)
                 shift_sta=states[:,:-1,:]
                 previous_sta=states[:,1:,:]
 
@@ -216,7 +198,8 @@ def train(args, tmodel, smodel,prolayer,
                                               labels.reshape(-1))
                 huber_loss+=huberloss(shift_laem,shift_sta)
                 # print(wordEmMSE_loss)
-                print(f"mse loss: {wordEmMSE_loss}\t cosine: {wordCos_loss}\t huber: {huber_loss}\t negative loss: {nega_loss}")
+
+                # print(f"mse loss: {wordEmMSE_loss}\t cosine: {wordCos_loss}\t huber: {huber_loss}\t negative loss: {nega_loss}")
                 wordEmMSE_loss1=wordEmMSE_loss
                 wordEmMSE_loss=wordCos_loss
             
@@ -238,12 +221,9 @@ def train(args, tmodel, smodel,prolayer,
             if loss<train_past_l and i%100==0:
                 print("SaveNewTrainModel")
                 smodel.save_pretrained(args.stu_save_ckpt+"trainmodel")
+                torch.save(prolayer.state_dict(),
+                           args.stu_save_ckpt+"trainmodel_prolayer.pt")
                 train_past_l=loss
-
-            # if inter_loss ==0.0:
-            #     loss=0.5*entropy_loss+0.5*softlabel_loss
-            # else:
-            #     loss=0.33*entropy_loss+0.33*softlabel_loss+0.33*inter_loss
 
             optimizer1.zero_grad()
             optimizer2.zero_grad()
@@ -264,8 +244,12 @@ def train(args, tmodel, smodel,prolayer,
                 tb_writer.add_scalar(args.board_name+"--CElOSS",entropy_loss.item(),overall_step)
                 tb_writer.add_scalar(args.board_name+"--interLOSS",inter_loss,overall_step)
 
-
-            if overall_step%100==0:
+            if overall_step%300==0:
+                smodel.save_pretrained(args.stu_save_ckpt+"finally")
+                tokenizer.save_pretrained(args.stu_save_ckpt+"finally")
+                if args.using_prolayer==1:
+                    torch.save(prolayer.state_dict(),
+                            args.stu_save_ckpt+"finally_prolayer.pt")
                 print("Run Validating...")
                 losses=testNew(test_loader=val_loader,
                          model=smodel,
@@ -280,40 +264,18 @@ def train(args, tmodel, smodel,prolayer,
                 if losses<past_losses:
                     print(f"find a better model, in epoch {epoch} step {i}")
                     smodel.save_pretrained(args.stu_save_ckpt)
+                    if args.using_prolayer==1:
+                        torch.save(prolayer.state_dict(),
+                                args.stu_save_ckpt+"_prolayer.pt")
                     past_losses=losses
                 if losses<0.25 and no_save_差不多model:
                     smodel.save_pretrained(args.stu_save_ckpt+"差不多")
+                    if args.using_prolayer==1:
+                        torch.save(prolayer.state_dict(),
+                                args.stu_save_ckpt+"差不多_prolayer.pt")
                     no_save_差不多model=False
 
     print("End Training.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def main():
@@ -403,27 +365,9 @@ def main():
     print("length of vocab in tokenizer: ",len(tokenizer))
 
     if args.using_wordEmbedMSE==1:
-        ## using the embedding representation as the classifier params.
-        # embedding_weight=smodel.get_input_embeddings().weight.T
-        # d,v=embedding_weight.shape
-        # print(f"V: {v}\td: {d}")
-
-        # newlm=nn.Linear(d,v,bias=False)
-        # newlm.weight=nn.Parameter(embedding_weight.T)
-        # for param in newlm.parameters():
-        #     param.requires_grad = False
-        # smodel.set_output_embeddings(newlm)
 
         print("whether the last linear map has grad: ",
               smodel.lm_head.weight.requires_grad)
-
-        # for name,param in smodel.named_parameters():
-        #     if "wte" in name:
-        #         print("find word embedding layer,\
-        #         now set the grad to false.")
-        #         param.required_grad=False
-        # print("whether the embedding layer has grad: ",
-        #       False)
 
         ## add new layer
         from projectModel import ProjecLayer
@@ -468,12 +412,17 @@ def main():
               DEVICE=DEVICE,tokenizer=tokenizer,
               only_decoder=only_decoder)
         smodel.save_pretrained(args.stu_save_ckpt+"finally")
+
+        if args.using_prolayer==1:
+            torch.save(prolayer.state_dict(),
+                       args.stu_save_ckpt+"finally_prolayer.pt")
         tokenizer.save_pretrained(args.stu_save_ckpt)
         tokenizer.save_pretrained(args.stu_save_ckpt+"finally")
         tokenizer.save_pretrained(args.stu_save_ckpt+"差不多")
         #============================================
 
     smodel=smodel.from_pretrained(args.stu_save_ckpt)
+    prolayer=torch.load(args.stu_save_ckpt+"_prolayer.pt",map_location="cpu")
     smodel.to(DEVICE)
     smodel.eval()
     

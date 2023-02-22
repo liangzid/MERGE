@@ -40,7 +40,7 @@ def eval_vanilla_gpt2():
     # ## 待测试的新版本，在cosine loss的基础上又添加了mse loss
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01_testmseloss/"
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01_testmselosstrainmodel/"
-    model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01_testmselossfinally/"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01_testmselossfinally/"
 
     # ## 待测试的新版本(无显著效果，放弃测试)
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01_tuneNoise/"
@@ -48,6 +48,23 @@ def eval_vanilla_gpt2():
     # ## 待测试的新版本,在cosine和mse的基础上又添加了negative loss
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01_testNegativeLosstrainmodel/"
 
+
+    ## 新版本，添加了dropout
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropout/"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropouttrainmodel/"
+
+
+    ### 该checkpoint是当下的最好结果。后续的所有修改计划基于该checkpoint进行
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropoutfinally/"
+
+
+    # ## 在dropout之上添加了新一轮的retraining
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropoutfinally/ReTraining1114008e-50.01finally/"
+
+    # 该方法追平了之前的结果
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropoutfinally/ReTraining1114008e-50.01trainmodel/"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropoutfinally/ReTraining1114008e-50.01/"
+    model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropoutfinally/ReTraining1114008e-50.01finally/"
 
     task="web_nlg"
     subset="release_v2"

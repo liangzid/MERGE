@@ -1,31 +1,43 @@
 """
 ======================================================================
-2.1.INFERENCES ---
+2.3.INFERENCENEWEMBEDRESENDTEST ---
 
-Inference Experiments.
+New version test. Go!
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created: 10 二月 2023
+    Created: 20 二月 2023
 ======================================================================
 """
 
 
 # ------------------------ Code --------------------------------------
+
+## normal import 
+import json
+from typing import List,Tuple,Dict
+import random
+from pprint import pprint as ppp
+
 from inference import Inference
 from trains1 import getFinetunedSet,getTestDataSet
 import json
 from collections import OrderedDict
 
-def eval_vanilla_gpt2():
+def eval_gpt2():
     
-    model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114103e-50.01/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114108e-50.01/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114108e-50.01/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114108e-50.01差不多/"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
+
+    ## 新版本，添加了dropout
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropout/"
+    model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropouttrainmodel/"
+
+    # add extra linear projection
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropouttrainmodel/WithLinearProjectiontrainmodel"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropouttrainmodel/WithLinearProjection"
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropouttrainmodel/WithLinearProjectionfinally"
+    model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropouttrainmodel/WithLinearProjection"
+    
 
     task="web_nlg"
     subset="release_v2"
@@ -33,9 +45,8 @@ def eval_vanilla_gpt2():
     # task="e2e_nlg"
     # subtask=None
 
-    cuda_num=2
-    infermodel=Inference(model_path,cuda_num,
-                         # approximation=True
+    cuda_num=1
+    infermodel=Inference(model_path,cuda_num,have_project=True
                          )
 
     te=getTestDataSet(infermodel.tokenizer,split="test",
@@ -80,20 +91,18 @@ def eval_vanilla_gpt2():
     #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
     # print("res save done.")
 
-    # from collections import OrderedDict
-    with open(genpath, 'r',encoding='utf8') as f:
-        data=json.load(f,object_pairs_hook=OrderedDict)
-    newseqls,valabels=data
-    res=infermodel.evaluate(newseqls,valabels)
-    print("----Embedding Resend Results----")
-    print(res)
+    # # from collections import OrderedDict
+    # with open(genpath, 'r',encoding='utf8') as f:
+    #     data=json.load(f,object_pairs_hook=OrderedDict)
+    # newseqls,valabels=data
+    # res=infermodel.evaluate(newseqls,valabels)
+    # print("----Embedding Resend Results----")
+    # print(res)
 
-def main():
-    eval_vanilla_gpt2()
 
 ## running entry
 if __name__=="__main__":
-    main()
+    eval_gpt2()
     print("EVERYTHING DONE.")
 
 

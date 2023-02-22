@@ -105,6 +105,8 @@ def setup_train_args():
     parser.add_argument('--weight_decay', default=0.01,
                         type=float, required=False,
                         )
+    parser.add_argument('--using_prolayer', default=0,
+                        type=int, required=False,)
     return parser.parse_args()
 
 
@@ -316,6 +318,8 @@ def train(args, tmodel, smodel,prolayer,
 
 
             if overall_step%100==0:
+                smodel.save_pretrained(args.stu_save_ckpt+"finally")
+                tokenizer.save_pretrained(args.stu_save_ckpt+"finally")
                 print("Run Validating...")
                 losses=testNew(test_loader=val_loader,
                          model=smodel,
@@ -420,6 +424,7 @@ def main1():
     tokenizer=ttokenizer
     tokenizer.save_pretrained(args.stu_save_ckpt)
     tokenizer.save_pretrained(args.stu_save_ckpt+"trainmodel")
+    tokenizer.save_pretrained(args.stu_save_ckpt+"finally")
     smodel.resize_token_embeddings(len(tokenizer))
     print("length of vocab in tokenizer: ",len(tokenizer))
 

@@ -57,7 +57,8 @@ from transformers import BartForConditionalGeneration
 # there might exist some bugs in the evaluate library
 import evaluate
 # as a replacement, we use nlg-metricverse as the evaluate metric.
-from nlgmetricverse import NLGMetricverse
+# from nlgmetricverse import NLGMetricverse
+from projectModel import ProjecLayer
 
 
 class Inference:
@@ -66,6 +67,7 @@ class Inference:
                  cuda_num=6,
                  seed=3933, cuda=True,
                  approximation=False,
+                 have_project=False,
                  ):
 
         device = 'cuda:{}'.format(cuda_num) if cuda else 'cpu'
@@ -81,6 +83,16 @@ class Inference:
         if config.activation_function=="quad":
             approximation=True
 
+
+        ## load the extra projection module.
+        self.projection= lambda x: x 
+        if have_project:
+            d=768
+            self.proj=torch.load(model_path+"_prolayer.pt",
+                                       map_location="cpu")
+            self.projection=ProjecLayer(d,d)
+            self.projection.load_state_dict(self.proj)
+            self.projection=self.projection.to(self.device)
 
         only_decoder=True
         if "gpt" in model_path:
@@ -319,10 +331,11 @@ class Inference:
 
                 newdistribution=next_token_distribution
 
-                # Appendix: repetition control
-                newdistribution=self.repetition_processor(decoder_input_ids,
-                                                          newdistribution.unsqueeze(0))
-                # ## add temperature and subset sampling
+                # # Appendix: repetition control
+                # newdistribution=self.repetition_processor(decoder_input_ids,
+                #                                           newdistribution.unsqueeze(0))
+
+                # # ## add temperature and subset sampling
                 # newdistribution=self.temp_warper(decoder_input_ids,
                 #                                    newdistribution)
                 # newdistribution=self.top_p_warpper(decoder_input_ids,
@@ -347,6 +360,7 @@ class Inference:
                 # get new embeddings for next step's input.
                 if self.only_decoder:
                     newem=output.hidden_states[-1][:,-1:,:]
+                    newem=self.projection(newem)
                     # print(embeddings.shape)
                     embeddings=torch.cat([embeddings,newem
                                           ],dim=1) 
@@ -414,8 +428,9 @@ class Inference:
                 newdistribution=next_token_distribution
 
                 # Appendix: repetition control
-                newdistribution=self.repetition_processor(decoder_input_ids,
-                                                          newdistribution.unsqueeze(0))
+                # newdistribution=self.repetition_processor(decoder_input_ids,
+                                                          # newdistribution.unsqueeze(0))
+
                 # ## add temperature and subset sampling
                 # newdistribution=self.temp_warper(decoder_input_ids,
                 #                                    newdistribution)

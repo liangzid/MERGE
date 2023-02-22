@@ -32,7 +32,7 @@ def eval_vanilla_gpt2():
     # task="e2e_nlg"
     # subset=None
 
-    cuda_num=4
+    cuda_num=1
     infermodel=Inference(model_path,cuda_num)
 
     te=getTestDataSet(infermodel.tokenizer,split="test",
@@ -46,20 +46,20 @@ def eval_vanilla_gpt2():
     # seqls=seqls[:3]
     # valabels=valabels[:3]
 
-    # # print(seqls[0])
-    # newseqls=infermodel.inference(seqls)
-    # genpath=model_path+task+subset+"greedy.json"
-    # with open(genpath, 'w',encoding='utf8') as f:
-    #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
-    # print("data save done.")
-    # # from collections import OrderedDict
-    # with open(genpath, 'r',encoding='utf8') as f:
-    #     data=json.load(f,object_pairs_hook=OrderedDict)
-    # newseqls,valabels=data
+    # print(seqls[0])
+    newseqls=infermodel.inference(seqls)
+    genpath=model_path+task+subset+"greedy.json"
+    with open(genpath, 'w',encoding='utf8') as f:
+        json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
+    print("data save done.")
+    # from collections import OrderedDict
+    with open(genpath, 'r',encoding='utf8') as f:
+        data=json.load(f,object_pairs_hook=OrderedDict)
+    newseqls,valabels=data
 
-    # res=infermodel.evaluate(newseqls,valabels)
-    # print("----Vanilla Greedy Search Results----")
-    # print(res)
+    res=infermodel.evaluate(newseqls,valabels)
+    print("----Vanilla Greedy Search Results----")
+    print(res)
 
     # print(newseqls)
     # print(valabels)
