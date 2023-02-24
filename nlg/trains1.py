@@ -33,6 +33,7 @@ from transformers import BartForConditionalGeneration
 from transformers import AutoTokenizer
 
 from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import Subset
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import accuracy_score
 
@@ -91,6 +92,32 @@ def get_pretrained_dataset(tokenizer,
         return dset
     return getSet("train"),getSet("validation"),getSet("test")
 
+def multiwoz_se(split):
+    PATH=f"/home/liangzi/datasets/multi_woz_21_nlg/{split}.json"
+    from collections import OrderedDict
+    with open(PATH, 'r',encoding='utf8') as f:
+        data=json.load(f,object_pairs_hook=OrderedDict)
+    inps,outs=data["acts"],data["resps"]
+    sinps=[]
+    
+    for x in inps:
+        segs=[", ".join(act) for act in x]
+        seg="; ".join(segs)
+        sinps.append(seg)
+        # print(seg)
+
+    # print(len(sinps),len(outs))
+    return sinps,outs
+            
+def daily_dialog(split):
+    PATH=f"/home/liangzi/datasets/daily_dialog_post/{split}.json"
+    from collections import OrderedDict
+    with open(PATH, 'r',encoding='utf8') as f:
+        data=json.load(f,object_pairs_hook=OrderedDict)
+    inps,outs=data["inps"],data["resps"]
+
+    return inps,outs
+
 def getFinetunedSet(tokenizer,
                     max_sentence_length=256,
                     task="web_nlg",subset="release_v2",
@@ -98,22 +125,23 @@ def getFinetunedSet(tokenizer,
     """
     For Downstream Tasks based on Conditional Generation.
     task and subtask enums:
-    + GEM/web_nlg
-        + en
-        + ru
-    + e2e_nlg, subset:none
+    e2e_nlg, subset:none
     """
     sep_token="<|sep|>"
     # sep_token=tokenizer.sep_token
     eos_token=tokenizer.eos_token
 
     def getSet(split="train"):
-        # print(subset)
-        if subset is not None:
-            train_set=load_dataset(task,subset,split=split)
-        else:
-            train_set=load_dataset(task,split=split)
-        # print(train_set)
+        if task in ["web_nlg","e2e_nlg","GEM/taskmaster"]:
+            if subset is not None:
+                train_set=load_dataset(task,subset,split=split)
+            else:
+                train_set=load_dataset(task,split=split)
+        elif task == "multiwoz_nlg":
+            train_set=multiwoz_se(split)
+        elif task == "daily_dialog":
+            train_set=daily_dialog(split)
+            sep_token=""
 
         inps=[]
         outs=[]
@@ -127,10 +155,17 @@ def getFinetunedSet(tokenizer,
             for x in train_set:
                 inps.append(x["meaning_representation"])
                 outs.append(x["human_reference"])
+        elif "multiwoz_nlg" in task or "daily_dialog" in task:
+            inps,outs=train_set
+            train_set=inps
+        elif "taskmaster" in task:
+            for x in train_set:
+                inps.append(x["context"])
+                outs.append(x["target"])
         
         if only_decoder:
             outs=[inps[i]+sep_token+outs[i]+eos_token\
-                for i in range(len(train_set))]
+                for i in range(len(inps))]
 
             outss=tokenizer(outs,padding="longest",
                             truncation=True,
@@ -153,8 +188,10 @@ def getFinetunedSet(tokenizer,
 
     if "web_nlg" in task:
         names=["train","dev","test"]
-    elif "e2e_nlg" in task:
+    elif "e2e_nlg" in task or "taskmaster" in task or "daily_dialog" in task:
         names=["train","validation","test"]
+    elif "multiwoz_nlg" in task:
+        names=["train","val","test"]
     return getSet(names[0]),getSet(names[1]),getSet(names[2])
 
 def getTestDataSet(tokenizer,split="test",
@@ -192,6 +229,20 @@ def getTestDataSet(tokenizer,split="test",
             for x in train_set:
                 inps.append(x["meaning_representation"])
                 outs.append(x["human_reference"])
+
+            # merge the same inputs.
+            inpout_dict={}
+            for i, inp in enumerate(inps):
+                out=outs[i]
+                if inp not in inpout_dict:
+                    inpout_dict[inp]=[out]
+                else:
+                    inpout_dict[inp].append([out])
+            inps=[]
+            outs=[]
+            for k,v in inpout_dict.items():
+                inps.append(k)
+                outs.append(v)
             
         labels=outs
         outs=inps
@@ -202,8 +253,16 @@ def getTestDataSet(tokenizer,split="test",
                         truncation=True,
                         max_length=max_sentence_length,
                             return_tensors="pt")
+            # print(ou.input_ids)
+            # print(type(ou.input_ids))
+            if ou.input_ids[0][-1]==50257:
+                x=ou.input_ids
+            else:
+                x=torch.cat((ou.input_ids[0],torch.tensor([50257])),0).unsqueeze(0)
+            # print(x)
+                
             # print("ou shape: ",ou)
-            prefix_id_ls.append(ou.input_ids)
+            prefix_id_ls.append(x)
 
         return prefix_id_ls,labels
     # if "web_nlg" in task:
@@ -286,16 +345,17 @@ def trainConditional(model,
                 print(f">>Val Loss: {losses}")
                 tb_writer.add_scalar(board_name+"valloss",
                                      losses.item(),ii)
-                lossess=test(test_loader=test_loader,
-                         model=model,
-                         task=task,
-                         batch_size=batch_size,
-                             DEVICE=DEVICE,
-                        only_decoder=only_decoder
-                             )
-                print(f">>Test Loss: {lossess}")
-                tb_writer.add_scalar(board_name+"testloss",
-                                     lossess.item(),ii)
+
+                # lossess=test(test_loader=test_loader,
+                #          model=model,
+                #          task=task,
+                #          batch_size=batch_size,
+                #              DEVICE=DEVICE,
+                #         only_decoder=only_decoder
+                #              )
+                # print(f">>Test Loss: {lossess}")
+                # tb_writer.add_scalar(board_name+"testloss",
+                #                      lossess.item(),ii)
 
                 if losses<past_losses:
                     print(" -->now save a better model.")
@@ -389,25 +449,30 @@ def main():
     EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:7")
+    DEVICE = torch.device("cuda:3")
     # DEVICE = torch.device("cpu")
-    BATCH_SIZE =1
+    BATCH_SIZE =4
     batch_size=BATCH_SIZE
     task_ls=["web_nlg","e2e_nlg"]
     subtaskls=["release_v2",None]
 
-    task="web_nlg"
-    subtask="release_v2"
+    # task="web_nlg"
+    # subtask="release_v2"
 
-    # task="e2e_nlg"
+    task="e2e_nlg"
+    subtask=None
+
+    # task="multiwoz_nlg"
     # subtask=None
 
+    # task="daily_dialog"
+    # subtask=None
 
     prefix_path="/home/liangzi/models/"
 
-    # model_name="gpt2/"
+    model_name="gpt2/"
     # model_name="t5-small/"
-    model_name="bart-base/"
+    # model_name="bart-base/"
     print(model_name)
     frmpth=prefix_path+model_name
 
@@ -432,7 +497,9 @@ def main():
         else:
             model = AutoModelForCausalLM.from_pretrained(frmpth)
             
-    tokenizer = AutoTokenizer.from_pretrained(frmpth)
+    tokenizer = AutoTokenizer.from_pretrained(frmpth,
+                                              truncation="left" # left part truncation
+                                              )
     tokenizer.pad_token=tokenizer.eos_token
     if only_decoder:
         tokenizer.add_tokens(["<|sep|>",],special_tokens=True)
@@ -444,6 +511,9 @@ def main():
 
     trs,vas,tes=getFinetunedSet(tokenizer,128,task,
                     subtask,only_decoder)
+    # truncation the val set for fast training.
+    vas=Subset(vas, np.arange(500))
+
     print(f"train set len: {len(trs)}")
     print(f"validation set len: {len(vas)}")
     print(f"test set len: {len(tes)}")
@@ -457,6 +527,7 @@ def main():
     teloader=DataLoader(tes,batch_size=batch_size,
                             shuffle=False,drop_last=True)
 
+    tokenizer.save_pretrained(PATH+"fianlly")
     #============================================
     trainConditional(model, optimizer,
                      trloader,valoader,teloader,

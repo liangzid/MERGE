@@ -60,7 +60,7 @@ def train(args, tmodel, smodel,prolayer,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
     loss_func=CrossEntropyLoss(reduction="none")
-    drop_layer=nn.Dropout(p=0.7)
+    drop_layer=nn.Dropout(p=0.6)
     tb_writer = SummaryWriter(log_dir=args.writer_dir+args.board_name)
     no_save_差不多model=True
     ii=0
@@ -342,7 +342,7 @@ def main():
         else:
             smodel = BFSCNew.from_pretrained(args.stu_ckpt)
 
-    if args.stu_ckpt==args.teach_ckpt and "WithEm" in args.stu_save_ckpt:
+    if args.stu_ckpt==args.teach_ckpt or "WithEm" in args.stu_save_ckpt:
         print("Using vanilla structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5ForConditionalGeneration.\
@@ -422,9 +422,11 @@ def main():
         #============================================
 
     smodel=smodel.from_pretrained(args.stu_save_ckpt)
-    prolayer=torch.load(args.stu_save_ckpt+"_prolayer.pt",map_location="cpu")
-    smodel.to(DEVICE)
-    smodel.eval()
+    if args.using_prolayer==1:
+        prolayer=torch.load(args.stu_save_ckpt+"_prolayer.pt",
+                            map_location="cpu")
+    prolayer.to(DEVICE)
+    prolayer.eval()
     
     # test(test_loader=val_loader,model=smodel,task=task,
     #      batch_size=BATCH_SIZE,DEVICE=DEVICE)

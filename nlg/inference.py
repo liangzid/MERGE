@@ -76,6 +76,8 @@ class Inference:
         # os.environ["CUDA_VISIBLE_DEVICES"] ="6"
         
         bla_tokenizer = AutoTokenizer.from_pretrained(model_path)
+        text="<|sep|>"
+        # print(bla_tokenizer(text))
         self.tokenizer = bla_tokenizer
         print("tokenizer loading done...")
 
@@ -211,9 +213,9 @@ class Inference:
                 if generate_mode_test == "greedy":
                     # outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=7.5,no_repeat_ngram_size=3,
                     ## using self-defined forward function
-                    # outputs=self.gen_greedyUgly(input_ids)
+                    outputs=self.gen_greedyUgly(input_ids)
                     # outputs=self.gen_virtualEmbedReSend(input_ids)
-                    outputs=self.gen_embedResend(input_ids)
+                    # outputs=self.gen_embedResend(input_ids)
                 else:
                     outputs=self.gen_embedResend(input_ids)
 
