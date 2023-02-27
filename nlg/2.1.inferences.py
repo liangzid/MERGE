@@ -53,8 +53,8 @@ def eval_vanilla_gpt2():
     # seqls=[x[0] for x in va]
     seqls=va
 
-    seqls=seqls[:50]
-    valabels=valabels[:50]
+    # seqls=seqls[:50]
+    # valabels=valabels[:50]
 
     # print(seqls[0])
     newseqls=infermodel.inference(seqls)

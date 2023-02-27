@@ -107,6 +107,10 @@ def setup_train_args():
                         )
     parser.add_argument('--using_prolayer', default=0,
                         type=int, required=False,)
+    parser.add_argument('--dropout_rate', default=0.7,
+                        type=float, required=False,)
+    parser.add_argument('--noise', default=0.2,
+                        type=float, required=False,)
     return parser.parse_args()
 
 

@@ -19,13 +19,23 @@ from collections import OrderedDict
 def eval_vanilla_gpt2():
     
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
-    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
+
+
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small/"
 
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
     # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.01"
-    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.01finally/"
-    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.01trainmodel/"
-    
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7finally/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7epoch0/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7epoch1/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7epoch2/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7epoch3/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7epoch4/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7trainmodel/"
+        
+    ## --------new eposide test.
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.8trainmodel/"
+    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.8epoch2/"
 
     # task="web_nlg"
     # subset="release_v2"
@@ -52,8 +62,17 @@ def eval_vanilla_gpt2():
     # seqls=[x[0] for x in va]
     seqls=va
 
-    seqls=seqls[:50]
-    valabels=valabels[:50]
+    # seqls=seqls[:50]
+    # valabels=valabels[:50]
+
+    # seqls=seqls[500:600]
+    # valabels=valabels[500:600]
+
+    # seqls=seqls[-100:]
+    # valabels=valabels[-100:]
+
+    # seqls=seqls[:100]
+    # valabels=valabels[:100]
 
     # # print(seqls[0])
     # newseqls=infermodel.inference(seqls)

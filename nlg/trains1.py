@@ -128,7 +128,9 @@ def getFinetunedSet(tokenizer,
     e2e_nlg, subset:none
     """
     sep_token="<|sep|>"
-    # sep_token=tokenizer.sep_token
+    sep_token=tokenizer.sep_token
+    if task =="daily_dialog":
+        sep_token=""
     eos_token=tokenizer.eos_token
 
     def getSet(split="train"):
@@ -141,7 +143,6 @@ def getFinetunedSet(tokenizer,
             train_set=multiwoz_se(split)
         elif task == "daily_dialog":
             train_set=daily_dialog(split)
-            sep_token=""
 
         inps=[]
         outs=[]
@@ -459,11 +460,11 @@ def main():
     # task="web_nlg"
     # subtask="release_v2"
 
-    task="e2e_nlg"
-    subtask=None
-
-    # task="multiwoz_nlg"
+    # task="e2e_nlg"
     # subtask=None
+
+    task="multiwoz_nlg"
+    subtask=None
 
     # task="daily_dialog"
     # subtask=None

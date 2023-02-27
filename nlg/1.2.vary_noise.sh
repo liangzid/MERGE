@@ -18,7 +18,7 @@ export epochs=5
 # export lr=3e-5
 export lr=8e-5
 # export lr=3e-4
-export device="5"
+export device="3"
 export batch_size=4
 # export task="web_nlg"
 export task="e2e_nlg"
@@ -37,10 +37,11 @@ export using_quadacti=0
 
 export using_simLN=0
 export weight_decay=0.01
-export dropout_rate=0.8
+export dropout_rate=0.7
+export noise=0.8
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}DropoutTraining${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}
+export stu_save_ckpt=${stu_ckpt}DropoutTraining${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -67,8 +68,16 @@ ${python} train_slide.py \
 	--board_name=${board_name}\
 	--weight_decay=${weight_decay}\
 	--dropout_rate=${dropout_rate}\
+	--dropout_rate=${noise}\
 	--root_dir=$root_dir
 
 
-echo "RUNNING 1.1.distill_e2enlg.sh DONE."
-# 1.1.distill_e2enlg.sh ends here
+
+
+
+
+
+
+
+echo "RUNNING 1.2.vary_noise.sh DONE."
+# 1.2.vary_noise.sh ends here

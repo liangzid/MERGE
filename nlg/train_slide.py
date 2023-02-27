@@ -60,7 +60,7 @@ def train(args, tmodel, smodel,prolayer,
           ):
     kl_loss=torch.nn.KLDivLoss(reduction='batchmean')
     loss_func=CrossEntropyLoss(reduction="none")
-    drop_layer=nn.Dropout(p=0.6)
+    drop_layer=nn.Dropout(p=args.dropout_rate)
     tb_writer = SummaryWriter(log_dir=args.writer_dir+args.board_name)
     no_save_差不多model=True
     ii=0
@@ -90,7 +90,7 @@ def train(args, tmodel, smodel,prolayer,
 
             if only_decoder:
                 emd_inps=embedds(inps)
-                noise=(torch.rand(emd_inps.shape)-0.5)*2/(1/0.2)
+                noise=(torch.rand(emd_inps.shape)-0.5)*2/(1/args.noise)
                 # mask p% noise
                 p=0.10
                 mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
@@ -274,6 +274,12 @@ def train(args, tmodel, smodel,prolayer,
                         torch.save(prolayer.state_dict(),
                                 args.stu_save_ckpt+"差不多_prolayer.pt")
                     no_save_差不多model=False
+        # epoch level
+        smodel.save_pretrained(args.stu_save_ckpt+f"epoch{epoch}")
+        tokenizer.save_pretrained(args.stu_save_ckpt+f"epoch{epoch}")
+        if args.using_prolayer==1:
+            torch.save(prolayer.state_dict(),
+                    args.stu_save_ckpt+f"epoch{epoch}_prolayer.pt")
 
     print("End Training.")
 
@@ -316,7 +322,9 @@ def main():
     else:
         tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
     print("TEA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
-    ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt)
+    ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt,
+                            # truncation="left" # left part truncation
+                                               )
     tmodel.resize_token_embeddings(len(ttokenizer))
 
     config=AutoConfig.from_pretrained(args.stu_ckpt)

@@ -219,8 +219,17 @@ class Inference:
                 else:
                     outputs=self.gen_embedResend(input_ids)
 
+                
+                # print(outputs[0])
+                clean_out=self.remove_repetition(outputs[0])
+
                 sentence=self.tokenizer.decode(outputs[0],
                                 skip_special_tokens=False)
+
+                # sentence1=self.tokenizer.decode(clean_out,
+                #                 skip_special_tokens=False)
+                # sentence=sentence1
+
                 p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
                 print(">>>raw prefix: {}".format(p))
                 # # print("raw prefix id: {}".format(seq))
@@ -248,6 +257,29 @@ class Inference:
             progress.update(1)
         print('=============testing finished====================')
         return new_sent
+
+    def remove_repetition(self,sent:List[int]):
+        """
+        self implementation of `repetition` in huggingface generate methods.
+        """
+
+        ## remove 1 grams
+        newsent=[]
+        for i,x in enumerate(sent):
+            if i!=0 and x==sent[i-1]:
+                continue
+            newsent.append(x)
+        
+        ## remove 2 grams
+        newsent_ls=[]
+        # gram2ls=[]
+        # for i in range(len(newsent)-1):
+        #     gram2ls.append(sent[i:i+2])
+        for i,x in enumerate(newsent):
+            if i>=2 and newsent[i:i+2]==newsent[i-2:i]:
+                continue
+            newsent_ls.append(newsent[i])
+        return newsent_ls
 
     def evaluate(self,hyps,refs):
         """
@@ -640,9 +672,40 @@ def main1_testEval():
     refs=[]
     res=inferenceModel.evaluate(hyps,refs)
     print(res)
+
+def main2_testNgramRepition():
+    x="Wild Wild a family friendly restaurant called Wild Wildwood in the the city centre near Raj Raja Cu Cuisine."
+
+    x=x.split(" ")
     
+    def remove_repetition(sent:List[int]):
+        """
+        self implementation of `repetition` in huggingface generate methods.
+        """
+
+        ## remove 1 grams
+        newsent=[]
+        for i,x in enumerate(sent):
+            if i!=0 and x==sent[i-1]:
+                continue
+            newsent.append(x)
+
+        ## remove 2 grams
+        newsent_ls=[]
+        gram2ls=[]
+        for i in range(len(newsent)-1):
+            gram2ls.append(sent[i:i+2])
+        for i,x in enumerate(newsent):
+            if i>=2 and newsent[i:i+2]==newsent[i-2:i]:
+                continue
+            newsent_ls.append(newsent[i])
+        return newsent_ls
+    xx=remove_repetition(x)
+    print(x)
+    print(xx)
 
 if __name__=="__main__":
-    main()
+    # main()
     # main1_testEval()
+    main2_testNgramRepition()
 
