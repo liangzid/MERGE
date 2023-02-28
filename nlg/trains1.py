@@ -210,14 +210,21 @@ def getTestDataSet(tokenizer,split="test",
         sep_token="<|sep|>"
     else:
         sep_token=""
+    if task=="daily_dialog":
+        sep_token=""
     # sep_token=tokenizer.sep_token
     eos_token=tokenizer.eos_token
 
     def getSet(split="train"):
-        if subset is not None:
-            train_set=load_dataset(task,subset,split=split)
-        else:
-            train_set=load_dataset(task,split=split)
+        if task in ["web_nlg", "e2e_nlg", "GEM/taskmaster"]:
+            if subset is not None:
+                train_set=load_dataset(task,subset,split=split)
+            else:
+                train_set=load_dataset(task,split=split)
+        elif task=="multiwoz_nlg":
+            train_set=multiwoz_se(split)
+        elif task=="daily_dialog":
+            train_set=daily_dialog(split)
 
         inps=[]
         outs=[]
@@ -230,6 +237,13 @@ def getTestDataSet(tokenizer,split="test",
             for x in train_set:
                 inps.append(x["meaning_representation"])
                 outs.append(x["human_reference"])
+        elif "multiwoz_nlg" in task or "daily_dialog" in task:
+            inps,outs=train_set
+            train_set=inps
+        elif "taskmaster" in task:
+            for x in train_set:
+                inps.append(x['context'])
+                outs.append(x['target'])
 
             # merge the same inputs.
             inpout_dict={}
@@ -256,7 +270,7 @@ def getTestDataSet(tokenizer,split="test",
                             return_tensors="pt")
             # print(ou.input_ids)
             # print(type(ou.input_ids))
-            if ou.input_ids[0][-1]==50257:
+            if ou.input_ids[0][-1]==50257 or task=="daily_dialog":
                 x=ou.input_ids
             else:
                 x=torch.cat((ou.input_ids[0],torch.tensor([50257])),0).unsqueeze(0)
@@ -450,7 +464,7 @@ def main():
     EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:3")
+    DEVICE = torch.device("cuda:0")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =4
     batch_size=BATCH_SIZE
@@ -463,11 +477,11 @@ def main():
     # task="e2e_nlg"
     # subtask=None
 
-    task="multiwoz_nlg"
-    subtask=None
-
-    # task="daily_dialog"
+    # task="multiwoz_nlg"
     # subtask=None
+
+    task="daily_dialog"
+    subtask=None
 
     prefix_path="/home/liangzi/models/"
 

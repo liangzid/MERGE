@@ -31,10 +31,16 @@ def eval_vanilla_gpt2():
     # task="web_nlg"
     # subset="release_v2"
 
-    task="e2e_nlg"
+    # task="e2e_nlg"
+    # subset=None
+
+    # task="multiwoz_nlg"
+    # subset=None
+
+    task="daily_dialog"
     subset=None
 
-    cuda_num=2
+    cuda_num=0
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True
                          )
@@ -79,22 +85,22 @@ def eval_vanilla_gpt2():
     # res=infermodel.evaluate2(newseqls,valabels)
     # print(res)
 
-    # newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
-    if subset is None:
-        genpath=model_path+task+"embedresend.json"
-    else:
-        genpath=model_path+task+subset+"embedresend.json"
-    # with open(genpath, 'w',encoding='utf8') as f:
-    #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
-    # print("res save done.")
+    # # newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
+    # if subset is None:
+    #     genpath=model_path+task+"embedresend.json"
+    # else:
+    #     genpath=model_path+task+subset+"embedresend.json"
+    # # with open(genpath, 'w',encoding='utf8') as f:
+    # #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
+    # # print("res save done.")
 
-    # from collections import OrderedDict
-    with open(genpath, 'r',encoding='utf8') as f:
-        data=json.load(f,object_pairs_hook=OrderedDict)
-    newseqls,valabels=data
-    res=infermodel.evaluate(newseqls,valabels)
-    print("----Embedding Resend Results----")
-    print(res)
+    # # from collections import OrderedDict
+    # with open(genpath, 'r',encoding='utf8') as f:
+    #     data=json.load(f,object_pairs_hook=OrderedDict)
+    # newseqls,valabels=data
+    # res=infermodel.evaluate(newseqls,valabels)
+    # print("----Embedding Resend Results----")
+    # print(res)
 
 def main():
     eval_vanilla_gpt2()
