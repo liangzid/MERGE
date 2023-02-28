@@ -101,7 +101,7 @@ def multiwoz_se(split):
     sinps=[]
     
     for x in inps:
-        segs=[", ".join(act) for act in x]
+        segs=[", ".join(act[:3]) for act in x]
         seg="; ".join(segs)
         sinps.append(seg)
         # print(seg)
@@ -527,7 +527,7 @@ def main():
     trs,vas,tes=getFinetunedSet(tokenizer,128,task,
                     subtask,only_decoder)
     # truncation the val set for fast training.
-    vas=Subset(vas, np.arange(500))
+    vas=Subset(vas, np.arange(1000))
 
     print(f"train set len: {len(trs)}")
     print(f"validation set len: {len(vas)}")

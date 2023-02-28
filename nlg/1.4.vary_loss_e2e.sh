@@ -1,14 +1,10 @@
 #!/bin/bash
 ######################################################################
-#1.1.DISTILL_E2ENLG --- 
+#1.4.VARY_LOSS_E2E --- 
 
 # Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
 # Copyright © 2023, ZiLiang, all rights reserved.
-# Created: 23 二月 2023
-######################################################################
-
-######################### Commentary ##################################
-##  
+# Created: 28 二月 2023
 ######################################################################
 
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
@@ -18,29 +14,31 @@ export epochs=5
 # export lr=3e-5
 export lr=8e-5
 # export lr=3e-4
-export device="5"
+export device="0"
 export batch_size=4
 # export task="web_nlg"
 export task="e2e_nlg"
 export max_seq_length=128
 
 export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
-# export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/WithEmbedResendDistilled1114008e-50.01trainmodel/ReTraining1114008e-50.01_testdropoutfinally/"
 export stu_ckpt=${teach_ckpt}
 
 export using_entropy=1
-export using_softLabel=1
+export using_softLabel=0
 export tau=4
-export using_interKL=1
-export using_wordEmbedMSE=1
+export using_interKL=0
+export using_wordEmbedMSE=0
+export using_COSEm=1
+export using_NEGAEm=1
 export using_quadacti=0
 
 export using_simLN=0
 export weight_decay=0.01
-export dropout_rate=0.4
+export dropout_rate=0.7
+export noise=0.7
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}DropoutTraining${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}
+export stu_save_ckpt=${stu_ckpt}VaryLoss${using_entropy}${using_softLabel}${using_interKL}${tau}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -67,8 +65,8 @@ ${python} train_slide.py \
 	--board_name=${board_name}\
 	--weight_decay=${weight_decay}\
 	--dropout_rate=${dropout_rate}\
+	--dropout_rate=${noise}\
 	--root_dir=$root_dir
 
-
-echo "RUNNING 1.1.distill_e2enlg.sh DONE."
-# 1.1.distill_e2enlg.sh ends here
+echo "RUNNING 1.4.vary_loss_e2e.sh DONE."
+# 1.4.vary_loss_e2e.sh ends here

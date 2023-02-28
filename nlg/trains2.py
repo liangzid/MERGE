@@ -90,6 +90,10 @@ def setup_train_args():
                         type=int, required=False,)
     parser.add_argument('--using_wordEmbedMSE', default=0,
                         type=int, required=False,)
+    parser.add_argument('--using_COSEm', default=0,
+                        type=int, required=False,)
+    parser.add_argument('--using_NEGAEm', default=0,
+                        type=int, required=False,)
     parser.add_argument('--using_quadacti', default=0,
                         type=int, required=False,)
     parser.add_argument('--using_simLN', default=0,

@@ -35,7 +35,12 @@ def eval_vanilla_gpt2():
         
     ## --------new eposide test.
     # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.8trainmodel/"
-    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.8epoch2/"
+    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.4epoch3/"
+
+    ## ----noise detection
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.8epoch2/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.8finally/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.7trainmodel/"
 
     # task="web_nlg"
     # subset="release_v2"
@@ -43,7 +48,7 @@ def eval_vanilla_gpt2():
     task="e2e_nlg"
     subset=None
 
-    cuda_num=2
+    cuda_num=0
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True
                          )

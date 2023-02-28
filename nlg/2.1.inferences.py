@@ -19,14 +19,11 @@ from collections import OrderedDict
 
 def eval_vanilla_gpt2():
     
+    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small/"
     # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
     model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1t5-small/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled111410/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114103e-50.01/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114108e-50.01/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114108e-50.01/"
-    # model_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114108e-50.01差不多/"
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs1gpt2/"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs1gpt2/"
 
     # task="web_nlg"
     # subset="release_v2"
@@ -34,11 +31,11 @@ def eval_vanilla_gpt2():
     # task="e2e_nlg"
     # subset=None
 
-    # task="multiwoz_nlg"
-    # subset=None
-
-    task="daily_dialog"
+    task="multiwoz_nlg"
     subset=None
+
+    # task="daily_dialog"
+    # subset=None
 
     cuda_num=0
     infermodel=Inference(model_path,cuda_num,
