@@ -465,9 +465,9 @@ class GPTBaseFlatten(nn.Module):
         all_logits=self.lm_head(past_features[-1])
         c1=comm.get().get_communication_stats()
         t1=time.time()
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+        self.timing["GenerationTime"]+=(t1-t0)
+        self.timing["GenerationCommTime"]+=(c1['time']-c0['time'])
+        self.timing["GenerationCommByte"]+=(c1['bytes']-c0['bytes'])
         
         return all_logits
 

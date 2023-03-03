@@ -1,11 +1,14 @@
 #!/bin/bash
 ######################################################################
-#1.2.DISTILL_DAILY_DIALOG --- 
+#1.5.TRAINIDEA ---
+
+# ideally training.
 
 # Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
 # Copyright © 2023, ZiLiang, all rights reserved.
-# Created: 25 二月 2023
+# Created:  1 三月 2023
 ######################################################################
+
 
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcGen/nlg/"
@@ -16,16 +19,11 @@ export lr=8e-5
 # export lr=3e-4
 export device="4"
 export batch_size=4
-export task="web_nlg"
-# export task="e2e_nlg"
-# export task="daily_dialog"
-# export task="multiwoz_nlg"
+# export task="web_nlg"
+export task="e2e_nlg"
 export max_seq_length=128
 
-# export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
-# export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/"
-# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
-export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
+export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
 export stu_ckpt=${teach_ckpt}
 
 export using_entropy=1
@@ -43,7 +41,7 @@ export dropout_rate=0.4
 export noise=0.7
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}DropoutTraining${using_entropy}${using_softLabel}${using_interKL}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}
+export stu_save_ckpt=${stu_ckpt}VaryLoss${using_entropy}${using_softLabel}${using_interKL}${tau}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -77,5 +75,13 @@ ${python} train_slide.py \
 
 
 
-echo "RUNNING 1.2.distill_daily_dialog.sh DONE."
-# 1.2.distill_daily_dialog.sh ends here
+
+
+
+
+
+
+
+
+echo "RUNNING 1.5.trainidea.sh DONE."
+# 1.5.trainidea.sh ends here

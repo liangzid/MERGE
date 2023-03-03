@@ -68,6 +68,7 @@ class Inference:
                  seed=3933, cuda=True,
                  approximation=False,
                  have_project=False,
+                 use_filter=0,
                  ):
 
         device = 'cuda:{}'.format(cuda_num) if cuda else 'cpu'
@@ -84,6 +85,7 @@ class Inference:
         config=AutoConfig.from_pretrained(model_path)
         if config.activation_function=="quad":
             approximation=True
+        self.use_filter=use_filter
 
 
         ## load the extra projection module.
@@ -226,9 +228,9 @@ class Inference:
                 sentence=self.tokenizer.decode(outputs[0],
                                 skip_special_tokens=False)
 
-                # sentence1=self.tokenizer.decode(clean_out,
-                #                 skip_special_tokens=False)
-                # sentence=sentence1
+                if self.use_filter==1:
+                    sentence=self.tokenizer.decode(clean_out,
+                                    skip_special_tokens=False)
 
                 p=self.tokenizer.decode(seq[0],skip_special_tokens=False)
                 print(">>>raw prefix: {}".format(p))
@@ -240,6 +242,10 @@ class Inference:
                 if self.only_decoder:
                     if self.sep_token in sentence:
                         sentence=sentence.split(self.sep_token)[-1]
+                    elif " <System> " in sentence:
+                        sentence=sentence.split(" <System> ")[-1]
+                        if " <User> " in sentence:
+                            sentence=sentence.split(" <User> ")[0]
                 print(">>>post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
@@ -511,6 +517,7 @@ class Inference:
                 # print(decoder_input_ids)
                 if decoder_input_ids[0,-1]==self.eos_token_id:
                     break
+                
         return decoder_input_ids
 
     def gen_virtualEmbedReSend(self,prefix_ids):

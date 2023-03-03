@@ -245,19 +245,19 @@ def getTestDataSet(tokenizer,split="test",
                 inps.append(x['context'])
                 outs.append(x['target'])
 
-            # merge the same inputs.
-            inpout_dict={}
-            for i, inp in enumerate(inps):
-                out=outs[i]
-                if inp not in inpout_dict:
-                    inpout_dict[inp]=[out]
-                else:
-                    inpout_dict[inp].append([out])
-            inps=[]
-            outs=[]
-            for k,v in inpout_dict.items():
-                inps.append(k)
-                outs.append(v)
+        # merge the same inputs.
+        inpout_dict={}
+        for i, inp in enumerate(inps):
+            out=outs[i]
+            if inp not in inpout_dict:
+                inpout_dict[inp]=[out]
+            else:
+                inpout_dict[inp].append([out])
+        inps=[]
+        outs=[]
+        for k,v in inpout_dict.items():
+            inps.append(k)
+            outs.append(v)
             
         labels=outs
         outs=inps

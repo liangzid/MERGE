@@ -47,8 +47,8 @@ echo ">> 2. evaluate mpcformer"
 # export method="thex"
 export method="vanillaGPT"
 # export method="MPCformer"
-export gen_type="embedReSend"
-# export gen_type="vanilla"
+# export gen_type="embedReSend"
+export gen_type="vanilla"
 export device=0
 export port="5001"
 

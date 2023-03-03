@@ -34,13 +34,37 @@ def eval_vanilla_gpt2():
     # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.7trainmodel/"
         
     ## --------new eposide test.
-    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.8trainmodel/"
-    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.4epoch3/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.4trainmodel/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.8finally/"
+
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.3epoch2/"
 
     ## ----noise detection
     # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.8epoch2/"
-    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.8finally/"
-    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.7trainmodel/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.5finally/"
+    model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1114008e-50.010.70.7epoch2/"
+
+    ## -----------vary loss functions
+    # only cross entropy 
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1004000008e-50.010.70.7finally/"
+
+    # cosem + negaem
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1004011008e-50.010.70.7epoch2/"
+
+    # # mseem
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1004100008e-50.010.70.7epoch2/"
+    
+    # # all losses
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1114111008e-50.010.70.7finally/"
+
+
+    ## ideally results
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1004010008e-50.010.40.7trainmodel"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1004010008e-50.010.40.7epoch1"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/VaryLoss1004010008e-50.010.40.7finally/"
+    # model_path="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2t2/DropoutTraining1114008e-50.010.70.7finally/"
+    
+    
 
     # task="web_nlg"
     # subset="release_v2"
@@ -50,6 +74,7 @@ def eval_vanilla_gpt2():
 
     cuda_num=0
     infermodel=Inference(model_path,cuda_num,
+                         use_filter=1,
                          # approximation=True
                          )
 
@@ -103,10 +128,12 @@ def eval_vanilla_gpt2():
     # print(res)
 
     newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
+
     if subset is None:
         genpath=model_path+task+"embedresend.json"
     else:
         genpath=model_path+task+subset+"embedresend.json"
+
     with open(genpath, 'w',encoding='utf8') as f:
         json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
     print("res save done.")

@@ -169,17 +169,30 @@ if config.accelarate_type=="our":
                 avg_t[k]+=v
             print(timing)
 else:
-    for i in tqdm(range(num)):
-        m.reset_timing()
-        time_s = time.time()
-        # run a forward pass
-        with crypten.no_grad():
-            model.generate(input_ids, config.gen_len)
-        time_e = time.time()
-        timing["total_time"] = (time_e - time_s)
-        for k,v in timing.items():
-            avg_t[k]+=v
-        print(timing)
+    if config.gen_type=="vanilla":
+        for i in tqdm(range(num)):
+            m.reset_timing()
+            time_s = time.time()
+            # run a forward pass
+            with crypten.no_grad():
+                model.generate(input_ids, config.gen_len)
+            time_e = time.time()
+            timing["total_time"] = (time_e - time_s)
+            for k,v in timing.items():
+                avg_t[k]+=v
+            print(timing)
+    else:
+        for i in tqdm(range(num)):
+            m.reset_timing()
+            time_s = time.time()
+            # run a forward pass
+            with crypten.no_grad():
+                model.generate_ourmethod(input_ids, config.gen_len)
+            time_e = time.time()
+            timing["total_time"] = (time_e - time_s)
+            for k,v in timing.items():
+                avg_t[k]+=v
+            print(timing)
 
 for k,v in avg_t.items():
    avg_t[k]/=num

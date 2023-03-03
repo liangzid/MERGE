@@ -192,14 +192,14 @@ def train(args, tmodel, smodel,prolayer,
                 wordEmMSE_loss+=F.mse_loss(shift_laem,shift_sta,
                                            reduction="mean")
                 num_loss+=1
-            if args.using_COSEm:
+            if args.using_COSEm==1:
                 labels=torch.ones((shift_sta.shape[0],
                                    shift_sta.shape[1])).to(shift_sta.device)
                 wordCos_loss=cosineEmbedLoss(shift_laem.reshape(-1,states.shape[-1]),
                                               shift_sta.reshape(-1,states.shape[-1]),
                                               labels.reshape(-1))
                 num_loss+=1
-            if args.using_NEGAEm:
+            if args.using_NEGAEm==1:
                 labels=torch.ones((shift_sta.shape[0],
                                    shift_sta.shape[1])).to(shift_sta.device)*(-1)
                 nega_loss=cosineEmbedLoss(shift_laem.reshape(-1,states.shape[-1]),

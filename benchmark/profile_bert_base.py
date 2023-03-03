@@ -47,14 +47,24 @@ class config():
        self.intermediate_size = 3072
        self.sequence_length = 512
        self.max_position_embeddings = 512
+       # mpcformer
        self.hidden_act = "quad"
-       self.softmax_act = "softmax_2RELU"
+       self.softmax_act = "softmax_2QUAD"
+
+       # ## the-x
+       # self.hidden_act = "relu"
+       # self.softmax_act = "softmax_2RELU"
+
+       # ## vanilla bert
+       # self.hidden_act="newGeLU"
+       # self.softmax_act="softmax"
+       
        self.layer_norm_eps = 1e-12
        self.num_attention_heads = 12
        self.vocab_size = 28996
        self.hidden_dropout_prob = 0.1
        self.attention_probs_dropout_prob = 0.1
-       self.device="cuda:0"
+       self.device="cuda:7"
 
    def __display__(self):
       t=""
@@ -76,8 +86,8 @@ os.environ["MASTER_ADDR"] = "219.245.186.45"
 os.environ["MASTER_PORT"] = "10001"
 os.environ["RENDEZVOUS"] = "env://"
 
-# eval_type="VanillaBert"
-eval_type="FastBert"
+eval_type="VanillaBert"
+# eval_type="FastBert"
 # eval_type="testlinearlayer"
 
 crypten.init()
@@ -115,6 +125,7 @@ model=model.to(config.device)
 
 # encrpy inputs
 input_ids = encrypt_tensor(input_ids,config)
+input_ids=input_ids.to(config.device)
 
 num=10
 for i in range(num):
@@ -128,6 +139,8 @@ for i in range(num):
     timing["total_time"] = (time_e - time_s)
     for k,v in timing.items():
        avg_t[k]+=v
+    print(timing)
+    print("-------")
     print(timing)
 
 for k,v in avg_t.items():

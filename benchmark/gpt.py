@@ -9,6 +9,8 @@ import crypten.nn as cnn
 import crypten.communicator as comm
 from crypten.common.functions import maximum
 
+from tqdm import tqdm
+
 from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor
 
 class gpt(cnn.Module):
@@ -45,13 +47,39 @@ class gpt(cnn.Module):
         output = self.lm_head(output)
         comm1 = comm.get().get_communication_stats()
         t1 = time.time()
-        self.timing["LinearTime"] += (t1-t0)
-        self.timing["LinearCommTime"] += (comm1["time"] - comm0["time"])
-        self.timing["LinearCommByte"] += (comm1["bytes"] - comm0["bytes"])
-        self.timing["lmHeadTime"] += (t1-t0)
-        self.timing["lmHeadCommTime"] += (comm1["time"] - comm0["time"])
-        self.timing["lmHeadCommByte"] += (comm1["bytes"] - comm0["bytes"])
+        # self.timing["LinearTime"] += (t1-t0)
+        # self.timing["LinearCommTime"] += (comm1["time"] - comm0["time"])
+        # self.timing["LinearCommByte"] += (comm1["bytes"] - comm0["bytes"])
+
+        self.timing["GenerateOtherTime"] += (t1-t0)
+        self.timing["GenerateOtherCommTime"] += (comm1["time"] - comm0["time"])
+        self.timing["GenerateOtherCommByte"] += (comm1["bytes"] - comm0["bytes"])
         return output#, past
+
+    def forward_nohead(self,input_ids,past_list):
+        output = self.embeddings(input_ids)
+        for layer_id, layer in enumerate(self.encoder):
+            output = layer(output, past_list[layer_id])
+        ## here we dont use the lm-head.
+        return output#, past
+
+    def forward_noembed(self,feature,past_list):
+        output=feature
+        for layer_id, layer in enumerate(self.encoder):
+            # pass in a past key/value of shape [[b, s, h], [b, s, h]] !!not tuple, it will get deep copied..!!
+            if len(past_list[layer_id]) == 0:
+                print("input to layer None")
+            else:
+                print("input to layer size: ", past_list[layer_id][0].shape, past_list[layer_id][1].shape)
+            #output, past = layer(output, past_list[layer_id])
+            output = layer(output, past_list[layer_id])
+            #past_list[layer_id].append()
+
+        ## here we dont use the lm-head.
+        return output#, past
+        
+
+
 
     def generate(self, idx, max_new_tokens, temperature=1.0, do_sample=False, top_k=None):
         """
@@ -107,6 +135,73 @@ class gpt(cnn.Module):
             self.timing["GenerateOtherCommByte"] += (comm1["bytes"] - comm0["bytes"])
             print(generation_time)
         return idx
+
+    def feature_onestep(self,new_feature,past_states):
+        """
+        shape of new_feature: bs,d
+        """
+        # if len(past_states[0])==0:
+        #     num_past_token=0 # i.e. sequence length
+        # else:
+        #     num_past_token=past_states[0].shape[1] # i.e. sequence length
+
+        xo=new_feature
+        # if len(past_states[0])==0:
+        #     past_states[0]=xo
+        # else:
+        #     past_states[0]=past_states[0].\
+        #         cat([past_states[0],xo], 1)
+
+        xo=self.forward_noembed(xo,past_states)
+
+        # past_states[i+2]=past_states[i+2].\
+        #     cat([past_states[i+2],xo], 1)
+
+        # return xo,past_states
+        return xo
+
+    def generate_ourmethod(self, idx, max_new_tokens,):
+        """
+        Take a conditioning sequence of indices idx (LongTensor of shape (b,s,v)) and complete
+        the sequence max_new_tokens times, feeding the predictions back into the model each time.
+        Most likely you'll want to make sure to be in model.eval() mode of operation for this.
+        """
+        generation_time = {}
+        past_list = [[] for _ in range(self.config.num_hidden_layers)]
+        generation_stage = False
+
+        b, sql, _ = idx.shape
+        if sql<1: # empty
+            idx=self.cat([idx,self.bos_one_hot])
+        feature=self.embeddings(idx[:,-1:,:])
+        output=self.forward_nohead(idx[:,:-1,:],past_list)
+        past_features=past_list
+
+        prog=tqdm(total=self.config.sequence_length-\
+                  self.config.prefix_length)
+
+        for _ in range(self.config.gen_len):
+            prog.update(1)
+            # if the sequence context is growing too long we must crop it at block_size
+            idx_cond = idx if idx.size(1) <= self.config.max_position_embeddings else idx[:, -self.config.max_position_embeddings:,:]
+            # forward the model to get the logits for the index in the sequence
+            #print(idx_cond.shape)
+            feature = self.feature_onestep(feature,
+                                          past_features)
+            
+        t0 = time.time()
+        comm0 = comm.get().get_communication_stats()
+        logits=self.lm_head(feature)
+        # probs = self.smax(logits)
+        # idx_next = maximum.argmax(probs, dim=-1)
+        # idx = self.cat([idx, idx_next])
+        comm1 = comm.get().get_communication_stats()
+        t1 = time.time()
+        self.timing["GenerateTime"] += (t1-t0)
+        self.timing["GenerateCommTime"] += (comm1["time"] - comm0["time"])
+        self.timing["GenerateCommByte"] += (comm1["bytes"] - comm0["bytes"])
+        return idx
+
 
 class gptEmbeddings(cnn.Module):
     def __init__(self, config, timing):

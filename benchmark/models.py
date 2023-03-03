@@ -8,7 +8,8 @@ import crypten
 import crypten.nn as cnn
 import crypten.communicator as comm
 
-from utils import softmax_2RELU, activation_quad
+from utils import activation_newGeLU, softmax_2RELU, activation_quad
+from utils import softmax_2QUAD
 
 class Bert(cnn.Module):
     def __init__(self, config, timing):
@@ -53,10 +54,10 @@ class BertEmbeddings(cnn.Module):
         self.timing = timing
 
     def cuda(self, device=None):
-        super(BertEmbeddings, self).cuda(device=device)
+        super(BertEmbeddings, self).cuda(device=self.config.device)
 
         for i in range(len(self.moduleList)):
-            self.moduleList[i].cuda(device=device)
+            self.moduleList[i].cuda(device=self.config.device)
         return self
 
     def encrypt(self, mode=True, src=0):
@@ -251,6 +252,8 @@ class BertIntermediate(cnn.Module):
             self.intermediate_act_fn = cnn.ReLU()
         elif config.hidden_act == "quad":
             self.intermediate_act_fn = activation_quad()
+        elif config.hidden_act=="newGeLU":
+            self.intermediate_act_fn=activation_newGeLU()
         else:
             raise ValueError(f"activation type {config.hidden_act} not implemented")
         self.timing = timing
