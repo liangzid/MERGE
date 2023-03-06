@@ -19,6 +19,7 @@ import json
 from typing import List,Tuple,Dict
 import random
 from pprint import pprint as ppp
+from numpy.core.numeric import outer
 from tqdm import tqdm
 
 from datasets import load_dataset
@@ -30,7 +31,7 @@ from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
 from transformers import T5ForConditionalGeneration
 from transformers import BartForConditionalGeneration
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer,AutoConfig
 
 from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data import Subset
@@ -106,6 +107,11 @@ def multiwoz_se(split):
         sinps.append(seg)
         # print(seg)
 
+    newouts=[]
+    for x in outs:
+        newouts.append(x)
+    outs=newouts
+
     # print(len(sinps),len(outs))
     return sinps,outs
             
@@ -132,9 +138,13 @@ def getFinetunedSet(tokenizer,
     if task =="daily_dialog":
         sep_token=""
     eos_token=tokenizer.eos_token
+    if only_decoder:
+        bos_token=""
+    else:
+        bos_token=tokenizer.bos_token
 
     def getSet(split="train"):
-        if task in ["web_nlg","e2e_nlg","GEM/taskmaster"]:
+        if task in ["web_nlg","e2e_nlg","GEM/taskmaster","common_gen"]:
             if subset is not None:
                 train_set=load_dataset(task,subset,split=split)
             else:
@@ -148,10 +158,14 @@ def getFinetunedSet(tokenizer,
         outs=[]
         if "web_nlg" in task:
             for x in train_set:
+                # print("data: ",x)
                 inps.append(" ; ".join(x["modified_triple_sets"]\
                                        ["mtriple_set"][0]))
                 outs.append(x["lex"]["text"][0])
-
+        elif "common_gen" in task:
+            for x in train_set:
+                inps.append(", ".join(x["concepts"]))
+                outs.append(x["target"])
         elif "e2e_nlg" in task:
             for x in train_set:
                 inps.append(x["meaning_representation"])
@@ -177,7 +191,7 @@ def getFinetunedSet(tokenizer,
             inps=tokenizer(inps,padding="longest",truncation=True,
                            max_length=max_sentence_length,
                            return_tensors="pt")
-            outs=[x+eos_token for x in outs]
+            outs=[bos_token+x+eos_token for x in outs]
             outs=tokenizer(outs,padding="longest",truncation=True,
                            max_length=max_sentence_length,
                            return_tensors="pt")
@@ -189,7 +203,7 @@ def getFinetunedSet(tokenizer,
 
     if "web_nlg" in task:
         names=["train","dev","test"]
-    elif "e2e_nlg" in task or "taskmaster" in task or "daily_dialog" in task:
+    elif task in ["e2e_nlg","taskmaster","daily_dialog","common_gen"]:
         names=["train","validation","test"]
     elif "multiwoz_nlg" in task:
         names=["train","val","test"]
@@ -216,7 +230,7 @@ def getTestDataSet(tokenizer,split="test",
     eos_token=tokenizer.eos_token
 
     def getSet(split="train"):
-        if task in ["web_nlg", "e2e_nlg", "GEM/taskmaster"]:
+        if task in ["web_nlg", "e2e_nlg", "GEM/taskmaster", "common_gen"]:
             if subset is not None:
                 train_set=load_dataset(task,subset,split=split)
             else:
@@ -237,6 +251,10 @@ def getTestDataSet(tokenizer,split="test",
             for x in train_set:
                 inps.append(x["meaning_representation"])
                 outs.append(x["human_reference"])
+        elif "common_gen" in task:
+            for x in train_set:
+                inps.append(", ".join(x["concepts"]))
+                outs.append(x["target"])
         elif "multiwoz_nlg" in task or "daily_dialog" in task:
             inps,outs=train_set
             train_set=inps
@@ -270,7 +288,9 @@ def getTestDataSet(tokenizer,split="test",
                             return_tensors="pt")
             # print(ou.input_ids)
             # print(type(ou.input_ids))
-            if ou.input_ids[0][-1]==50257 or task=="daily_dialog":
+            if withsep==False:
+                x=ou.input_ids
+            elif ou.input_ids[0][-1]==50257 or task=="daily_dialog":
                 x=ou.input_ids
             else:
                 x=torch.cat((ou.input_ids[0],torch.tensor([50257])),0).unsqueeze(0)
@@ -318,6 +338,10 @@ def trainConditional(model,
             else:
                 inps,atts,outs=x
                 outs=outs.to(DEVICE)
+            # print("----------------")
+            # print(tokenizer.decode(inps[0]))
+            # print(tokenizer.decode(outs[0]))
+
             tqdm2.update(1)
             # print(ii)
             ii+=1
@@ -333,7 +357,7 @@ def trainConditional(model,
                 # todo: fix the encoder decoder writing.
                 outputs = model(inps,
                                 attention_mask=atts,
-                                decoder_input_ids=outs,
+                                # decoder_input_ids=outs,
                                 labels=outs)
 
             loss = outputs.loss
@@ -405,7 +429,7 @@ def test(test_loader,model,task,batch_size=32,
             else:
                 outputs = model(inps,
                                 attention_mask=atts,
-                                decoder_input_ids=outs,
+                                # decoder_input_ids=outs,
                                 labels=outs)
             loss = outputs.loss
             # print(loss)
@@ -444,7 +468,7 @@ def testNew(test_loader,model,task,batch_size=32,
             else:
                 outputs = model(inps,
                                 attention_mask=atts,
-                                decoder_input_ids=outs,
+                                # decoder_input_ids=outs,
                                 labels=outs)
             logits=outputs.logits[:,:,:]
             bs,msl,v=logits.shape
@@ -464,7 +488,7 @@ def main():
     EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:0")
+    DEVICE = torch.device("cuda:2")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =4
     batch_size=BATCH_SIZE
@@ -474,20 +498,23 @@ def main():
     # task="web_nlg"
     # subtask="release_v2"
 
-    # task="e2e_nlg"
-    # subtask=None
+    task="e2e_nlg"
+    subtask=None
 
     # task="multiwoz_nlg"
     # subtask=None
 
-    task="daily_dialog"
-    subtask=None
+    # task="daily_dialog"
+    # subtask=None
+
+    # task="common_gen"
+    # subtask=None
 
     prefix_path="/home/liangzi/models/"
 
-    model_name="gpt2/"
+    # model_name="gpt2/"
     # model_name="t5-small/"
-    # model_name="bart-base/"
+    model_name="bart-base/"
     print(model_name)
     frmpth=prefix_path+model_name
 
@@ -508,6 +535,8 @@ def main():
         if "t5" in frmpth:
             model = T5ForConditionalGeneration.from_pretrained(frmpth)
         elif "bart" in frmpth:
+            config=AutoConfig.from_pretrained(frmpth)
+            config.decoder_start_token_id=config.bos_token_id
             model = BartForConditionalGeneration.from_pretrained(frmpth)
         else:
             model = AutoModelForCausalLM.from_pretrained(frmpth)
@@ -515,7 +544,17 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(frmpth,
                                               truncation="left" # left part truncation
                                               )
-    tokenizer.pad_token=tokenizer.eos_token
+    if "t5" in frmpth:
+        tokenizer.bos_token="<pad>"
+        tokenizer.sep_token=""
+        tokenizer.pad_token=tokenizer.eos_token
+    elif "bart" in frmpth:
+        tokenizer.bos_token="<s>"
+        tokenizer.sep_token=""
+        # tokenizer.pad_token=tokenizer.eos_token
+    else:
+        tokenizer.pad_token=tokenizer.eos_token
+
     if only_decoder:
         tokenizer.add_tokens(["<|sep|>",],special_tokens=True)
         tokenizer.sep_token="<|sep|>"

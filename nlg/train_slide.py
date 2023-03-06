@@ -160,7 +160,8 @@ def train(args, tmodel, smodel,prolayer,
                 lens=len(toutputs.hidden_states)
                 # print(f"length of hidden states layers: {lens}")
                 for j in range(lens-1):
-
+                    if j> (lens-1)//2:
+                        break
                     templ=F.mse_loss(toutputs.hidden_states[j],
                                outputs.hidden_states[j],
                                 reduction="mean")
@@ -347,10 +348,9 @@ def main():
         config.layerNormType="sim" # set to quad activation
     else:
         config.layerNormType="no-sim" # set to quad activation
-    config.save_pretrained(args.stu_ckpt)
     config.save_pretrained(args.stu_save_ckpt)
     
-    if "Constant" in args.stu_ckpt or args.stu_ckpt!=args.teach_ckpt:
+    if "Constant" in args.stu_ckpt or args.stu_ckpt!=args.teach_ckpt or args.using_quadacti==1:
         print("Using new structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5New.\
@@ -361,7 +361,7 @@ def main():
         else:
             smodel = BFSCNew.from_pretrained(args.stu_ckpt)
 
-    if args.stu_ckpt==args.teach_ckpt or "WithEm" in args.stu_save_ckpt:
+    elif args.stu_ckpt==args.teach_ckpt or "WithEm" in args.stu_save_ckpt:
         print("Using vanilla structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5ForConditionalGeneration.\

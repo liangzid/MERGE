@@ -1,12 +1,12 @@
 """
 ======================================================================
-2.12.OTHERTASKS_INFERENCE ---
+2.13.QUAD_INFER ---
 
-Inference for other tasks.
+approximation and ER methods.
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created:  1 三月 2023
+    Created:  6 三月 2023
 ======================================================================
 """
 
@@ -34,59 +34,44 @@ def main():
     # task="daily_dialog"
     # subset=None
 
-    # ## 3. multiwoz 2.1 nlg
-    # task="multiwoz_nlg"
-    # subset=None
-    withsep=False
+    ## 3. multiwoz 2.1 nlg
+    task="multiwoz_nlg"
+    subset=None
+    withsep=True
 
     # ## 4. web nlg
     # task="web_nlg"
     # subset="release_v2"
 
-    ## # 5. common gen
-    task="common_gen"
-    subset=None
-
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/"
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4t5-small/"
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/"
-    model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4bart-base/"
-
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4bart-base/"
-    
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/"
-    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/DropoutTraining1114008e-50.01finally/"
-    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/DropoutTraining1114008e-50.01trainmodell/"
 
-    # # multiwoz ckpt
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/DropoutTraining1004008e-50.01finally"
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7finally/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7trainmodel/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7epoch3/"
 
-    # # web nlg ckpt
-    # model_path=f"./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/DropoutTraining1004008e-50.01trainmodel/"
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs1gpt2/"
-
-    # gentype="ER"
-    gentype="vanilla"
+    gentype="ER"
+    # gentype="vanilla"
 
 
     ## ---------------------------------------------
     cuda_num=1
     infermodel=Inference(model_path,cuda_num,
-                         # approximation=True
+                         approximation=True,
+                         use_filter=1,
                          )
 
-    if task=="common_gen":
-        te=getTestDataSet(infermodel.tokenizer,split="validation",
-                                max_sentence_length=infermodel.msl//2,
-                                task=task,subset=subset,withsep=withsep)
-        va,valabels=te
-    else:
-        te=getTestDataSet(infermodel.tokenizer,split="test",
-                                max_sentence_length=infermodel.msl//2,
-                                task=task,subset=subset,withsep=withsep)
-        va,valabels=te
+    te=getTestDataSet(infermodel.tokenizer,split="test",
+                             max_sentence_length=infermodel.msl//2,
+                             task=task,subset=subset,withsep=withsep)
+
+    va,valabels=te
     seqls=va
+
+    # seqls=seqls[:100]
+    # valabels=valabels[:100]
+
 
     if gentype=="vanilla":
 
@@ -127,7 +112,6 @@ def main():
         res=infermodel.evaluate(newseqls,valabels)
         print("----Embedding Resend Results----")
         print(res)
-
 
 
 ## running entry

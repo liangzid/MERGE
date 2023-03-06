@@ -76,6 +76,7 @@ class Inference:
         print('using device:{}'.format(device))
         # os.environ["CUDA_VISIBLE_DEVICES"] ="6"
         
+        self.model_path=model_path
         bla_tokenizer = AutoTokenizer.from_pretrained(model_path)
         text="<|sep|>"
         # print(bla_tokenizer(text))
@@ -83,9 +84,13 @@ class Inference:
         print("tokenizer loading done...")
 
         config=AutoConfig.from_pretrained(model_path)
-        if config.activation_function=="quad":
-            approximation=True
+        try:
+            if config.activation_function=="quad":
+                approximation=True
+        except Exception:
+            print("no activation function founded.")
         self.use_filter=use_filter
+        self.config=config
 
 
         ## load the extra projection module.
@@ -213,9 +218,13 @@ class Inference:
             input_ids = input_ids.to(self.device)
             try:
                 if generate_mode_test == "greedy":
-                    # outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,                                 repetition_penalty=7.5,no_repeat_ngram_size=3,
+                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,
+                                                  repetition_penalty=3.5,
+                    #                               # no_repeat_ngram_size=0,
+                                                  )
+
                     ## using self-defined forward function
-                    outputs=self.gen_greedyUgly(input_ids)
+                    # outputs=self.gen_greedyUgly(input_ids)
                     # outputs=self.gen_virtualEmbedReSend(input_ids)
                     # outputs=self.gen_embedResend(input_ids)
                 else:
@@ -430,15 +439,25 @@ class Inference:
             gen_len=self.msl-sl
         else:
             bs,sl=prefix_ids.shape
-            decoder_input_ids=self.tokenizer([" "],return_tensors="pt").input_ids
+            decoder_input_ids=torch.tensor([self.config.decoder_start_token_id])\
+                                   .unsqueeze(0)
             decoder_input_ids=decoder_input_ids.to(self.device)
+
+            # if "bart" in self.model_path:
+            decoder_input_ids=decoder_input_ids[:,:1]
+
             sl=1
             gen_len=self.msl-sl
 
         first_token=0
         # 2 greedy forward generation
         with torch.no_grad():
+            print("gen length", gen_len)
             for _ in range(gen_len):
+                # if not self.only_decoder:
+                #     print(f"encoder inp: {prefix_ids}")
+                #     print(f"decoder inp: {decoder_input_ids}")
+
                 first_token+=1
                 if self.only_decoder:
                     output=self.decoder(
@@ -456,7 +475,7 @@ class Inference:
                     else:
                         output=self.decoder.forward(
                             prefix_ids,
-                            decoder_inputs_ids=decoder_input_ids,
+                            decoder_input_ids=decoder_input_ids,
                             output_hidden_states=True,
                             )
                 if self.only_decoder:
@@ -483,6 +502,7 @@ class Inference:
 
                 sorted_ids = torch.argsort(newdistribution.squeeze(0),
                                         dim=-1, descending=True)
+                print(sorted_ids)
                 if self.only_decoder:
                     # here we just use the greedy search for generation
                     prefix_ids = torch.cat([prefix_ids,
@@ -516,6 +536,7 @@ class Inference:
 
                 # print(decoder_input_ids)
                 if decoder_input_ids[0,-1]==self.eos_token_id:
+                    print("now break")
                     break
                 
         return decoder_input_ids

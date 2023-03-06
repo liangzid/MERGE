@@ -28,6 +28,7 @@ echo "================================"
 export layer=12
 export d=768
 export msl=128
+export msl=512
 export prefix=4
 export head=12
 
@@ -44,12 +45,12 @@ export head=12
 
 echo ">> 2. evaluate mpcformer"
 # export method="our"
-export method="thex"
+# export method="thex"
 # export method="vanillaGPT"
-# export method="MPCformer"
-# export gen_type="embedReSend"
-export gen_type="vanilla"
-export device=4
+export method="MPCformer"
+export gen_type="embedReSend"
+# export gen_type="vanilla"
+export device=7
 export port="3934"
 
 $python profile_gpt.py 0 $device\

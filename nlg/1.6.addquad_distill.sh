@@ -10,11 +10,11 @@
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=5
+export epochs=3
 # export lr=3e-5
 export lr=8e-5
 # export lr=3e-4
-export device="5"
+export device="6"
 export batch_size=4
 # export task="web_nlg"
 # export task="e2e_nlg"
@@ -26,7 +26,9 @@ export max_seq_length=128
 # export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/"
 export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
 # export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
+
 export stu_ckpt=${teach_ckpt}
+# export stu_ckpt=${teach_ckpt}"___withConstantMatrix"
 
 export using_entropy=1
 export using_softLabel=0
@@ -38,7 +40,7 @@ export using_NEGAEm=0
 # export using_quadacti=0
 export using_quadacti=1 ##### now add the quadtic option.
 
-export using_simLN=0
+export using_simLN=1
 export weight_decay=0.01
 export dropout_rate=0.4
 export noise=0.7
@@ -76,7 +78,5 @@ ${python} train_slide.py \
 	--dropout_rate=${noise}\
 	--root_dir=$root_dir
 
-
-
-echo "RUNNING 1.2.distill_daily_dialog.sh DONE."
-# 1.2.distill_daily_dialog.sh ends here
+echo "RUNNING 1.6.addquad_distill.sh DONE."
+# 1.6.addquad_distill.sh ends here
