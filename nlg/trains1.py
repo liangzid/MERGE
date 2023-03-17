@@ -270,7 +270,7 @@ def getTestDataSet(tokenizer,split="test",
             if inp not in inpout_dict:
                 inpout_dict[inp]=[out]
             else:
-                inpout_dict[inp].append([out])
+                inpout_dict[inp].append(out)
         inps=[]
         outs=[]
         for k,v in inpout_dict.items():

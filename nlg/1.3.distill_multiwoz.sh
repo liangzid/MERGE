@@ -26,10 +26,10 @@ export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs1gpt2/"
 export stu_ckpt=${teach_ckpt}
 
 export using_entropy=1
-export using_softLabel=1
+export using_softLabel=0
 export tau=4
-export using_interKL=1
-export using_wordEmbedMSE=1
+export using_interKL=0
+export using_wordEmbedMSE=0
 export using_quadacti=0
 
 export using_simLN=0

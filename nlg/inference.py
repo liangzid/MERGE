@@ -60,6 +60,10 @@ import evaluate
 # from nlgmetricverse import NLGMetricverse
 from projectModel import ProjecLayer
 
+from bert_score import score as bertscore
+import sys
+sys.path.append("/home/liangzi/")
+from BARTscoremain.bart_score import BARTScorer
 
 class Inference:
     def __init__(self,
@@ -197,6 +201,15 @@ class Inference:
         print(f"time cost in load original metrics: {t2-t1}")
 
         print(">> NLG metrics loading DONE.")
+        
+
+        self.BartScorer=BARTScorer(device="cuda:0",max_length=1024,
+                            checkpoint="facebook/bart-large-cnn")
+        self.BartScorer.load(path="/home/liangzi/BARTscoremain/bart_score.pth")
+        print(">> Bart score checkpoint load DONE.")
+
+        # BLEURT
+        self.bleurt=evaluate.load("bleurt",module_type="metric")
 
 
         # t1=time.time()
@@ -218,13 +231,13 @@ class Inference:
             input_ids = input_ids.to(self.device)
             try:
                 if generate_mode_test == "greedy":
-                    outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,
-                                                  repetition_penalty=3.5,
-                    #                               # no_repeat_ngram_size=0,
-                                                  )
+                    # outputs=self.decoder.generate(input_ids=input_ids, max_length=self.max_target_length,
+                    #                               repetition_penalty=3.5,
+                    # #                               # no_repeat_ngram_size=0,
+                    #                               )
 
                     ## using self-defined forward function
-                    # outputs=self.gen_greedyUgly(input_ids)
+                    outputs=self.gen_greedyUgly(input_ids)
                     # outputs=self.gen_virtualEmbedReSend(input_ids)
                     # outputs=self.gen_embedResend(input_ids)
                 else:
@@ -246,6 +259,8 @@ class Inference:
                 # # print("raw prefix id: {}".format(seq))
                 print(">>>raw gen sent: {}".format(sentence))
                 if self.eos_token in sentence:
+                    if "<s>" in sentence:
+                        sentence=sentence.split("<s>")[-1]
                     sentence=sentence.split(self.eos_token)[0]
 
                 if self.only_decoder:
@@ -319,6 +334,15 @@ class Inference:
                 print("Error info:")
                 print(Exception)
                 print("------------------")
+        big_res_dict["bleurt"]=sum(self.bleurt(predictions=hyps,
+                                references=refs))/len(hyps)
+        print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
+        x=bertscore(hyps,refs,lang="en",verbose=True)
+        # print("bertscore res:",x)
+        big_res_dict["bert_score"]=sum(x[2])/len(hyps)
+        # x=self.BartScorer.multi_ref_score(hyps,one_refs,agg="max")
+        x=self.BartScorer.score(hyps,one_refs)
+        big_res_dict["bart_score"]=sum(x)/len(hyps)
         return big_res_dict
 
     def evaluate2(self,hyps,refs):
@@ -452,7 +476,7 @@ class Inference:
         first_token=0
         # 2 greedy forward generation
         with torch.no_grad():
-            print("gen length", gen_len)
+            # print("gen length", gen_len)
             for _ in range(gen_len):
                 # if not self.only_decoder:
                 #     print(f"encoder inp: {prefix_ids}")
@@ -502,7 +526,7 @@ class Inference:
 
                 sorted_ids = torch.argsort(newdistribution.squeeze(0),
                                         dim=-1, descending=True)
-                print(sorted_ids)
+                # print(sorted_ids)
                 if self.only_decoder:
                     # here we just use the greedy search for generation
                     prefix_ids = torch.cat([prefix_ids,

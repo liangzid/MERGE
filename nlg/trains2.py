@@ -115,6 +115,8 @@ def setup_train_args():
                         type=float, required=False,)
     parser.add_argument('--noise', default=0.2,
                         type=float, required=False,)
+    parser.add_argument('--lamda', default=0.5,
+                        type=float, required=False,)
     return parser.parse_args()
 
 

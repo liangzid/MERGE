@@ -106,7 +106,12 @@ class GPTBaseFlatten(nn.Module):
             self.M_mats[i]=crypten.cryptensor(self.M_mats[i],
                                                 src=0)
         
-        self.activation=activation_quad()
+        if config.hidden_act=="newGeLU":
+            self.activation=activation_newGeLU()
+        elif config.hidden_act=="relu":
+            self.activation=nn.ReLU()
+        elif config.hidden_act=="quad":
+            self.activation=activation_quad()
         # self.activation=nn.ReLU()
 
         self.lm_head=cnn.Linear(config.hidden_size,

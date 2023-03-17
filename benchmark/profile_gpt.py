@@ -56,6 +56,9 @@ class config():
         elif method=="thex":
             self.hidden_act="relu"
             self.softmax_act="softmax_2RELU"
+        elif method=="onlyCM":
+            self.hidden_act="newGeLU"
+            self.softmax_act="softmax"
         else:
             #self.hidden_act = "newGeLU"
             #self.softmax_act = "softmax"
@@ -126,7 +129,7 @@ input_ids = F.one_hot(torch.randint(low=0, high=config.vocab_size,
 
 timing = defaultdict(float)
 
-if config.accelarate_type=="our":
+if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":
     m = GPTBaseFlatten(config, timing)
     model = encrypt_model(m, GPTBaseFlatten,
                   (config, timing), input_ids).eval()
@@ -141,7 +144,7 @@ input_ids = encrypt_tensor(input_ids,config)
 num=1
 avg_t = defaultdict(float)
 
-if config.accelarate_type=="our":
+if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":
     if config.gen_type=="vanilla":
         for i in tqdm(range(num)):
             m.reset_timing()

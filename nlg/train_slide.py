@@ -226,9 +226,13 @@ def train(args, tmodel, smodel,prolayer,
             # loss=(wordEmMSE_loss+entropy_loss+wordEmMSE_loss1)/3
             # loss=(wordEmMSE_loss+entropy_loss+wordEmMSE_loss1-nega_loss)/total_num
             # loss=(wordEmMSE_loss+entropy_loss)/2
-            loss=(entropy_loss + softlabel_loss + inter_loss \
-                  +wordEmMSE_loss +wordCos_loss+nega_loss)/num_loss
-                  
+            if args.lamda==0.5:
+                loss=(entropy_loss + softlabel_loss + inter_loss \
+                    +wordEmMSE_loss +wordCos_loss+nega_loss)/num_loss
+            else:
+                loss=(entropy_loss + softlabel_loss + inter_loss \
+                    +wordEmMSE_loss+nega_loss)/(num_loss-1)*(1-args.lamda) + \
+                    args.lamda*wordCos_loss
 
             if loss<train_past_l and i%100==0:
                 print("SaveNewTrainModel")

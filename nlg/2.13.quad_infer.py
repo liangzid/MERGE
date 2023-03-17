@@ -47,16 +47,38 @@ def main():
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4t5-small/"
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4bart-base/"
 
-    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7finally/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7finally/"
     # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7trainmodel/"
     # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7epoch3/"
+
+    # ## with interkl loss
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1010104108e-50.010.40.7finally/"
+
+    # ## only ER
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/DropoutTraining1004008e-50.01finally"
+
+
+    # ## with simLN
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.7finally/"
+
+    # ## with constant matrix
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixaddQuad1000104108e-50.010.40.7finally/"
+
+    # # ## weighted loss
+    # # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.70.9finally/"
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.70.75finally/"
+
+    ## ER+CM+simLN
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixOnlyCM1000104018e-50.010.40.70.75finally/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixOnlyCM1000104018e-50.010.40.70.75epoch2/"
+    
 
     gentype="ER"
     # gentype="vanilla"
 
 
     ## ---------------------------------------------
-    cuda_num=1
+    cuda_num=7
     infermodel=Inference(model_path,cuda_num,
                          approximation=True,
                          use_filter=1,
@@ -75,7 +97,7 @@ def main():
 
     if gentype=="vanilla":
 
-        print(seqls[0])
+        # print(seqls[0])
         newseqls=infermodel.inference(seqls)
 
         if subset is None:
@@ -91,6 +113,7 @@ def main():
             data=json.load(f,object_pairs_hook=OrderedDict)
         newseqls,valabels=data
 
+        print(valabels[0])
         res=infermodel.evaluate(newseqls,valabels)
         print("----Vanilla Greedy Search Results----")
         print(res)
