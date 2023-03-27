@@ -334,8 +334,10 @@ class Inference:
                 print("Error info:")
                 print(Exception)
                 print("------------------")
-        big_res_dict["bleurt"]=sum(self.bleurt(predictions=hyps,
-                                references=refs))/len(hyps)
+        x=self.bleurt.compute(predictions=hyps,
+                                references=one_refs)
+        print(x)
+        big_res_dict["bleurt"]=sum(x['scores'])/len(hyps)
         print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
         x=bertscore(hyps,refs,lang="en",verbose=True)
         # print("bertscore res:",x)

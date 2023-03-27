@@ -37,6 +37,7 @@ from transformers import BartForConditionalGeneration
 from transformers import AutoTokenizer
 from transformers import AutoConfig
 from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import Subset
 
 import torch
 import torch.nn as nn
@@ -127,8 +128,14 @@ def train(args, tmodel, smodel,prolayer,
             if args.using_entropy==1:
                 entropy_loss1 = outputs.loss
                 distri=outputs.logits # we cannot use SOFTMAX!
-                entropy_loss=loss_func(distri[:,:-1,:].reshape(bs*(msl-1),-1),
-                                       inps[:,1:].reshape(-1))
+                # print(f"distri: {distri.shape}")
+                if only_decoder:
+                    entropy_loss=loss_func(distri[:,:-1,:].reshape(bs*(msl-1),-1),
+                                        inps[:,1:].reshape(-1))
+                else:
+                    entropy_loss=loss_func(distri[:,:-1,:].reshape(-1,
+                                                            distri.size(-1)),
+                                        outs[:,1:].reshape(-1))
                 entropy_loss=entropy_loss.reshape(bs,-1)
 
                 # weights=torch.linspace(1.,0.,steps=msl-1).to(DEVICE)
@@ -178,10 +185,17 @@ def train(args, tmodel, smodel,prolayer,
             cosineEmbedLoss=nn.CosineEmbeddingLoss(reduction="mean")
             huberloss=nn.HuberLoss(reduction="mean",delta=0.01)
             # 1. first get the label embeddings. 
-            label_embedds=embedds(inps) # expect shape: bs,sl,d
-            shift_laem=label_embedds[:,1:,:]
+            if only_decoder:
+                label_embedds=embedds(inps) # expect shape: bs,sl,d
+            else:
+                label_embedds=embedds(outs) # expect shape: bs,sl,d
+            shift_laem=label_embedds[:,1:,:] 
             # 1.1. output hidden states
-            states=outputs.hidden_states[-1]
+            if only_decoder:
+                states=outputs.hidden_states[-1]
+            else:
+                states=outputs.decoder_hidden_states[-1]
+            # print(states.shape) ## (bs,msl,d)
             if args.using_prolayer==1:
                 states=prolayer(states)
             shift_sta=states[:,:-1,:]
@@ -196,6 +210,9 @@ def train(args, tmodel, smodel,prolayer,
             if args.using_COSEm==1:
                 labels=torch.ones((shift_sta.shape[0],
                                    shift_sta.shape[1])).to(shift_sta.device)
+                # print("---")
+                # print(shift_laem.shape)
+                # print(shift_sta.shape)
                 wordCos_loss=cosineEmbedLoss(shift_laem.reshape(-1,states.shape[-1]),
                                               shift_sta.reshape(-1,states.shape[-1]),
                                               labels.reshape(-1))
@@ -237,17 +254,17 @@ def train(args, tmodel, smodel,prolayer,
             if loss<train_past_l and i%100==0:
                 print("SaveNewTrainModel")
                 smodel.save_pretrained(args.stu_save_ckpt+"trainmodel")
-                torch.save(prolayer.state_dict(),
-                           args.stu_save_ckpt+"trainmodel_prolayer.pt")
+                # torch.save(prolayer.state_dict(),
+                #            args.stu_save_ckpt+"trainmodel_prolayer.pt")
                 train_past_l=loss
 
             optimizer1.zero_grad()
-            optimizer2.zero_grad()
+            # optimizer2.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
                 smodel.parameters(), args.max_grad_norm)
             optimizer1.step()
-            optimizer2.step()
+            # optimizer2.step()
 
             if i%1==0:
                 # print(f"loss:{loss.item()}")
@@ -303,6 +320,8 @@ def train(args, tmodel, smodel,prolayer,
 def main():
     args=setup_train_args()
     torch.autograd.set_detect_anomaly(True)
+
+    assert args.teach_ckpt!=args.stu_ckpt
     
     EPOCH = args.epochs
     LR = args.lr
@@ -352,9 +371,10 @@ def main():
         config.layerNormType="sim" # set to quad activation
     else:
         config.layerNormType="no-sim" # set to quad activation
-    config.save_pretrained(args.stu_save_ckpt)
+    # config.save_pretrained(args.stu_save_ckpt)
+    config.save_pretrained(args.stu_ckpt)
     
-    if "Constant" in args.stu_ckpt or args.stu_ckpt!=args.teach_ckpt or args.using_quadacti==1:
+    if "Constant" in args.stu_ckpt or args.stu_ckpt!=args.teach_ckpt or args.using_quadacti==1 or args.using_simLN==1:
         print("Using new structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5New.\
@@ -365,7 +385,7 @@ def main():
         else:
             smodel = BFSCNew.from_pretrained(args.stu_ckpt)
 
-    elif args.stu_ckpt==args.teach_ckpt or "WithEm" in args.stu_save_ckpt:
+    elif (args.using_simLN==0 and args.using_quadacti==0) or "WithEm" in args.stu_save_ckpt:
         print("Using vanilla structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5ForConditionalGeneration.\
@@ -391,8 +411,9 @@ def main():
             smodel.lm_head.weight.requires_grad)
 
     ## add new layer
-    from projectModel import ProjecLayer
-    prolayer=ProjecLayer(config.n_embd,config.n_embd)
+    # from projectModel import ProjecLayer
+    # prolayer=ProjecLayer(config.n_embd,config.n_embd)
+    prolayer=None
 
     # for name,param in smodel.named_parameters():
     #     if "M" in name:
@@ -404,15 +425,21 @@ def main():
 
     optimizer1 = torch.optim.AdamW(smodel.parameters(), lr=LR,
                                   weight_decay=args.weight_decay,)
-    optimizer2 = torch.optim.AdamW(prolayer.parameters(), lr=LR,
-                                  weight_decay=args.weight_decay,)
+
+    # optimizer2 = torch.optim.AdamW(prolayer.parameters(), lr=LR,
+    #                               weight_decay=args.weight_decay,)
+    optimizer2=None
     smodel = smodel.to(DEVICE)
-    prolayer = prolayer.to(DEVICE)
+    # prolayer = prolayer.to(DEVICE)
+    prolayer = None
     tmodel = tmodel.to(DEVICE)
 
     print(f"max sequence length: {args.max_seq_length}")
     trs,vas,tes=getFinetunedSet(tokenizer,args.max_seq_length,
                                 task,subtask,only_decoder)
+    
+    if task=="mutiwoz_nlg":
+        vas=Subset(vas, np.arange(1000))
 
     trloader=DataLoader(trs,batch_size=batch_size,
                             shuffle=True,drop_last=False)

@@ -323,7 +323,8 @@ class T5LayerFF(nn.Module):
             self.DenseReluDense = T5DenseActDense(config)
 
         if config.layerNormType=="sim":
-            self.layer_norm = SimpleLayerNorm(config.d_model,)
+            # self.layer_norm = SimpleLayerNorm(config.d_model,)
+            self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         else:
             self.layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
@@ -336,7 +337,8 @@ class T5LayerFF(nn.Module):
 
 
 class T5Attention(nn.Module):
-    def __init__(self, config: T5Config, has_relative_attention_bias=False):
+    def __init__(self, config: T5Config,
+                 has_relative_attention_bias=False,isCross=False):
         super().__init__()
         self.is_decoder = config.is_decoder
         self.has_relative_attention_bias = has_relative_attention_bias
@@ -347,6 +349,7 @@ class T5Attention(nn.Module):
         self.n_heads = config.num_heads
         self.dropout = config.dropout_rate
         self.inner_dim = self.n_heads * self.key_value_proj_dim
+        self.isCross=isCross
 
         # Mesh TensorFlow initialization to avoid scaling before softmax
         self.q = nn.Linear(self.d_model, self.inner_dim, bias=False)
@@ -561,11 +564,17 @@ class T5Attention(nn.Module):
         # dynamic attentions
 
         bs=attn_weights.shape[0]
+        sl=value_states.shape[2]
+        isl=query_states.shape[2]
         attn_weights=self.M.unsqueeze(0)
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
-        attn_weights = attn_weights.type(value.dtype)
+        attn_weights = attn_weights.type(scores.dtype)
 
+        if self.isCross:
+            attn_weights=attn_weights[:,:,:isl,:sl]
+        else:
+            attn_weights=attn_weights[:,:,:sl,:sl]
         #----------------- ends here ---------------------
         
         attn_weights = nn.functional.dropout(
@@ -576,7 +585,8 @@ class T5Attention(nn.Module):
         if layer_head_mask is not None:
             attn_weights = attn_weights * layer_head_mask
 
-        attn_output = unshape(torch.matmul(attn_weights, value_states))  # (batch_size, seq_length, dim)
+        attn_output = unshape(torch.matmul(attn_weights,
+                                           value_states))  # (batch_size, seq_length, dim)
         attn_output = self.o(attn_output)
 
         present_key_value_state = (key_states, value_states) if (self.is_decoder and use_cache) else None
@@ -625,7 +635,8 @@ class T5LayerSelfAttention(nn.Module):
 class T5LayerCrossAttention(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.EncDecAttention = T5Attention(config, has_relative_attention_bias=False)
+        self.EncDecAttention = T5Attention(config, has_relative_attention_bias=False,
+                                           isCross=True)
         if config.layerNormType=="sim":
             self.layer_norm = SimpleLayerNorm(config.d_model,)
         else:
@@ -844,6 +855,7 @@ class T5PreTrainedModel(PreTrainedModel):
             module.o.weight.data.normal_(mean=0.0, std=factor * ((n_heads * key_value_proj_dim) ** -0.5))
             if module.has_relative_attention_bias:
                 module.relative_attention_bias.weight.data.normal_(mean=0.0, std=factor * ((d_model) ** -0.5))
+            module.M.data.normal_(mean=0.0,std=factor * (d_model**-0.5))
 
     def _set_gradient_checkpointing(self, module, value=False):
         if isinstance(module, (T5Attention, T5Stack)):
@@ -886,7 +898,8 @@ class T5Stack(T5PreTrainedModel):
             [T5Block(config, has_relative_attention_bias=bool(i == 0)) for i in range(config.num_layers)]
         )
         if config.layerNormType=="sim":
-            self.final_layer_norm=SimpleLayerNorm(config.d_model)
+            # self.final_layer_norm=SimpleLayerNorm(config.d_model)
+            self.final_layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         else:
             self.final_layer_norm = T5LayerNorm(config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)

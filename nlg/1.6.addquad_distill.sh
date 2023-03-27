@@ -14,7 +14,7 @@ export epochs=3
 # export lr=3e-5
 export lr=8e-5
 # export lr=3e-4
-export device="5"
+export device="3"
 export batch_size=4
 # export task="web_nlg"
 # export task="e2e_nlg"
@@ -24,7 +24,9 @@ export max_seq_length=128
 
 # export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
 # export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/"
-export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
+
+# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
+export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
 # export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
 
 export stu_ckpt=${teach_ckpt}
@@ -38,9 +40,9 @@ export using_wordEmbedMSE=0
 export using_COSEm=1
 export using_NEGAEm=0
 # export using_quadacti=0
-export using_quadacti=0 ##### now add the quadtic option.
+export using_quadacti=1 ##### now add the quadtic option.
 
-export using_simLN=0
+export using_simLN=1
 export weight_decay=0.01
 export dropout_rate=0.4
 export noise=0.7

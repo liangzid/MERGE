@@ -468,7 +468,7 @@ def testNew(test_loader,model,task,batch_size=32,
             else:
                 outputs = model(inps,
                                 attention_mask=atts,
-                                # decoder_input_ids=outs,
+                                decoder_input_ids=outs,
                                 labels=outs)
             logits=outputs.logits[:,:,:]
             bs,msl,v=logits.shape
@@ -476,8 +476,12 @@ def testNew(test_loader,model,task,batch_size=32,
             # distri=F.softmax(logits,dim=-1)
             distri=logits
 
-            loss1=loss_func(distri[:,:-1,:].reshape(-1,v),
-                           inps[:,1:].reshape(-1))
+            if only_decoder:
+                loss1=loss_func(distri[:,:-1,:].reshape(-1,v),
+                            inps[:,1:].reshape(-1))
+            else:
+                loss1=loss_func(distri[:,:-1,:].reshape(-1,v),
+                            outs[:,1:].reshape(-1))
             loss=loss1
             losses+=loss
     losses/=(i+1)
