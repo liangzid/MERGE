@@ -371,6 +371,11 @@ def main():
         config.layerNormType="sim" # set to quad activation
     else:
         config.layerNormType="no-sim" # set to quad activation
+    if args.softmax2quad==1:
+        config.quad_softmax="1"
+    else:
+        config.quad_softmax="0"
+        
     # config.save_pretrained(args.stu_save_ckpt)
     config.save_pretrained(args.stu_ckpt)
     
@@ -473,14 +478,15 @@ def main():
     if args.using_prolayer==1:
         prolayer=torch.load(args.stu_save_ckpt+"_prolayer.pt",
                             map_location="cpu")
-    prolayer.to(DEVICE)
-    prolayer.eval()
+        prolayer.to(DEVICE)
+        prolayer.eval()
     
     # test(test_loader=val_loader,model=smodel,task=task,
     #      batch_size=BATCH_SIZE,DEVICE=DEVICE)
 
     print("Now on Original Student Model.")
-    smodel=smodel.from_pretrained(args.stu_save_ckpt)
+    # smodel=smodel.from_pretrained(args.stu_save_ckpt+"finally")
+    smodel=smodel.from_pretrained(args.stu_save_ckpt+"trainmodel")
     smodel.to(DEVICE)
     smodel.eval()
     

@@ -76,6 +76,7 @@ class Inference:
                  ):
 
         device = 'cuda:{}'.format(cuda_num) if cuda else 'cpu'
+        # device="cpu"
         self.device = device
         print('using device:{}'.format(device))
         # os.environ["CUDA_VISIBLE_DEVICES"] ="6"
@@ -89,6 +90,10 @@ class Inference:
 
         config=AutoConfig.from_pretrained(model_path)
         try:
+            # print("--------")
+            # print(config.activation_function)
+            # print(model_path)
+            # print(config)
             if config.activation_function=="quad":
                 approximation=True
         except Exception:
@@ -133,6 +138,7 @@ class Inference:
                     self.decoder=T5ForConditionalGeneration\
                         .from_pretrained(model_path)
                 else:
+                    print(">>>>>>>>>>>using approximtion version")
                     self.decoder=T5New\
                         .from_pretrained(model_path)
         else:
@@ -356,21 +362,28 @@ class Inference:
         Embedding resend style sentence generation.
         """
         # print(">>> USING EMBEDRESEND GENERATION.")
+        # self.decoder.train()
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,
         # because the positional embedding can be added to, in models.
+        # print(prefix_ids)
+        # print(self.embedds.weight.shape)
         embeddings=self.embedds(prefix_ids)
         # print(f"embeddings shape: {embeddings.shape}")
         if self.only_decoder:
             bs,sl,d=embeddings.shape
             gen_len=self.msl-sl
         else:
-            bs,sl,d=embeddings.shape
-            decoder_input_ids=self.tokenizer([" "],return_tensors="pt").input_ids
+            bs,sl=prefix_ids.shape
+            decoder_input_ids=torch.tensor([self.config.decoder_start_token_id])\
+                                   .unsqueeze(0)
             decoder_input_ids=decoder_input_ids.to(self.device)
+
+            # if "bart" in self.model_path:
+            decoder_input_ids=decoder_input_ids[:,:1]
             decoder_input_embedds=self.embedds(decoder_input_ids)
-            # print("decoder embedds shape: ",decoder_input_embedds.shape)
+
             sl=1
             gen_len=self.msl-sl
             

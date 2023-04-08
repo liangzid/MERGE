@@ -117,6 +117,8 @@ def setup_train_args():
                         type=float, required=False,)
     parser.add_argument('--lamda', default=0.5,
                         type=float, required=False,)
+    parser.add_argument('--softmax2quad', default=0,
+                        type=int, required=False,)
     return parser.parse_args()
 
 

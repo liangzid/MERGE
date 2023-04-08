@@ -54,17 +54,19 @@ export using_NEGAEm=0
 ## method 7
 export using_quadacti=1 ##### now add the quadtic option.
 export using_simLN=1
-export lamda=0.75
-export device="3"
+# export lamda=0.75
+export lamda=0.5
+export device="5"
 
 ##############################################################
 
 export weight_decay=0.01
 export dropout_rate=0.4
 export noise=0.7
+export noise=0.25
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}addQuad${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}TestCommonGen${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 

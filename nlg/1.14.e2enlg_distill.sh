@@ -19,14 +19,14 @@ export lr=8e-5
 # export device="cpu"
 export batch_size=4
 # export task="web_nlg"
-# export task="e2e_nlg"
-export task="daily_dialog"
+export task="e2e_nlg"
+# export task="daily_dialog"
 # export task="multiwoz_nlg"
 # export task="common_gen"
 export max_seq_length=128
 
-export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
-# export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs4gpt2/fianlly/"
+# export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
+export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
 
 export stu_ckpt=${teach_ckpt}_stu
 
@@ -40,11 +40,11 @@ export using_NEGAEm=0
 
 ##############################################################
 
-## method 3
-export using_quadacti=0 ##### now add the quadtic option.
-export using_simLN=0
-export lamda=0.75
-export device="7"
+# ## method 3
+# export using_quadacti=0 ##### now add the quadtic option.
+# export using_simLN=0
+# export lamda=0.75
+# export device="7"
 
 # ## method 6
 # export using_quadacti=1 ##### now add the quadtic option.
@@ -52,12 +52,12 @@ export device="7"
 # export lamda=0.5
 # export device="6"
 
-# ## method 7
-# export using_quadacti=0 ##### now add the quadtic option.
-# export using_simLN=1
-# # export lamda=0.25
-# export lamda=0.75
-# export device="5"
+## method 7
+export using_quadacti=1 ##### now add the quadtic option.
+export using_simLN=1
+# export lamda=0.25
+export lamda=0.75
+export device="3"
 
 ##############################################################
 
@@ -67,7 +67,7 @@ export noise=0.7
 # export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}noQuad${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}addQuad${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 

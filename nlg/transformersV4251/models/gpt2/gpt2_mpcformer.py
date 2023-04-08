@@ -10,15 +10,6 @@ Approximate version of vanilla GPT-2
 ======================================================================
 """
 
-
-# ------------------------ Code --------------------------------------
-
-## normal import 
-import json
-from typing import List,Tuple,Dict
-import random
-from pprint import pprint as ppp
-
 import math
 import os
 from dataclasses import dataclass
@@ -31,8 +22,6 @@ from torch.cuda.amp import autocast
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from ...activations import ACT2FN
-from ...newlayerNorm import SimpleLayerNorm
-
 from ...modeling_outputs import (
     BaseModelOutputWithPastAndCrossAttentions,
     CausalLMOutputWithCrossAttentions,
@@ -51,6 +40,8 @@ from ...utils import (
 )
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_gpt2 import GPT2Config
+
+from myutils import softmax_2QUAD,activation_quad
 
 
 logger = logging.get_logger(__name__)
@@ -130,6 +121,7 @@ class GPT2Attention(nn.Module):
     def __init__(self, config, is_cross_attention=False, layer_idx=None):
         super().__init__()
 
+        self.config=config
         max_positions = config.max_position_embeddings
         self.register_buffer(
             "bias",
@@ -167,16 +159,6 @@ class GPT2Attention(nn.Module):
         self.attn_dropout = nn.Dropout(config.attn_pdrop)
         self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
-        ## ======================
-        if hasattr(config,"msl"):
-            self.msl=config.msl
-        else:
-            self.msl=128
-        self.M = nn.Parameter(torch.ones(config.num_attention_heads,
-                                          self.msl,
-                                          self.msl))
-        ## ======================
-
         self.pruned_heads = set()
 
     def prune_heads(self, heads):
@@ -195,10 +177,8 @@ class GPT2Attention(nn.Module):
         self.pruned_heads = self.pruned_heads.union(heads)
 
     def _attn(self, query, key, value, attention_mask=None, head_mask=None):
-
         attn_weights = torch.matmul(query, key.transpose(-1, -2))
 
-        print("Warning: You are using vanilla attention.")
         if self.scale_attn_weights:
             attn_weights = attn_weights / torch.full(
                 [], value.size(-1) ** 0.5, dtype=attn_weights.dtype, device=attn_weights.device
@@ -222,12 +202,11 @@ class GPT2Attention(nn.Module):
             # Apply the attention mask
             attn_weights = attn_weights + attention_mask
 
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
-
-        # shape of attn_weights: bs, num_heads,msl,msl
-
-        # print("-----------")
-        # print("Shape of Attention Weights:",attn_weights.shape)
+        before_attn_weights=attn_weights
+        if self.config.quad_softmax=="1":
+            attn_weights = softmax_2QUAD(dim=-1).forward(attn_weights)
+        else:
+            attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
         attn_weights = attn_weights.type(value.dtype)
@@ -236,78 +215,16 @@ class GPT2Attention(nn.Module):
         # Mask heads if we want to
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
+
+        # print(f"shape of query: {query.shape}")
+        # print(f"shape of value: {value.shape}")
+        # # --------------------------
+        # print(f"shape of attn w: {attn_weights.shape}")
+        
 
         attn_output = torch.matmul(attn_weights, value)
 
-        return attn_output, attn_weights
-
-    def _attnConstant(self, query,key,value, attention_mask=None, head_mask=None):
-
-        # shape of attn_weights: bs, num_heads,msl,msl
-
-        # print("-----------")
-        # print("Shape of Attention Weights:",attn_weights.shape)
-
-        # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op otherwise
-
-        # print(f"query shape: {query.shape}")
-        # print(f"value.shape: {value.shape}")
-
-        # if attention_mask is not None:
-        #     # Apply the attention mask
-        #     attn_weights = attn_weights + attention_mask
-
-        _,_,msl,_=query.shape
-        bs,num_head,sl,d_perhead=value.shape
-        attn_weights = self.M.unsqueeze(0)
-        if bs!=1:
-            attn_weights.repeat(bs,1,1,1)
-
-        attn_weights=attn_weights[:,:,:sl,:sl]
-
-        # print(f"Attn before: {attn_weights}")
-        if not self.is_cross_attention:
-            # if only "normal" attention layer implements causal mask
-            query_length, key_length = query.size(-2), key.size(-2)
-            # print(f"q length: {query_length}")
-            # print(f"k length: {key_length}")
-            causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length].to(torch.bool)
-            mask_value = torch.finfo(attn_weights.dtype).min
-            # mask_value = 0.
-
-            # Need to be a tensor, otherwise we get error: `RuntimeError: expected scalar type float but found double`.
-            # Need to be on the same device, otherwise `RuntimeError: ..., x and y to be on the same device`
-            mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(attn_weights.device)
-            attn_weights = torch.where(causal_mask, attn_weights, mask_value)
-        # print(f"Attn after: {attn_weights}")
-
-        # Mask heads if we want to
-        if head_mask is not None:
-            attn_weights = attn_weights * head_mask
-
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
-
-        attn_weights = attn_weights.type(value.dtype)
-        # print(attn_weights)
-        attn_weights = self.attn_dropout(attn_weights)
-
-        # # print(msl,sl,msl==sl)
-        # if sl==msl: # parallel forward
-        #     # print("the same, using parallel")
-        #     attn_weights=attn_weights[:,:,:sl,:sl]
-        # else:
-        #     print("Unimplements for `generate` function supports.")
-        #     assert 1==0
-        #     # print("generation Mode")
-
-        #     # attn_weights=attn_weights[:, :, sl-1:sl, :sl]
-        #     attn_weights=attn_weights[:,:,:sl,:sl]
-        #     attn_weights=attn_weights[:, :, -1:, :]
-
-        attn_output = torch.matmul(attn_weights,value)
-
-        # print(attn_output)
-
+        # return attn_output, before_attn_weights
         return attn_output, attn_weights
 
     def _upcast_and_reordered_attn(self, query, key, value, attention_mask=None, head_mask=None):
@@ -346,7 +263,10 @@ class GPT2Attention(nn.Module):
             # Apply the attention mask
             attn_weights = attn_weights + attention_mask
 
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+        if self.config.quad_softmax==1:
+            attn_weights = softmax_2QUAD(dim=-1).forward(attn_weights)
+        else:
+            attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         # Downcast (if necessary) back to V's dtype (if in mixed-precision) -- No-Op if otherwise
         if attn_weights.dtype != torch.float32:
@@ -419,17 +339,11 @@ class GPT2Attention(nn.Module):
         if self.reorder_and_upcast_attn:
             attn_output, attn_weights = self._upcast_and_reordered_attn(query, key, value, attention_mask, head_mask)
         else:
-            # print("shape of query: ",query.shape)
-            # print("shape of key: ",key.shape)
-
-            # attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
-            attn_output, attn_weights = self._attnConstant(query,key,value,
-                                attention_mask, head_mask)
+            attn_output, attn_weights = self._attn(query, key, value, attention_mask, head_mask)
 
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         attn_output = self.c_proj(attn_output)
         attn_output = self.resid_dropout(attn_output)
-
 
         outputs = (attn_output, present)
         if output_attentions:
@@ -453,10 +367,7 @@ class GPT2MLP(nn.Module):
         hidden_states = self.c_proj(hidden_states)
         hidden_states = self.dropout(hidden_states)
         return hidden_states
-    # def constrain(self,x):
-    #     x[x>10]=10
-    #     x[x<-10]=-10
-    #     return x
+
 
 class GPT2Block(nn.Module):
     def __init__(self, config, layer_idx=None):
@@ -464,30 +375,13 @@ class GPT2Block(nn.Module):
         hidden_size = config.hidden_size
         inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
 
-        if config.layerNormType=="sim":
-            self.ln_1 = SimpleLayerNorm(hidden_size)
-            # self.ln_1 = nn.LayerNorm(hidden_size,
-            #                          eps=config.layer_norm_epsilon)
-        else:
-            self.ln_1 = nn.LayerNorm(hidden_size,eps=config.layer_norm_epsilon)
-
+        self.ln_1 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
         self.attn = GPT2Attention(config, layer_idx=layer_idx)
-
-        if config.layerNormType=="sim":
-            # self.ln_2 = SimpleLayerNorm(hidden_size)
-            self.ln_2 = nn.LayerNorm(hidden_size,
-                                     eps=config.layer_norm_epsilon)
-        else:
-            self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        self.ln_2 = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
         if config.add_cross_attention:
             self.crossattention = GPT2Attention(config, is_cross_attention=True, layer_idx=layer_idx)
-            if config.layerNormType=="sim":
-                self.ln_cross_attn = SimpleLayerNorm(hidden_size)
-                # self.ln_cross_attn = nn.LayerNorm(hidden_size,
-                #                 eps=config.layer_norm_epsilon)
-            else:
-                self.ln_cross_attn = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+            self.ln_cross_attn = nn.LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
         self.mlp = GPT2MLP(inner_dim, config)
 
@@ -503,9 +397,7 @@ class GPT2Block(nn.Module):
         output_attentions: Optional[bool] = False,
     ) -> Union[Tuple[torch.Tensor], Optional[Tuple[torch.Tensor, Tuple[torch.FloatTensor, ...]]]]:
         residual = hidden_states
-        # print("residual ",residual)
         hidden_states = self.ln_1(hidden_states)
-        # print("hidden states ",hidden_states)
         attn_outputs = self.attn(
             hidden_states,
             layer_past=layer_past,
@@ -586,10 +478,6 @@ class GPT2PreTrainedModel(PreTrainedModel):
         elif isinstance(module, nn.LayerNorm):
             module.bias.data.zero_()
             module.weight.data.fill_(1.0)
-        elif isinstance(module,SimpleLayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
-            
 
         # Reinitialize selected weights subject to the OpenAI GPT-2 Paper Scheme:
         #   > A modified initialization which accounts for the accumulation on the residual path with model depth. Scale
@@ -801,11 +689,7 @@ class GPT2Model(GPT2PreTrainedModel):
 
         self.drop = nn.Dropout(config.embd_pdrop)
         self.h = nn.ModuleList([GPT2Block(config, layer_idx=i) for i in range(config.num_hidden_layers)])
-        if config.layerNormType=="sim":
-            # self.ln_f = SimpleLayerNorm(self.embed_dim)
-            self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
-        else:
-            self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
+        self.ln_f = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_epsilon)
 
         # Model parallel
         self.model_parallel = False
@@ -884,9 +768,6 @@ class GPT2Model(GPT2PreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPastAndCrossAttentions]:
-
-        # print(f"input ids: {input_ids}")
-
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -1673,39 +1554,3 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
             hidden_states=transformer_outputs.hidden_states,
             attentions=transformer_outputs.attentions,
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## running entry
-if __name__=="__main__":
-    main()
-    print("EVERYTHING DONE.")
-
-
