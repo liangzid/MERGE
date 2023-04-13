@@ -4,6 +4,7 @@
 #+email: liangzid@stu.xjtu.edu.cn
 #+latex_class: elegantpaper
 
+--------------------------------past results
 * 提升效果-验证想法的章节
 ** vary epochs 
 
@@ -206,6 +207,33 @@ lamda是loss的权重，即 $L=(1-lamda)*otherloss+lamda*wordCosLoss*$
 |   0.9 | 0.2543 | 0.3952 |
 |-------+--------+--------|
 
+* 提升效果的章节：新阶段
+
+** daily dialogue 训练loss分析
+
+| method                           | loss(st200) | bertscore |
+|----------------------------------+-------------+-----------|
+| me3+3e-5+dp0.4+noise0.7          |      1.8754 |           |
+| me3+8e-5+dp0.4+noise0.7          |      0.5847 |           |
+| me7(noquad)+8e-5+dp0.4+noise0.7  |      4.6616 |           |
+| me7(quad)+8e-5+dp0.4+noise0.7    |      3.5962 |           |
+| me7(quad)+3e-5+dp0.4+noise0.7    |      4.2256 |           |
+| me7(quad)+3e-5+dp0.4+noise0.7ca  |      5.1307 |           |
+| me7(quad)+3e-6+dp0.4+noise0.7    |      5.1423 |           |
+| me7(quad)+8e-5+dp0.4+noise0.7bs8 |      3.8446 |           |
+| me7(quad)+8e-5+dp0.4+bs12        |      4.2549 |           |
+| me7 dp 0.25                      |      3.9986 |           |
+| me7 dp 0.1                       |      4.6213 |           |
+| me7 dp 0.7                       |      4.8871 |           |
+| me7 dp 0.9                       |      4.5613 |           |
+| me7 dp0.7 noise 0.0              |      4.8047 |           |
+| me7  simln0                      |      3.2612 |           |
+| me7 noweight                     |      4.5522 |           |
+| me7 noweight                     |      3.9165 |           |
+|                                  |             |           |
+
+
+
 
 * 总体结果表格
 ** WEB_NLG
@@ -279,7 +307,6 @@ lamda是loss的权重，即 $L=(1-lamda)*otherloss+lamda*wordCosLoss*$
 |---------+--------+--------+---------+---------+--------+--------+--------+--------|
 
 
-
 * 总体结果表格 new
 
 ** MultiWoz2.1 NLG
@@ -319,7 +346,6 @@ lamda是loss的权重，即 $L=(1-lamda)*otherloss+lamda*wordCosLoss*$
 
 问题：
 1. 能否测试一下使用正常的activation function，但是使用constant Matrix的推理速度和训练效果？
-
 
 * appendix
 
@@ -370,7 +396,6 @@ x={'bleu': {'bleu': 0.5001423160755862, 'precisions': [0.8378426592138907, 0.626
 
 
 
-
 * New appdendix
 
 ** multiwoz nlg
@@ -378,3 +403,14 @@ x={'bleu': {'bleu': 0.5001423160755862, 'precisions': [0.8378426592138907, 0.626
 *** t5 original
 
 {'bleu': {'bleu': 0.3188210300794158, 'precisions': [0.5232476451275287, 0.36435085638021797, 0.272415964128315, 0.19894279300078016], 'brevity_penalty': 1.0, 'length_ratio': 1.253689224409095, 'translation_length': 69749, 'reference_length': 55635}, 'meteor': {'meteor': 0.5225416548176837}, 'chrf': {'score': 45.02296440375493, 'char_order': 6, 'word_order': 0, 'beta': 2}, 'ter': {'res': 'empty, with error.'}, 'nist_mt': {'nist_mt': 4.243508240083943}, 'rouge': {'rouge1': 0.4846778941780512, 'rouge2': 0.25982614415796634, 'rougeL': 0.4215551156167472, 'rougeLsum': 0.4218329549818247}, 'bleurt': -0.6187268173822758, 'bert_score': tensor(0.9140), 'bart_score': -2.8915836795353127}
+
+
+
+* new results
+--------------------------------new results
+
+** 高epoch是否会带来提升？在commongen上进行实验
+| epoch | final valloss | bertscore |
+|-------+---------------+-----------|
+|       |               |           |
+**  寻找其他合适的NLG任务

@@ -66,16 +66,21 @@ def train(args, tmodel, smodel,prolayer,
     no_save_差不多model=True
     ii=0
     overall_step=0.
+    step_break=0
     tqdm1=tqdm(total=EPOCH)
     past_losses=10000
     train_past_l=1e4
     for epoch in range(EPOCH):
         ii+=1
         tqdm1.update(1)
-        tqdm2=tqdm(total=len(train_loader))
-
+        tqdm2=tqdm(total=args.train_step)
+        if step_break==1:
+            break
         print(f"-------EPOCH {epoch}-------------")
         for i,x in enumerate(train_loader):
+            if overall_step>args.train_step:
+                step_break=1
+                break
             embedds=smodel.get_input_embeddings()
             if only_decoder:
                 inps,atts=x
@@ -93,7 +98,7 @@ def train(args, tmodel, smodel,prolayer,
                 emd_inps=embedds(inps)
                 noise=(torch.rand(emd_inps.shape)-0.5)*2/(1/args.noise)
                 # mask p% noise
-                p=0.10
+                p=0.0
                 mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
                 noise=noise*mask_noise
                 noise=noise.to(emd_inps.device)
@@ -183,7 +188,7 @@ def train(args, tmodel, smodel,prolayer,
             huber_loss=0.
             nega_loss=0.
             cosineEmbedLoss=nn.CosineEmbeddingLoss(reduction="mean")
-            huberloss=nn.HuberLoss(reduction="mean",delta=0.01)
+            # huberloss=nn.HuberLoss(reduction="mean",delta=0.01)
             # 1. first get the label embeddings. 
             if only_decoder:
                 label_embedds=embedds(inps) # expect shape: bs,sl,d
@@ -321,7 +326,7 @@ def main():
     args=setup_train_args()
     torch.autograd.set_detect_anomaly(True)
 
-    assert args.teach_ckpt!=args.stu_ckpt
+    # assert args.teach_ckpt!=args.stu_ckpt
     
     EPOCH = args.epochs
     LR = args.lr
@@ -358,11 +363,11 @@ def main():
         tmodel = AutoModelForCausalLM.from_pretrained(args.teach_ckpt)
     print("TEA Original embedding size: ",tmodel.get_input_embeddings().weight.shape[0])
     ttokenizer = AutoTokenizer.from_pretrained(args.teach_ckpt,
-                            # truncation="left" # left part truncation
+                            truncation="left" # left part truncation
                                                )
     tmodel.resize_token_embeddings(len(ttokenizer))
 
-    config=AutoConfig.from_pretrained(args.stu_ckpt)
+    config=AutoConfig.from_pretrained(args.teach_ckpt)
     if args.using_quadacti==1:
         config.activation_function="quad" # set to quad activation
     else:
@@ -376,19 +381,18 @@ def main():
     else:
         config.quad_softmax="0"
         
-    # config.save_pretrained(args.stu_save_ckpt)
-    config.save_pretrained(args.stu_ckpt)
+    config.save_pretrained(args.stu_save_ckpt)
     
-    if "Constant" in args.stu_ckpt or args.stu_ckpt!=args.teach_ckpt or args.using_quadacti==1 or args.using_simLN==1:
+    if "Constant" in args.stu_ckpt or args.using_quadacti==1 or args.using_simLN==1:
         print("Using new structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5New.\
-                from_pretrained(args.stu_ckpt)
+                from_pretrained(args.stu_ckpt,config=args.stu_save_ckpt)
         elif "bart" in args.teach_ckpt:
             smodel = BartNew.\
-                from_pretrained(args.stu_ckpt)
+                from_pretrained(args.stu_ckpt,config=args.stu_save_ckpt)
         else:
-            smodel = BFSCNew.from_pretrained(args.stu_ckpt)
+            smodel = BFSCNew.from_pretrained(args.stu_ckpt,config=args.stu_save_ckpt)
 
     elif (args.using_simLN==0 and args.using_quadacti==0) or "WithEm" in args.stu_save_ckpt:
         print("Using vanilla structure.")
@@ -405,8 +409,8 @@ def main():
 
     # print(smodel.transformer.h[2].attn.M)
 
-    stokenizer = AutoTokenizer.from_pretrained(args.stu_ckpt)
     tokenizer=ttokenizer
+    stokenizer=tokenizer
     tokenizer.save_pretrained(args.stu_save_ckpt)
     tokenizer.save_pretrained(args.stu_save_ckpt+"trainmodel")
     smodel.resize_token_embeddings(len(tokenizer))

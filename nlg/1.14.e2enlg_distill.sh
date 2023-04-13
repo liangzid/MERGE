@@ -12,12 +12,12 @@
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=3
+export epochs=7
 # export lr=3e-5
 export lr=8e-5
 # export lr=3e-4
 # export device="cpu"
-export batch_size=4
+export batch_size=32
 # export task="web_nlg"
 export task="e2e_nlg"
 # export task="daily_dialog"
@@ -26,9 +26,9 @@ export task="e2e_nlg"
 export max_seq_length=128
 
 # export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
-export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
+export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/"
 
-export stu_ckpt=${teach_ckpt}_stu
+export stu_ckpt=${teach_ckpt}
 
 export using_entropy=1
 export using_softLabel=0
@@ -53,11 +53,11 @@ export using_NEGAEm=0
 # export device="6"
 
 ## method 7
-export using_quadacti=1 ##### now add the quadtic option.
+export using_quadacti=0 ##### now add the quadtic option.
 export using_simLN=1
 # export lamda=0.25
 export lamda=0.75
-export device="3"
+export device="6"
 
 ##############################################################
 

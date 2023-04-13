@@ -492,9 +492,9 @@ def main():
     EPOCH = 3
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:2")
+    DEVICE = torch.device("cuda:5")
     # DEVICE = torch.device("cpu")
-    BATCH_SIZE =4
+    BATCH_SIZE =32
     batch_size=BATCH_SIZE
     task_ls=["web_nlg","e2e_nlg"]
     subtaskls=["release_v2",None]
@@ -502,8 +502,8 @@ def main():
     # task="web_nlg"
     # subtask="release_v2"
 
-    task="e2e_nlg"
-    subtask=None
+    # task="e2e_nlg"
+    # subtask=None
 
     # task="multiwoz_nlg"
     # subtask=None
@@ -511,14 +511,14 @@ def main():
     # task="daily_dialog"
     # subtask=None
 
-    # task="common_gen"
-    # subtask=None
+    task="common_gen"
+    subtask=None
 
     prefix_path="/home/liangzi/models/"
 
-    # model_name="gpt2/"
+    model_name="gpt2/"
     # model_name="t5-small/"
-    model_name="bart-base/"
+    # model_name="bart-base/"
     print(model_name)
     frmpth=prefix_path+model_name
 

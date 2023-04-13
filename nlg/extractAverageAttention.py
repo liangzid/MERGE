@@ -130,6 +130,7 @@ def calAttnMat(task,subset,ckpt_path,ckpt_save_p):
                             output_attentions=True).attentions
 
             for j,a in enumerate(atts):
+                print(a.shape)
                 # print("attention shape:>>>",a.shape) # 1,12,128,128
                 # print(j)
                 attentions[j]+=a[0]
@@ -211,12 +212,15 @@ def calAttnMat(task,subset,ckpt_path,ckpt_save_p):
 
 def main():
     # task="web_nlg"
-    task="multiwoz_nlg"
+    # task="multiwoz_nlg"
+    # task="daily_dialog"
+    # task="e2e_nlg"
+    task="common_gen"
     subset=None
     # ckpt_path="./save_models/saved_bert-tiny_taskcola-epoch30-lr3e-05-bs32"
     # ckpt_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1"
     # ckpt_path="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
-    ckpt_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
+    ckpt_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/"
     # ckpt_save_p=ckpt_path+"___withConstantMatrixInitLN"
     ckpt_save_p=ckpt_path+"___withConstantMatrix"
     calAttnMat(task,subset,ckpt_path,ckpt_save_p)

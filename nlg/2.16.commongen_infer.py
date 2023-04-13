@@ -1,15 +1,14 @@
 """
 ======================================================================
-2.14.367_THREEINFER ---
+2.16.COMMONGEN_INFER ---
 
-Three methods inference.
+Inference for common gen.
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created: 29 三月 2023
+    Created: 12 四月 2023
 ======================================================================
 """
-
 
 # ------------------------ Code --------------------------------------
 
@@ -26,19 +25,22 @@ from collections import OrderedDict
 
 def main():
 
+    # ## 2. E2E NLG
+    # task="e2e_nlg"
+    # subset=None
+
     # ## 2. dailydialog
     # task="daily_dialog"
     # subset=None
 
+    ## 5. common gen
+    task="common_gen"
+    subset=None
+
     # ## 3. multiwoz 2.1 nlg
     # task="multiwoz_nlg"
     # subset=None
-    withsep=True
-    # withsep=False
-
-    ## 4. e2e nlg
-    task="e2e_nlg"
-    subset=None
+    # # withsep=False
 
     # ## 4. web nlg
     # task="web_nlg"
@@ -49,33 +51,60 @@ def main():
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4bart-base/"
 
 
-    ## 3
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/_stuaddQuad1000104008e-50.010.40.70.75trainmodel/"
+    withsep=True
+
+    # 3
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stunoQuad1000104003e-50.010.40.70.75trainmodel/"
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stunoQuad1000104008e-50.010.40.70.75trainmodel/"
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noQuad1000104118e-50.010.40.70.75epoch0/"
+    # model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/_stunoQuad1000104118e-50.010.40.70.75epoch2/"
+    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75trainmodel/"
 
 
-    # # 6
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/_stuaddQuad1000104118e-50.010.40.70.5finally/"
 
-    # ## 7
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/_stuaddQuad1000104118e-50.010.40.70.75finally/"
-    # model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/addQuad1010104118e-50.010.40.70.75finally/"
-    # model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/addQuad1000104018e-50.010.40.70.75finally/"
-    model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/"
+
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104018e-50.010.40.70.75finally/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104018e-50.010.40.70.75finally/"
+    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104013e-40.010.60.70.75finally/"
+    # cuda_num=1
+    cuda_num=0
+
+
+    # # # 6
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.5finally/"
+    # cuda_num=6
+
+    # # ## 7
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs1gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
+    # cuda_num=6
+
+    ## -------------- trash-------------------------------------------------
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104113e-50.010.40.70.75trainmodel/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs4gpt2/_stuTestCommonGen1000104118e-50.010.40.250.5finally/"
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.75epoch1/"
+    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
+    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.20.25finally/"
+    ## -------------- trash-------------------------------------------------
+    
 
     gentype="ER"
     # gentype="vanilla"
 
     ## ---------------------------------------------
-    cuda_num=5
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True,
-                         # approximation=False,
+                         approximation=False,
                          use_filter=1,
                          )
 
-    te=getTestDataSet(infermodel.tokenizer,split="test",
-                             max_sentence_length=infermodel.msl//2,
-                             task=task,subset=subset,withsep=withsep)
+    if task=="common_gen":
+        te=getTestDataSet(infermodel.tokenizer,split="validation",
+                                max_sentence_length=infermodel.msl//2,
+                                task=task,subset=subset,withsep=withsep)
+    else:
+        te=getTestDataSet(infermodel.tokenizer,split="test",
+                                max_sentence_length=infermodel.msl//2,
+                                task=task,subset=subset,withsep=withsep)
 
     va,valabels=te
     seqls=va
@@ -128,17 +157,7 @@ def main():
         print(res)
 
 
-
-
-
-
-
-
-
-
 ## running entry
 if __name__=="__main__":
     main()
     print("EVERYTHING DONE.")
-
-

@@ -12,12 +12,13 @@
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=3
-# export lr=3e-5
+export epochs=3000
+export step=50000
+# export lr=8e-4
 export lr=8e-5
 # export lr=3e-4
 # export device="cpu"
-export batch_size=4
+export batch_size=16
 # export task="web_nlg"
 # export task="e2e_nlg"
 export task="daily_dialog"
@@ -26,9 +27,12 @@ export task="daily_dialog"
 export max_seq_length=128
 
 export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
+
+# export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs1bart-base/6gpt2/"
 # export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs4gpt2/fianlly/"
 
-export stu_ckpt=${teach_ckpt}_stu
+export stu_ckpt=${teach_ckpt}
+# export stu_ckpt=${teach_ckpt}___withConstantMatrix/
 
 export using_entropy=1
 export using_softLabel=0
@@ -40,11 +44,11 @@ export using_NEGAEm=0
 
 ##############################################################
 
-## method 3
-export using_quadacti=0 ##### now add the quadtic option.
-export using_simLN=0
-export lamda=0.75
-export device="7"
+# ## method 3
+# export using_quadacti=0 ##### now add the quadtic option.
+# export using_simLN=0
+# export lamda=0.75
+# export device="7"
 
 # ## method 6
 # export using_quadacti=1 ##### now add the quadtic option.
@@ -52,22 +56,22 @@ export device="7"
 # export lamda=0.5
 # export device="6"
 
-# ## method 7
-# export using_quadacti=0 ##### now add the quadtic option.
-# export using_simLN=1
-# # export lamda=0.25
-# export lamda=0.75
-# export device="5"
+## method 7
+export using_quadacti=1 ##### now add the quadtic option.
+export using_simLN=1
+# export lamda=0.25
+export lamda=0.75
+export device="0"
 
 ##############################################################
 
 export weight_decay=0.01
-export dropout_rate=0.4
+export dropout_rate=0.6
 export noise=0.7
 # export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}noQuad${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}manystep${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -76,6 +80,7 @@ export board_name=$stu_save_ckpt
 ${python} train_slide.py \
 	--train=1 \
 	--epochs=${epochs} \
+	--train_step=${step} \
 	--lr=${lr} \
 	--cuda_num=${device} \
 	--batch_size=${batch_size} \
@@ -99,23 +104,6 @@ ${python} train_slide.py \
 	--dropout_rate=${noise}\
 	--lamda=${lamda}\
 	--root_dir=$root_dir
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 echo "RUNNING 1.12.dailydialog_distill.sh DONE."
 # 1.12.dailydialog_distill.sh ends here

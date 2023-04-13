@@ -18,14 +18,14 @@ class softmax_2QUAD(nn.Module):
         quad = (x+5) * (x+5)
         return quad / quad.sum(dim=self.dim, keepdims=True)
 
-class activation_quad(cnn.Module):
-    def __init__(self):
-        super().__init__()
-        self.first_coef = torch.tensor([0.125]).item()
-        self.second_coef = torch.tensor([0.5]).item()
-        self.third_coef = torch.tensor([0.25]).item()
-        self.pow = torch.tensor([2]).item()
+# class activation_quad(cnn.Module):
+#     def __init__(self):
+#         super().__init__()
+#         self.first_coef = torch.tensor([0.125]).item()
+#         self.second_coef = torch.tensor([0.5]).item()
+#         self.third_coef = torch.tensor([0.25]).item()
+#         self.pow = torch.tensor([2]).item()
      
-    def forward(self, x):
-        return self.first_coef*x*x + self.second_coef*x + self.third_coef
-        #return x*x
+#     def forward(self, x):
+#         return self.first_coef*x*x + self.second_coef*x + self.third_coef
+#         #return x*x

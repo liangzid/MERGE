@@ -61,6 +61,8 @@ def setup_train_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', default=5, type=int,
                         required=False,)
+    parser.add_argument('--train_step', default=1e6, type=int,
+                        required=False,)
     parser.add_argument('--lr', default=3e-4, type=float,
                         required=False,)
     parser.add_argument('--cuda_num', default='6', type=str, required=False)

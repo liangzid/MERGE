@@ -26,8 +26,8 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn import CrossEntropyLoss
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel
-from torchvision.transforms import Compose as ComposeTransformation
-import tensorboardX
+# from torchvision.transforms import Compose as ComposeTransformation
+# import tensorboardX
 
 
 class ProjecLayer(nn.Module):

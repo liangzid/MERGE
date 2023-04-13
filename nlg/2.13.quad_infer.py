@@ -76,7 +76,8 @@ def main():
     # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/others_1000104118e-50.010.40.70.5finally/"
 
     ## ER+CM+simLN
-    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.70.75finally/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75epoch0/"
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75finally/"
     # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixOnlyCM1000104018e-50.010.40.70.75epoch2/"
     
 
@@ -127,16 +128,16 @@ def main():
         print(res)
 
     else:
-        # newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
+        newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
 
         if subset is None:
             genpath=model_path+task+"embedresend.json"
         else:
             genpath=model_path+task+subset+"embedresend.json"
 
-        # with open(genpath, 'w',encoding='utf8') as f:
-        #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
-        # print("res save done.")
+        with open(genpath, 'w',encoding='utf8') as f:
+            json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
+        print("res save done.")
 
         # from collections import OrderedDict
         with open(genpath, 'r',encoding='utf8') as f:

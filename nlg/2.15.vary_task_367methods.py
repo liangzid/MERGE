@@ -26,13 +26,13 @@ from collections import OrderedDict
 
 def main():
 
-    ## 2. dailydialog
-    task="e2e_nlg"
-    subset=None
-
-    # ## 2. dailydialog
-    # task="daily_dialog"
+    # ## 2. E2E NLG
+    # task="e2e_nlg"
     # subset=None
+
+    ## 2. dailydialog
+    task="daily_dialog"
+    subset=None
 
     # ## 5. common gen
     # task="common_gen"
@@ -53,17 +53,24 @@ def main():
 
 
     withsep=True
-    # # 3
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104008e-50.010.40.70.75finally/"
-    # cuda_num=5
+
+    # 3
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stunoQuad1000104003e-50.010.40.70.75trainmodel/"
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stunoQuad1000104008e-50.010.40.70.75trainmodel/"
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noQuad1000104118e-50.010.40.70.75epoch0/"
+    # model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/_stunoQuad1000104118e-50.010.40.70.75epoch2/"
+    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75trainmodel/"
+    model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/testLeftTruncation1000104018e-50.010.40.70.75finally/"
+    cuda_num=2
 
 
     # # # 6
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.5finally/"
     # cuda_num=6
 
-    # ## 7
-    model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs1gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
+    # # ## 7
+    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs1gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
+    # cuda_num=6
 
     ## -------------- trash-------------------------------------------------
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104113e-50.010.40.70.75trainmodel/"
@@ -72,7 +79,6 @@ def main():
     # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
     # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.20.25finally/"
     ## -------------- trash-------------------------------------------------
-    cuda_num=6
     
 
     gentype="ER"
@@ -125,16 +131,16 @@ def main():
         print(res)
 
     else:
-        # newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
+        newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
 
         if subset is None:
             genpath=model_path+task+"embedresend.json"
         else:
             genpath=model_path+task+subset+"embedresend.json"
 
-        # with open(genpath, 'w',encoding='utf8') as f:
-        #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
-        # print("res save done.")
+        with open(genpath, 'w',encoding='utf8') as f:
+            json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
+        print("res save done.")
 
         # from collections import OrderedDict
         with open(genpath, 'r',encoding='utf8') as f:

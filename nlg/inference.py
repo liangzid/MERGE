@@ -76,13 +76,16 @@ class Inference:
                  ):
 
         device = 'cuda:{}'.format(cuda_num) if cuda else 'cpu'
+        if cuda_num=="cpu":
+            device="cpu"
         # device="cpu"
         self.device = device
         print('using device:{}'.format(device))
         # os.environ["CUDA_VISIBLE_DEVICES"] ="6"
         
         self.model_path=model_path
-        bla_tokenizer = AutoTokenizer.from_pretrained(model_path)
+        bla_tokenizer = AutoTokenizer.from_pretrained(model_path,
+                                                      truncation="left")
         text="<|sep|>"
         # print(bla_tokenizer(text))
         self.tokenizer = bla_tokenizer
@@ -94,10 +97,11 @@ class Inference:
             # print(config.activation_function)
             # print(model_path)
             # print(config)
-            if config.activation_function=="quad":
+            if config.activation_function=="quad" or config.layerNormType=="sim":
                 approximation=True
         except Exception:
             print("no activation function founded.")
+
         self.use_filter=use_filter
         self.config=config
 
@@ -156,6 +160,7 @@ class Inference:
         print("INFERENCE-MODEL-PATH: {}".format(model_path))
 
         self.decoder.resize_token_embeddings(len(bla_tokenizer))
+        print(self.tokenizer)
         
         self.embedds=self.decoder.get_input_embeddings()
         print("model loading done...")
@@ -184,38 +189,38 @@ class Inference:
         # repetition_penalty=2.5
         self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
-        print(">> Waiting the NLG metrics loading...")
-        t1=time.time()
-        ## calculate the running examples.
-        self.metrics_ls=["bleu","meteor","chrf","ter",
-                                  "bertscore","bleurt",
-                   "nist_mt","meteor","rouge"]
-        self.metrics_ls=["bleu","meteor","chrf","ter",
-                   "nist_mt","meteor","rouge"]
-        self.multi_ref_ls=["bleu","ter","nist_mt"]
-        self.metricsModel_ls=[]
-        for metric in self.metrics_ls:
-            if metric=="bleurt":
-                self.metricsModel_ls.append(evaluate.load(metric,
-                                    module_type="metric"))
-            elif metric=="chrf":
-                self.metricsModel_ls.append(evaluate.load(metric,
-                                    word_order=2))
-            else:
-                self.metricsModel_ls.append(evaluate.load(metric))
-        t2=time.time()
-        print(f"time cost in load original metrics: {t2-t1}")
+        # print(">> Waiting the NLG metrics loading...")
+        # t1=time.time()
+        # ## calculate the running examples.
+        # self.metrics_ls=["bleu","meteor","chrf","ter",
+        #                           "bertscore","bleurt",
+        #            "nist_mt","meteor","rouge"]
+        # self.metrics_ls=["bleu","meteor","chrf","ter",
+        #            "nist_mt","meteor","rouge"]
+        # self.multi_ref_ls=["bleu","ter","nist_mt"]
+        # self.metricsModel_ls=[]
+        # for metric in self.metrics_ls:
+        #     if metric=="bleurt":
+        #         self.metricsModel_ls.append(evaluate.load(metric,
+        #                             module_type="metric"))
+        #     elif metric=="chrf":
+        #         self.metricsModel_ls.append(evaluate.load(metric,
+        #                             word_order=2))
+        #     else:
+        #         self.metricsModel_ls.append(evaluate.load(metric))
+        # t2=time.time()
+        # print(f"time cost in load original metrics: {t2-t1}")
 
-        print(">> NLG metrics loading DONE.")
+        # print(">> NLG metrics loading DONE.")
         
 
-        self.BartScorer=BARTScorer(device="cuda:0",max_length=1024,
-                            checkpoint="facebook/bart-large-cnn")
-        self.BartScorer.load(path="/home/liangzi/BARTscoremain/bart_score.pth")
-        print(">> Bart score checkpoint load DONE.")
+        # self.BartScorer=BARTScorer(device="cuda:0",max_length=1024,
+        #                     checkpoint="facebook/bart-large-cnn")
+        # self.BartScorer.load(path="/home/liangzi/BARTscoremain/bart_score.pth")
+        # print(">> Bart score checkpoint load DONE.")
 
-        # BLEURT
-        self.bleurt=evaluate.load("bleurt",module_type="metric")
+        # # BLEURT
+        # self.bleurt=evaluate.load("bleurt",module_type="metric")
 
 
         # t1=time.time()
@@ -244,6 +249,7 @@ class Inference:
 
                     ## using self-defined forward function
                     outputs=self.gen_greedyUgly(input_ids)
+
                     # outputs=self.gen_virtualEmbedReSend(input_ids)
                     # outputs=self.gen_embedResend(input_ids)
                 else:
@@ -323,6 +329,7 @@ class Inference:
         """
         one_refs=[x[0] for x in refs]
         big_res_dict={}
+        self.metrics_ls=[]
         for i,m in enumerate(self.metrics_ls):
             try:
                 # if m=="bleurt":
@@ -340,17 +347,21 @@ class Inference:
                 print("Error info:")
                 print(Exception)
                 print("------------------")
-        x=self.bleurt.compute(predictions=hyps,
-                                references=one_refs)
-        print(x)
-        big_res_dict["bleurt"]=sum(x['scores'])/len(hyps)
-        print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
+
+        # x=self.bleurt.compute(predictions=hyps,
+        #                         references=one_refs)
+        # print(x)
+        # big_res_dict["bleurt"]=sum(x['scores'])/len(hyps)
+        # print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
+
         x=bertscore(hyps,refs,lang="en",verbose=True)
         # print("bertscore res:",x)
         big_res_dict["bert_score"]=sum(x[2])/len(hyps)
-        # x=self.BartScorer.multi_ref_score(hyps,one_refs,agg="max")
-        x=self.BartScorer.score(hyps,one_refs)
-        big_res_dict["bart_score"]=sum(x)/len(hyps)
+
+        # # x=self.BartScorer.multi_ref_score(hyps,one_refs,agg="max")
+        # x=self.BartScorer.score(hyps,one_refs)
+        # big_res_dict["bart_score"]=sum(x)/len(hyps)
+
         return big_res_dict
 
     def evaluate2(self,hyps,refs):
@@ -449,6 +460,9 @@ class Inference:
                 if self.only_decoder:
                     newem=output.hidden_states[-1][:,-1:,:]
                     newem=self.projection(newem)
+                    # noise=(torch.rand(newem.shape)-0.5)*2/(1/0.7)
+                    # mask_noise=torch.bernoulli(torch.ones_like(noise)*(0.6))
+                    # newem+=newem
                     # print(embeddings.shape)
                     embeddings=torch.cat([embeddings,newem
                                           ],dim=1) 

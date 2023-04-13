@@ -17,7 +17,7 @@ export root_dir="/home/liangzi/mpcGen/nlg/"
 export epochs=3
 export lr=8e-5
 export device="4"
-export batch_size=4
+export batch_size=32
 export task="multiwoz_nlg"
 export max_seq_length=128
 
@@ -38,17 +38,16 @@ export using_wordEmbedMSE=0
 export using_COSEm=1
 export using_NEGAEm=0
 # export using_quadacti=0
-export using_quadacti=1 ##### now add the quadtic option.
-
+export using_quadacti=0 ##### now add the quadtic option.
 export using_simLN=1
 export weight_decay=0.01
 export dropout_rate=0.4
 export noise=0.7
-# export lamda=0.75
-export lamda=0.5
+export lamda=0.75
+# export lamda=0.5
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}others_${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}noQuad${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -80,15 +79,6 @@ ${python} train_slide.py \
 	--dropout_rate=${noise}\
 	--lamda=${lamda}\
 	--root_dir=$root_dir
-
-
-
-
-
-
-
-
-
 
 echo "RUNNING 1.8.__NewmultiwozOthers_distill.sh DONE."
 # 1.8.__NewmultiwozOthers_distill.sh ends here
