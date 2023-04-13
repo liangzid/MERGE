@@ -489,10 +489,10 @@ def testNew(test_loader,model,task,batch_size=32,
     return losses
 
 def main():
-    EPOCH = 3
+    EPOCH = 6
     # LR = 5e-5 
     LR = 5e-5 
-    DEVICE = torch.device("cuda:5")
+    DEVICE = torch.device("cuda:0")
     # DEVICE = torch.device("cpu")
     BATCH_SIZE =32
     batch_size=BATCH_SIZE
@@ -505,20 +505,20 @@ def main():
     # task="e2e_nlg"
     # subtask=None
 
-    # task="multiwoz_nlg"
-    # subtask=None
+    task="multiwoz_nlg"
+    subtask=None
 
     # task="daily_dialog"
     # subtask=None
 
-    task="common_gen"
-    subtask=None
+    # task="common_gen"
+    # subtask=None
 
     prefix_path="/home/liangzi/models/"
 
-    model_name="gpt2/"
+    # model_name="gpt2/"
     # model_name="t5-small/"
-    # model_name="bart-base/"
+    model_name="bart-base/"
     print(model_name)
     frmpth=prefix_path+model_name
 

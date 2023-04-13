@@ -25,9 +25,11 @@ from torch.nn import CrossEntropyLoss
 
 from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
+from transformersV4251.models.gpt2.gpt2_mpcformer import \
+    GPT2LMHeadModel as mpcGPT2
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
-from transformersV4251.models.bart.modeling_bart import \
+from transformersV4251.models.bart.new_bart import \
     BartForConditionalGeneration as BartNew
 
 from transformers import GPT2LMHeadModel
@@ -114,6 +116,7 @@ def train(args, tmodel, smodel,prolayer,
                                 labels=inps,
                                 output_hidden_states=True)
             else:
+                #! bug finded: NO ER in this procedure.
                 toutputs=tmodel(inps,attention_mask=atts,
                                 decoder_input_ids=outs,
                                 labels=outs,
@@ -133,7 +136,6 @@ def train(args, tmodel, smodel,prolayer,
             if args.using_entropy==1:
                 entropy_loss1 = outputs.loss
                 distri=outputs.logits # we cannot use SOFTMAX!
-                # print(f"distri: {distri.shape}")
                 if only_decoder:
                     entropy_loss=loss_func(distri[:,:-1,:].reshape(bs*(msl-1),-1),
                                         inps[:,1:].reshape(-1))
@@ -377,13 +379,23 @@ def main():
     else:
         config.layerNormType="no-sim" # set to quad activation
     if args.softmax2quad==1:
-        config.quad_softmax="1"
+        # config.quad_softmax="quad"
+        config.quad_softmax="relu"
+        # config.quad_softmax="linear"
     else:
         config.quad_softmax="0"
         
     config.save_pretrained(args.stu_save_ckpt)
-    
-    if "Constant" in args.stu_ckpt or args.using_quadacti==1 or args.using_simLN==1:
+
+    print(f"config softmax2quad: {args.softmax2quad}")
+    if args.softmax2quad==1:
+        if 1==0:
+            pass
+        else:
+            print(">>>>>Using MPCFORMER GPT-2")
+            smodel = mpcGPT2.from_pretrained(args.stu_ckpt,
+                                config=args.stu_save_ckpt)
+    elif "Constant" in args.stu_ckpt or args.using_quadacti==1 or args.using_simLN==1:
         print("Using new structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5New.\
@@ -457,17 +469,30 @@ def main():
     teloader=DataLoader(tes,batch_size=batch_size,
                             shuffle=True,drop_last=True)
 
+    #============================================
     if args.train==1:
-        #============================================
-        train(args,tmodel=tmodel,smodel=smodel,prolayer=prolayer,
-              optimizer1=optimizer1,
-              optimizer2=optimizer2,
-              train_loader=trloader,val_loader=valoader,
-              task=task,
-              batch_size=BATCH_SIZE,
-              EPOCH=EPOCH,LR=LR,
-              DEVICE=DEVICE,tokenizer=tokenizer,
-              only_decoder=only_decoder)
+        if args.softmax2quad==1:
+            from train_baseline_distill import vanilla_distill as vd
+            vd(args,tmodel=tmodel,smodel=smodel,prolayer=prolayer,
+                optimizer1=optimizer1,
+                optimizer2=optimizer2,
+                train_loader=trloader,val_loader=valoader,
+                task=task,
+                batch_size=BATCH_SIZE,
+                EPOCH=EPOCH,LR=LR,
+                DEVICE=DEVICE,tokenizer=tokenizer,
+                only_decoder=only_decoder)
+            
+        else:
+            train(args,tmodel=tmodel,smodel=smodel,prolayer=prolayer,
+                optimizer1=optimizer1,
+                optimizer2=optimizer2,
+                train_loader=trloader,val_loader=valoader,
+                task=task,
+                batch_size=BATCH_SIZE,
+                EPOCH=EPOCH,LR=LR,
+                DEVICE=DEVICE,tokenizer=tokenizer,
+                only_decoder=only_decoder)
         smodel.save_pretrained(args.stu_save_ckpt+"finally")
 
         if args.using_prolayer==1:
@@ -476,7 +501,7 @@ def main():
         tokenizer.save_pretrained(args.stu_save_ckpt)
         tokenizer.save_pretrained(args.stu_save_ckpt+"finally")
         tokenizer.save_pretrained(args.stu_save_ckpt+"差不多")
-        #============================================
+    #============================================
 
     smodel=smodel.from_pretrained(args.stu_save_ckpt)
     if args.using_prolayer==1:

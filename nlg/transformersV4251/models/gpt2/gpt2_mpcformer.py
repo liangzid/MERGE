@@ -41,7 +41,9 @@ from ...utils import (
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_gpt2 import GPT2Config
 
-from myutils import softmax_2QUAD,activation_quad
+# from ...activations import softmax_2QUAD
+from ...activations import softmax_2QUAD
+from ...activations import softmax_2linear,softmax_2quad,softmax_2relu
 
 
 logger = logging.get_logger(__name__)
@@ -203,8 +205,11 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights + attention_mask
 
         before_attn_weights=attn_weights
-        if self.config.quad_softmax=="1":
-            attn_weights = softmax_2QUAD(dim=-1).forward(attn_weights)
+        if self.config.quad_softmax=="quad":
+            attn_weights = softmax_2quad(attn_weights,dim=-1)
+        elif self.config.quad_softmax=="relu":
+            attn_weights = softmax_2relu(attn_weights,dim=-1)
+            # attn_weights = softmax_2QUAD(dim=-1).forward(attn_weights)
         else:
             attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
@@ -443,6 +448,8 @@ class GPT2Block(nn.Module):
             outputs = (hidden_states,) + outputs
         else:
             outputs = (hidden_states,) + outputs[1:]
+        # print(hidden_states)
+        # print("------------")
 
         return outputs  # hidden_states, present, (attentions, cross_attentions)
 

@@ -21,6 +21,37 @@ from torch import Tensor, nn
 
 from .utils import logging
 
+import torch.nn as nn
+import torch
+
+class softmax_2QUAD(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+    
+    def forward(self, x):
+        a, b, c, d = x.size()
+        #quad = x#self.norm(x)
+        quad = (x+5) * (x+5)
+        return quad / quad.sum(dim=self.dim, keepdims=True)
+
+def softmax_2relu(scores, dim, eps=1e-12):
+    relu = torch.nn.functional.relu(scores)
+    reduce_dim = scores.shape[dim]
+    out = (relu + eps/reduce_dim) / (torch.sum(relu, dim=dim, keepdims=True)+eps)
+    return out
+
+def softmax_2linear(scores, dim):
+    out = scores / (torch.sum(scores, dim=dim, keepdims=True))
+    return out
+ 
+                   # attention_mask_zero_one,
+def softmax_2quad(scores,
+                dim):
+    scores =  (scores + 5) ** 2
+    # scores *= attention_mask_zero_one
+    scores = scores / torch.sum(scores, dim=dim, keepdims=True)
+    return scores
 
 logger = logging.get_logger(__name__)
 
@@ -157,11 +188,11 @@ def softmax_2relu(scores, dim, eps=1e-12):
     #print(torch.isnan(out).any(), out.shape)
     return out
 
-def softmax_2quad(scores, attention_mask_zero_one, dim):
-    scores =  (scores + 5) ** 2
-    scores *= attention_mask_zero_one
-    scores = scores / torch.sum(scores, dim=dim, keepdims=True)
-    return scores
+# def softmax_2quad(scores, attention_mask_zero_one, dim):
+#     scores =  (scores + 5) ** 2
+#     scores *= attention_mask_zero_one
+#     scores = scores / torch.sum(scores, dim=dim, keepdims=True)
+#     return scores
 
 class ClassInstantier(OrderedDict):
     def __getitem__(self, key):
