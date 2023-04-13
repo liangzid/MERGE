@@ -1,0 +1,59 @@
+#+title: New results
+#+date: Thu Apr 13 16:02:19 2023
+#+author: Zi Liang
+#+email: liangzid@stu.xjtu.edu.cn
+#+latex_class: elegantpaper
+
+* 新结果记录
+** CommonGen 数据集实验，将ourmethod 调到可接受指标范畴
+*** INPROGRESS 探究训练周期对实验结果的影响
+
+|-----------------------+---------------+------|
+| model                 | bertscore结果 | 日期 |
+|-----------------------+---------------+------|
+| 原始GPT-2实验结果     |        0.9336 |    - |
+| our 3epoch   dr=0.4   |        0.4540 | 0411 |
+| our 10epoch dr=0.6    |        0.8810 | 0413 |
+| our 50000 step dr=0.6 |             ? |      |
+|-----------------------+---------------+------|
+*** INPROGRESS 探究是否使用quad对模型结果的影响
+
+|--------------------------+-----------|
+| settings                 | bertscore |
+|--------------------------+-----------|
+| 50000 step+dr=0.6+quad=1 | ?         |
+| 50000 step+dr=0.6+quad=0 | ?         |
+|--------------------------+-----------|
+** TODO dailydialog 数据集实验，将ourmethod调到可接受范畴
+
+|--------------------------+-----------+------|
+| settings                 | bertscore | 日期 |
+|--------------------------+-----------+------|
+| gpt2                     |    0.8404 |    - |
+| epoch 10 res             |    0.5811 | 4.11 |
+| 50000 step+dr=0.6+quad=1 |         ? | 4.13 |
+|--------------------------+-----------+------|
+
+** multiwoz在T5和BART上的结果补充
+
+waiting~
+
+
+
+** 其他未进行
+*** WAITING 探究是否使用simpleLN对实验结果的影响
+
+* REVIEW 48 server
+** multiwoz
+**** REVIEW t5 method7 5w 
+**** REVIEW t5 method7 noquad 5w 
+**** WAITING bart method7 5w 
+**** WAITING gpt2 MPCformer distill
+**** TODO t5 MPCformer distill
+**** TODO bart MPCformer distill
+* REVIEW 49 server
+** dailydialog
+*** REVIEW gpt2 method7 tw 
+** commonGEN
+*** REVIEW gpt2 commonNLG method7 
+*** REVIEW gpt2 commonNLG method7 noquad
