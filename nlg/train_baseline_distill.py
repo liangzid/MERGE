@@ -161,18 +161,32 @@ def vanilla_distill(args, tmodel, smodel,prolayer,
 
             if args.using_interKL==1:
                 ## we use MSE loss for that.
-                lens=len(toutputs.hidden_states)
-                # print(f"length of hidden states layers: {lens}")
-                # print(toutputs.hidden_states)
-                # print(outputs.hidden_states)
-                for j in range(lens-1):
-                    if j> (lens-1)//2:
-                        break
-                    templ=F.mse_loss(toutputs.hidden_states[j],
-                               outputs.hidden_states[j],
-                                reduction="mean")
-                    # print(f"this part mse loss: {templ}")
-                    inter_loss+=templ
+                if only_decoder:
+                    lens=len(toutputs.hidden_states)
+                    # print(f"length of hidden states layers: {lens}")
+                    # print(toutputs.hidden_states)
+                    # print(outputs.hidden_states)
+                    for j in range(lens-1):
+                        if j> (lens-1)//2:
+                            break
+                        templ=F.mse_loss(toutputs.hidden_states[j],
+                                outputs.hidden_states[j],
+                                    reduction="mean")
+                        # print(f"this part mse loss: {templ}")
+                        inter_loss+=templ
+                else:
+                    lens=len(toutputs.decoder_hidden_states)
+                    # print(f"length of hidden states layers: {lens}")
+                    # print(toutputs.hidden_states)
+                    # print(outputs.hidden_states)
+                    for j in range(lens-1):
+                        if j> (lens-1)//2:
+                            break
+                        templ=F.mse_loss(toutputs.decoder_hidden_states[j],
+                                outputs.decoder_hidden_states[j],
+                                    reduction="mean")
+                        # print(f"this part mse loss: {templ}")
+                        inter_loss+=templ
 
                 inter_loss/=(lens-1)
                 num_loss+=1

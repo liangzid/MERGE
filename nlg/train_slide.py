@@ -27,10 +27,16 @@ from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
 from transformersV4251.models.gpt2.gpt2_mpcformer import \
     GPT2LMHeadModel as mpcGPT2
+
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
+from transformersV4251.models.t5.t5_mpcformer import \
+    T5ForConditionalGeneration as mpcT5
+
 from transformersV4251.models.bart.new_bart import \
     BartForConditionalGeneration as BartNew
+from transformersV4251.models.bart.bart_mpcformer import \
+    BartForConditionalGeneration as mpcBart
 
 from transformers import GPT2LMHeadModel
 from transformers import AutoModelForCausalLM
@@ -403,9 +409,18 @@ def main():
         if 1==0:
             pass
         else:
-            print(">>>>>Using MPCFORMER GPT-2")
-            smodel = mpcGPT2.from_pretrained(args.stu_ckpt,
-                                config=args.stu_save_ckpt)
+            if "t5" in args.teach_ckpt:
+                print(">>>>>Using MPCFORMER T5")
+                smodel = mpcT5.from_pretrained(args.stu_ckpt,
+                                    config=args.stu_save_ckpt)
+            elif "bart" in args.teach_ckpt:
+                print(">>>>>Using MPCFORMER bart")
+                smodel = mpcBart.from_pretrained(args.stu_ckpt,
+                                    config=args.stu_save_ckpt)
+            else:
+                print(">>>>>Using MPCFORMER gpt2")
+                smodel = mpcGPT2.from_pretrained(args.stu_ckpt,
+                                    config=args.stu_save_ckpt)
     elif "Constant" in args.stu_ckpt or args.using_quadacti==1 or args.using_simLN==1 or args.using_simLN==2:
         print("Using new structure.")
         if "t5" in args.teach_ckpt:
