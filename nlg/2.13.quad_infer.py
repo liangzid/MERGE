@@ -47,40 +47,13 @@ def main():
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4t5-small/"
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4bart-base/"
 
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7finally/"
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7trainmodel/"
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104108e-50.010.40.7epoch3/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/mpcformer1010004108e-50.010.00.00.0finally/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/addQuad1000104119e-50.010.60.70.75finally/"
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/addQuad1000104119e-50.010.60.70.75epoch0/"
+    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
 
-    # ## with interkl loss
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1010104108e-50.010.40.7finally/"
-
-    # ## only ER
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/DropoutTraining1004008e-50.01finally"
-
-
-    # ## with simLN
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.7finally/"
-
-    # ## with constant matrix
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixaddQuad1000104108e-50.010.40.7finally/"
-
-    # # ## weighted loss
-    # # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.70.9finally/"
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104118e-50.010.40.70.75finally/"
-
-    ## 4
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/addQuad1000104008e-50.010.40.70.75finally/"
-    ## 3
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/others_1000104008e-50.010.40.70.5finally/"
-    ## 6
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/others_1000104118e-50.010.40.70.5finally/"
-
-    ## ER+CM+simLN
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75epoch0/"
-    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75finally/"
-    # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixOnlyCM1000104018e-50.010.40.70.75epoch2/"
-    
-    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/mpcformer1010004108e-50.010.00.00.0finally/"
+    if "t5" in model_path:
+        withsep=False
 
     gentype="ER"
     # gentype="vanilla"
@@ -88,6 +61,7 @@ def main():
 
     ## ---------------------------------------------
     cuda_num=4
+    # cuda_num="cpu"
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True,
                          approximation=False,

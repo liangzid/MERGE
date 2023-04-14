@@ -531,7 +531,8 @@ def main():
     smodel.eval()
     
     res=test(test_loader=teloader,model=smodel,task=task,
-         batch_size=BATCH_SIZE,DEVICE=DEVICE)
+             batch_size=BATCH_SIZE,DEVICE=DEVICE,
+             only_decoder=only_decoder)
     print(res)
 
 

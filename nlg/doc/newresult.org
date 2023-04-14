@@ -30,23 +30,26 @@ CLOSED: [2023-04-13 周四 21:21]
 | val loss min(w.dr) |  =0.8773= |           0.8721 |              |
 |--------------------+-----------+------------------+--------------|
 
-*** DONE 探究训练周期对实验结果的影响
-CLOSED: [2023-04-13 周四 21:21]
+*** DONE CommonGen 结果调优
+CLOSED: [2023-04-14 周五 17:13]
 未达到目标。
-|-----------------------+---------------+------|
-| model                 | bertscore结果 | 日期 |
-|-----------------------+---------------+------|
-| 原始GPT-2实验结果     |        0.9336 |    - |
-| our 3epoch   dr=0.4   |        0.4540 | 0411 |
-| our 10epoch dr=0.6    |        0.8810 | 0413 |
-| our 50000 step dr=0.6 |        0.8787 | 0413 |
-| only er finally       |        0.8953 | 0414 |
-| only CM 3e-5          |        0.7922 | 0414 |
-| our 8e-5 quad         |        0.8666 | 0414 |
-|-----------------------+---------------+------|
+|-----------------------+--------------+------|
+| model                 | bertscore结果 |  日期 |
+|-----------------------+--------------+------|
+| 原始GPT-2实验结果        |       0.9336 |    - |
+| our 3epoch   dr=0.4   |       0.4540 | 0411 |
+| our 10epoch dr=0.6    |       0.8810 | 0413 |
+| our 50000 step dr=0.6 |       0.8787 | 0413 |
+| only er finally 8e-5  |       0.8953 | 0414 |
+| only er finally 3e-4  |       0.8850 | 0414 |
+| only CM 3e-5          |       0.7922 | 0414 |
+| only CM 3e-4          |       0.8664 | 0414 |
+| our 8e-5 quad         |       0.8666 | 0414 |
+| our 8e-4 no quad      |       0.8607 | 0414 |
+|-----------------------+--------------+------|
 
 *** DONE 探究是否使用quad对模型结果的影响
-CLOSED: [2023-04-13 周四 21:21]
+CLOSED: [2023-04-14 周五 17:13]
 没有显著区别
 |--------------------------+-----------|
 | settings                 | bertscore |
@@ -87,7 +90,7 @@ CLOSED: [2023-04-14 周五 09:14]
 | model        | bertscore |
 |--------------+-----------|
 | gpt2 vanilla |    0.9237 |
-| mpc baseline |           |
+| mpc baseline |    0.7954 |
 |--------------+-----------|
 
 *** TODO 存在问题，模型并没有很好地进行ER的训练。kill掉已有代码，重新运行这一部分。
@@ -101,10 +104,14 @@ CLOSED: [2023-04-14 周五 08:44]
 *** DONE GPT2 only ER
 CLOSED: [2023-04-14 周五 09:10]
 结论：效果不好，计划拉大训练step重新测试。
+*** REVIEW MPCformer GPT2 distill res
 ** commonGEN
-*** WAITING gpt2 commonGen only CM 3e-4
-*** WAITING gpt2 commonGen only ER 3e-4 long step
-*** WAITING gpt2 commonGen method7 8e-4
+*** DONE gpt2 commonGen only CM 3e-4
+CLOSED: [2023-04-14 周五 17:12]
+*** DONE gpt2 commonGen only ER 3e-4 long step
+CLOSED: [2023-04-14 周五 17:12]
+*** DONE gpt2 commonGen method7 8e-4
+CLOSED: [2023-04-14 周五 17:12]
 *** DONE GPT2 only ER
 CLOSED: [2023-04-14 周五 09:06]
 结论：效果较好，但存在更优的可能性，需要重新实验
@@ -118,6 +125,11 @@ CLOSED: [2023-04-14 周五 09:15]
 CLOSED: [2023-04-13 周四 20:54]
 *** DONE gpt2 commonNLG method7 noquad
 CLOSED: [2023-04-13 周四 20:54]
+*** REVIEW MPCformer GPT-2 distill results
+** MultiWoz
+**** WAITING bart method7
+**** WAITING t5 MPCformer distill
+**** WAITING bart MPCformer distill
 * REVIEW 48 server
 ** multiwoz
 **** CANCELED t5 method7 5w 
@@ -126,10 +138,9 @@ CLOSED: [2023-04-14 周五 10:09]
 CLOSED: [2023-04-14 周五 10:09]
 **** CANCELED bart method7 5w 
 CLOSED: [2023-04-14 周五 10:09]
-**** WAITING t5 method7
-**** WAITING t5 method7 noquad
-**** TODO bart method7
+**** REVIEW t5 method7
+生成过程存在问题，未跑通
+**** REVIEW t5 method7 noquad
+生成过程存在问题，未跑通
 **** DONE gpt2 MPCformer distill
 CLOSED: [2023-04-14 周五 09:39]
-**** TODO t5 MPCformer distill
-**** TODO bart MPCformer distill

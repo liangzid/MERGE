@@ -424,6 +424,8 @@ class Inference:
                 if self.only_decoder:
                     decoder_input_ids=prefix_ids
                 
+                print("======")
+                print(output.logits.shape)
                 next_token_logits=output.logits[0,-1,:]
                 next_token_distribution=F.softmax(next_token_logits,dim=-1)
 
@@ -466,8 +468,12 @@ class Inference:
                     embeddings=torch.cat([embeddings,newem
                                           ],dim=1) 
                 else:
-                    decoder_input_embedds=\
-                        output.decoder_hidden_states[-1][:,:sl,:]
+                    newem=output.decoder_hidden_states[-1][:,-1:,:]
+                    decoder_input_embedds=torch.cat([decoder_input_embedds,
+                                                     newem],dim=1)
+                    # decoder_input_embedds=\
+                    #     output.decoder_hidden_states[-1][:,:sl,:]
+
                 sl+=1
 
                 # print(decoder_input_ids)
