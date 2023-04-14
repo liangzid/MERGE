@@ -80,13 +80,14 @@ def main():
     model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75finally/"
     # model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/___withConstantMatrixOnlyCM1000104018e-50.010.40.70.75epoch2/"
     
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/mpcformer1010004108e-50.010.00.00.0finally/"
 
     gentype="ER"
     # gentype="vanilla"
 
 
     ## ---------------------------------------------
-    cuda_num=7
+    cuda_num=4
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True,
                          approximation=False,

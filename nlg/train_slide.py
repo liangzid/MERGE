@@ -117,12 +117,23 @@ def train(args, tmodel, smodel,prolayer,
                                 output_hidden_states=True)
             else:
                 #! bug finded: NO ER in this procedure.
+                emd_outs=embedds(outs)
+                noise=(torch.rand(emd_outs.shape)-0.5)*2/(1/args.noise)
+                # mask p% noise
+                p=0.0
+                mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
+                noise=noise*mask_noise
+                noise=noise.to(emd_outs.device)
+                emd_outs=noise+emd_outs
+                emd_outs=drop_layer(emd_outs)
+
                 toutputs=tmodel(inps,attention_mask=atts,
                                 decoder_input_ids=outs,
                                 labels=outs,
                                 output_hidden_states=True)
+
                 outputs = smodel(inps,attention_mask=atts,
-                                decoder_input_ids=outs,
+                                decoder_inputs_embeds=emd_outs,
                                 labels=outs,
                                 output_hidden_states=True)
 

@@ -6,54 +6,130 @@
 
 * 新结果记录
 ** CommonGen 数据集实验，将ourmethod 调到可接受指标范畴
-*** INPROGRESS 探究训练周期对实验结果的影响
+*** DONE vary epoch
+CLOSED: [2023-04-13 周四 21:21]
+我不理解
+|--------------------+-----------+------------------+--------------|
+|              epoch | bertscore | noquad bertscore | noquad  8e-5 |
+|--------------------+-----------+------------------+--------------|
+|                  2 |    0.8254 |                  |              |
+|                  4 |           |                  |              |
+|                  6 |    0.8231 |                  |              |
+|                  8 |           |                  |              |
+|                 10 |    0.8736 |                  |              |
+|                 12 |    0.8757 |           0.8715 |              |
+|                 14 |    0.8732 |                  |              |
+|                 16 |    0.8701 |                  |              |
+|                 18 |    0.8719 |                  |              |
+|                 20 |    0.8719 |                  |              |
+|                 22 |    0.8728 |                  |              |
+|                 24 |           |                  |              |
+|                 26 |    0.8699 |           0.8701 |       0.8666 |
+|     train loss min |    0.8742 |           0.8739 |              |
+|       val loss min |  =0.8787= |           0.8721 |              |
+| val loss min(w.dr) |  =0.8773= |           0.8721 |              |
+|--------------------+-----------+------------------+--------------|
 
+*** DONE 探究训练周期对实验结果的影响
+CLOSED: [2023-04-13 周四 21:21]
+未达到目标。
 |-----------------------+---------------+------|
 | model                 | bertscore结果 | 日期 |
 |-----------------------+---------------+------|
 | 原始GPT-2实验结果     |        0.9336 |    - |
 | our 3epoch   dr=0.4   |        0.4540 | 0411 |
 | our 10epoch dr=0.6    |        0.8810 | 0413 |
-| our 50000 step dr=0.6 |             ? |      |
+| our 50000 step dr=0.6 |        0.8787 | 0413 |
+| only er finally       |        0.8953 | 0414 |
+| only CM 3e-5          |        0.7922 | 0414 |
+| our 8e-5 quad         |        0.8666 | 0414 |
 |-----------------------+---------------+------|
-*** INPROGRESS 探究是否使用quad对模型结果的影响
 
+*** DONE 探究是否使用quad对模型结果的影响
+CLOSED: [2023-04-13 周四 21:21]
+没有显著区别
 |--------------------------+-----------|
 | settings                 | bertscore |
 |--------------------------+-----------|
-| 50000 step+dr=0.6+quad=1 | ?         |
-| 50000 step+dr=0.6+quad=0 | ?         |
+| 50000 step+dr=0.6+quad=1 | 0.8699   |
+| 50000 step+dr=0.6+quad=0 | 0.8701  |
 |--------------------------+-----------|
-** TODO dailydialog 数据集实验，将ourmethod调到可接受范畴
+** DONE dailydialog 数据集实验，将ourmethod调到可接受范畴
+CLOSED: [2023-04-14 周五 09:14]
 
 |--------------------------+-----------+------|
 | settings                 | bertscore | 日期 |
 |--------------------------+-----------+------|
 | gpt2                     |    0.8404 |    - |
 | epoch 10 res             |    0.5811 | 4.11 |
-| 50000 step+dr=0.6+quad=1 |         ? | 4.13 |
+| 50000 step+dr=0.6+quad=1 |    0.8143 | 4.13 |
+| only ER                  |    0.8205 | 4.14 |
 |--------------------------+-----------+------|
 
-** multiwoz在T5和BART上的结果补充
+** multiwoz
 
-waiting~
+*** T5与BART的结果
+|--------------+-----------|
+| model        | bertscore |
+|--------------+-----------|
+| gpt2 vanilla |    0.9237 |
+|--------------+-----------|
+| t5 vanilla   |    0.9140 |
+| t5 ours    |           |
+|--------------+-----------|
+| bart vanilla |         ? |
+| bart ours    |           |
+|--------------+-----------|
 
+*** mpcformer baseline results
 
+|--------------+-----------|
+| model        | bertscore |
+|--------------+-----------|
+| gpt2 vanilla |    0.9237 |
+| mpc baseline |           |
+|--------------+-----------|
 
+*** TODO 存在问题，模型并没有很好地进行ER的训练。kill掉已有代码，重新运行这一部分。
 ** 其他未进行
 *** WAITING 探究是否使用simpleLN对实验结果的影响
-
-* REVIEW 48 server
-** multiwoz
-**** REVIEW t5 method7 5w 
-**** REVIEW t5 method7 noquad 5w 
-**** WAITING bart method7 5w 
-**** WAITING gpt2 MPCformer distill
-**** TODO t5 MPCformer distill
-**** TODO bart MPCformer distill
+*** TODO [#A] 数据集的稀缺词分布情况统计
 * REVIEW 49 server
 ** dailydialog
-*** REVIEW gpt2 method7 tw 
+*** DONE gpt2 method7 tw 
+CLOSED: [2023-04-14 周五 08:44]
+*** DONE GPT2 only ER
+CLOSED: [2023-04-14 周五 09:10]
+结论：效果不好，计划拉大训练step重新测试。
 ** commonGEN
-*** REVIEW gpt2 commonNLG method7 
-*** REVIEW gpt2 commonNLG method7 noquad
+*** WAITING gpt2 commonGen only CM 3e-4
+*** WAITING gpt2 commonGen only ER 3e-4 long step
+*** WAITING gpt2 commonGen method7 8e-4
+*** DONE GPT2 only ER
+CLOSED: [2023-04-14 周五 09:06]
+结论：效果较好，但存在更优的可能性，需要重新实验
+*** DONE gpt2 commongNLG only MM
+CLOSED: [2023-04-14 周五 09:15]
+效果较差
+*** DONE gpt2 commonNLG method7 8e-5
+CLOSED: [2023-04-14 周五 09:15]
+效果较差
+*** DONE gpt2 commonNLG method7 
+CLOSED: [2023-04-13 周四 20:54]
+*** DONE gpt2 commonNLG method7 noquad
+CLOSED: [2023-04-13 周四 20:54]
+* REVIEW 48 server
+** multiwoz
+**** CANCELED t5 method7 5w 
+CLOSED: [2023-04-14 周五 10:09]
+**** CANCELED t5 method7 noquad 5w 
+CLOSED: [2023-04-14 周五 10:09]
+**** CANCELED bart method7 5w 
+CLOSED: [2023-04-14 周五 10:09]
+**** WAITING t5 method7
+**** WAITING t5 method7 noquad
+**** TODO bart method7
+**** DONE gpt2 MPCformer distill
+CLOSED: [2023-04-14 周五 09:39]
+**** TODO t5 MPCformer distill
+**** TODO bart MPCformer distill

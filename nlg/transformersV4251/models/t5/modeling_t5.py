@@ -563,12 +563,14 @@ class T5Attention(nn.Module):
         ## DONE. add the constant attention, instead of the \
         # dynamic attentions
 
+        # print(f"attention shape: {attn_weights.shape}")
+
         bs=attn_weights.shape[0]
         sl=value_states.shape[2]
         isl=query_states.shape[2]
         attn_weights=self.M.unsqueeze(0)
         if bs!=1:
-            attn_weights.repeat(bs,1,1,1)
+            attn_weights=attn_weights.repeat(bs,1,1,1)
         attn_weights = attn_weights.type(scores.dtype)
 
         if self.isCross:
@@ -576,6 +578,9 @@ class T5Attention(nn.Module):
         else:
             attn_weights=attn_weights[:,:,:sl,:sl]
         #----------------- ends here ---------------------
+
+        # print(f"new attention shape: {attn_weights.shape}")
+        # print("----------------------")
         
         attn_weights = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
