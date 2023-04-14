@@ -395,7 +395,7 @@ def main():
             print(">>>>>Using MPCFORMER GPT-2")
             smodel = mpcGPT2.from_pretrained(args.stu_ckpt,
                                 config=args.stu_save_ckpt)
-    elif "Constant" in args.stu_ckpt or args.using_quadacti==1 or args.using_simLN==1:
+    elif "Constant" in args.stu_ckpt or args.using_quadacti==1 or args.using_simLN==1 or args.using_simLN==2:
         print("Using new structure.")
         if "t5" in args.teach_ckpt:
             smodel = T5New.\

@@ -60,8 +60,10 @@ def main():
     # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noQuad1000104118e-50.010.40.70.75epoch0/"
     # model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/_stunoQuad1000104118e-50.010.40.70.75epoch2/"
     # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75trainmodel/"
-    model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/testLeftTruncation1000104018e-50.010.40.70.75finally/"
-    cuda_num=2
+    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/testLeftTruncation1000104018e-50.010.40.70.75finally/"
+    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/manystep500001000104118e-50.010.60.70.75finally/"
+    model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyER150001000104008e-50.010.60.70.75finally/"
+    cuda_num=1
 
 
     # # # 6
@@ -88,7 +90,7 @@ def main():
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True,
                          approximation=False,
-                         use_filter=1,
+                         use_filter=0,
                          )
 
     if task=="common_gen":

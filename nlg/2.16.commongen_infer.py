@@ -53,39 +53,16 @@ def main():
 
     withsep=True
 
-    # 3
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stunoQuad1000104003e-50.010.40.70.75trainmodel/"
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stunoQuad1000104008e-50.010.40.70.75trainmodel/"
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noQuad1000104118e-50.010.40.70.75epoch0/"
-    # model_path=f"./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs16gpt2/_stunoQuad1000104118e-50.010.40.70.75epoch2/"
-    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noQuad1000104018e-50.010.40.70.75trainmodel/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104013e-40.010.60.70.75finally/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75epoch20/"
 
-
-
-
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104018e-50.010.40.70.75finally/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104018e-50.010.40.70.75finally/"
-    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104013e-40.010.60.70.75finally/"
-    # cuda_num=1
-    cuda_num=0
-
-
-    # # # 6
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.5finally/"
-    # cuda_num=6
-
-    # # ## 7
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs1gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
-    # cuda_num=6
-
-    ## -------------- trash-------------------------------------------------
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104113e-50.010.40.70.75trainmodel/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs4gpt2/_stuTestCommonGen1000104118e-50.010.40.250.5finally/"
-    # model_path=f"./stage1_ckpts/{task}-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.75epoch1/"
-    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.70.75finally/"
-    # model_path=f"./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/_stuaddQuad1000104118e-50.010.40.20.25finally/"
-    ## -------------- trash-------------------------------------------------
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75/"
+    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/onlyER150001000104008e-50.010.60.70.75/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-50.010.60.70.75finally/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104018e-50.010.60.70.75finally/"
     
+    # cuda_num=1
+    cuda_num=5
 
     gentype="ER"
     # gentype="vanilla"

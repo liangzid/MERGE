@@ -278,10 +278,9 @@ class Inference:
                 if self.only_decoder:
                     if self.sep_token in sentence:
                         sentence=sentence.split(self.sep_token)[-1]
-                    elif " <System> " in sentence:
-                        sentence=sentence.split(" <System> ")[-1]
-                        if " <User> " in sentence:
-                            sentence=sentence.split(" <User> ")[0]
+                    # for daily dialog situation:
+                    elif " <User> " in sentence:
+                        sentence=sentence.split(p)[1].split(" <")[0]
                 print(">>>post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)

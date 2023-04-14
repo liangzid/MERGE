@@ -228,6 +228,9 @@ def getTestDataSet(tokenizer,split="test",
         sep_token=""
     # sep_token=tokenizer.sep_token
     eos_token=tokenizer.eos_token
+    tokenizer.truncation_side="left"
+    print("========")
+    print(tokenizer)
 
     def getSet(split="train"):
         if task in ["web_nlg", "e2e_nlg", "GEM/taskmaster", "common_gen"]:
