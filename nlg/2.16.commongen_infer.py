@@ -57,12 +57,12 @@ def main():
     # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75epoch20/"
 
     # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75/"
-    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/onlyER150001000104008e-50.010.60.70.75/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-50.010.60.70.75finally/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104018e-50.010.60.70.75finally/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/onlyER300001000104003e-40.010.60.70.75finally/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-40.010.60.70.75finally/"
+    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104018e-40.010.60.70.75finally/"
     
     # cuda_num=1
-    cuda_num=5
+    cuda_num=7
 
     gentype="ER"
     # gentype="vanilla"
