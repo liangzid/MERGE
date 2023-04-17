@@ -36,7 +36,8 @@ port=str(sys.argv[10])
 
 os.environ["RANK"] = str(rank)
 os.environ["WORLD_SIZE"] = str(2)
-os.environ["MASTER_ADDR"] = "219.245.186.45"
+# os.environ["MASTER_ADDR"] = "219.245.186.45"
+os.environ["MASTER_ADDR"] = "219.245.186.49"
 os.environ["MASTER_PORT"] = port
 os.environ["RENDEZVOUS"] = "env://"
 
@@ -59,6 +60,12 @@ class config():
         elif method=="onlyCM":
             self.hidden_act="newGeLU"
             self.softmax_act="softmax"
+        elif method=="mpcformer_sfrelu":
+            self.hidden_act="quad"
+            self.softmax_act="softmax_2RELU"
+        elif method=="mpcformer_sfquad":
+            self.hidden_act="quad"
+            self.softmax_act="softmax_2QUAD"
         else:
             #self.hidden_act = "newGeLU"
             #self.softmax_act = "softmax"
@@ -127,6 +134,7 @@ commInit = crypten.communicator.get().get_communication_stats()
 input_ids = F.one_hot(torch.randint(low=0, high=config.vocab_size,
             size=(config.batch_size, config.prefix_length)), config.vocab_size).float().to(device)
 
+print("init done")
 timing = defaultdict(float)
 
 if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":

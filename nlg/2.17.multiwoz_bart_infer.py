@@ -1,14 +1,15 @@
 """
 ======================================================================
-2.16.COMMONGEN_INFER ---
+2.17.MULTIWOZ_BART_INFER ---
 
-Inference for common gen.
+Inference of Bart on multiwoz dataset.
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created: 12 四月 2023
+    Created: 15 四月 2023
 ======================================================================
 """
+
 
 # ------------------------ Code --------------------------------------
 
@@ -33,14 +34,14 @@ def main():
     # task="daily_dialog"
     # subset=None
 
-    ## 5. common gen
-    task="common_gen"
-    subset=None
-
-    # ## 3. multiwoz 2.1 nlg
-    # task="multiwoz_nlg"
+    # ## 5. common gen
+    # task="common_gen"
     # subset=None
-    # # withsep=False
+
+    ## 3. multiwoz 2.1 nlg
+    task="multiwoz_nlg"
+    subset=None
+    # withsep=False
 
     # ## 4. web nlg
     # task="web_nlg"
@@ -53,20 +54,18 @@ def main():
 
     withsep=True
 
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/TestCommonGen1000104013e-40.010.60.70.75finally/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75epoch20/"
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/"
+    model_path=f"./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/addQuad1000104019e-50.010.60.70.75finally/"
 
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/onlyER300001000104003e-40.010.60.70.75finally/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-40.010.60.70.75finally/"
-    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104018e-40.010.60.70.75finally/"
-    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/mpcformer1010004108e-50.010.00.00.0finally/"
+
+    if "bart" in model_path or "t5" in model_path:
+        withsep=False
     
     # cuda_num=1
     cuda_num=2
 
-    # gentype="ER"
-    gentype="vanilla"
+    gentype="ER"
+    # gentype="vanilla"
 
     ## ---------------------------------------------
     infermodel=Inference(model_path,cuda_num,
@@ -135,7 +134,11 @@ def main():
         print(res)
 
 
+
+
 ## running entry
 if __name__=="__main__":
     main()
     print("EVERYTHING DONE.")
+
+

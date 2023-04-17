@@ -83,21 +83,6 @@ ${python} train_slide.py \
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 echo "RUNNING 1.9.train_baseline.sh DONE."
 # 1.9.train_baseline.sh ends here
 

@@ -17,7 +17,7 @@ export root_dir="/home/liangzi/mpcGen/nlg/"
 export epochs=10000
 export step=50000
 # export lr=3e-5
-export lr=9e-5
+export lr=8e-4
 # export lr=3e-4
 # export device="cpu"
 export batch_size=16
@@ -59,11 +59,19 @@ export using_NEGAEm=0
 # export lamda=0.5
 # export device="6"
 
-## method 7
+# only ER
+
+## Only ER SETTINGS
 export using_quadacti=0 ##### now add the quadtic option.
-export using_simLN=1
+export using_simLN=0
 export lamda=0.75
-export device="3"
+export device="5"
+
+# ## only MM
+# export using_quadacti=0 ##### now add the quadtic option.
+# export using_simLN=2
+# export lamda=0.75
+# export ice="2"
 
 ##############################################################
 
@@ -74,7 +82,7 @@ export noise=0.7
 # export lamda=0.5
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}addQuad${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}onlyMM${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 

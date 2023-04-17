@@ -38,8 +38,15 @@ from transformersV4251.models.gpt2.modeling_gpt2 import \
 
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
-from transformersV4251.models.bart.modeling_bart import \
+from transformersV4251.models.bart.new_bart import \
     BartForConditionalGeneration as BartNew
+
+from transformersV4251.models.bart.bart_mpcformer import \
+    BartForConditionalGeneration as mpcBart
+from transformersV4251.models.t5.t5_mpcformer import \
+    T5ForConditionalGeneration as mpcT5
+from transformersV4251.models.gpt2.gpt2_mpcformer import \
+    GPT2LMHeadModel as mpcGPT2
 
 import numpy as np
 
@@ -103,6 +110,8 @@ class Inference:
             print("no activation function founded.")
 
         self.use_filter=use_filter
+        print(">>>>>>>>>set filter as 0.")
+        self.use_filter=0
         self.config=config
 
 
@@ -118,7 +127,11 @@ class Inference:
 
         only_decoder=True
         if "gpt" in model_path:
-            if not approximation:
+            if "mpc" in model_path:
+                print("<<<<>>>>Using MPC version GPT-2.")
+                self.decoder=mpcGPT2\
+                    .from_pretrained(model_path)
+            elif not approximation:
                 # self.decoder=OldGpt2\
                 #     .from_pretrained(model_path)
                 self.decoder=AutoModelForCausalLM\
@@ -131,14 +144,22 @@ class Inference:
         elif "bart" in model_path or "t5" in model_path:
             only_decoder=False
             if "bart" in model_path:
-                if not approximation:
+                if "mpc" in model_path:
+                    print("<<<<>>>>Using MPC version BART.")
+                    self.decoder=mpcBart\
+                        .from_pretrained(model_path)
+                elif not approximation:
                     self.decoder=BartForConditionalGeneration\
                         .from_pretrained(model_path)
                 else:
                     self.decoder=BartNew\
                         .from_pretrained(model_path)
             elif "t5" in model_path:
-                if not approximation:
+                if "mpc" in model_path:
+                    print("<<<<>>>>Using MPC version T5.")
+                    self.decoder=mpcT5\
+                        .from_pretrained(model_path)
+                elif not approximation:
                     self.decoder=T5ForConditionalGeneration\
                         .from_pretrained(model_path)
                 else:
@@ -424,8 +445,8 @@ class Inference:
                 if self.only_decoder:
                     decoder_input_ids=prefix_ids
                 
-                print("======")
-                print(output.logits.shape)
+                # print("======")
+                # print(output.logits.shape)
                 next_token_logits=output.logits[0,-1,:]
                 next_token_distribution=F.softmax(next_token_logits,dim=-1)
 
