@@ -460,6 +460,7 @@ class GPT2Block(nn.Module):
         hidden_size = config.hidden_size
         inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
 
+        self.config=config
         if config.layerNormType=="sim":
             self.ln_1 = SimpleLayerNorm(hidden_size)
             # self.ln_1 = nn.LayerNorm(hidden_size,
