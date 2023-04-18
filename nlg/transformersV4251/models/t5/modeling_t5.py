@@ -566,8 +566,13 @@ class T5Attention(nn.Module):
         # print(f"attention shape: {attn_weights.shape}")
 
         bs=attn_weights.shape[0]
-        sl=value_states.shape[2]
-        isl=query_states.shape[2]
+
+        # sl=value_states.shape[2]
+        # isl=query_states.shape[2]
+
+        isl=attn_weights.shape[2]
+        sl=attn_weights.shape[3]
+
         attn_weights=self.M.unsqueeze(0)
         if bs!=1:
             attn_weights=attn_weights.repeat(bs,1,1,1)
@@ -576,7 +581,7 @@ class T5Attention(nn.Module):
         if self.isCross:
             attn_weights=attn_weights[:,:,:isl,:sl]
         else:
-            attn_weights=attn_weights[:,:,:sl,:sl]
+            attn_weights=attn_weights[:,:,:isl,:sl]
         #----------------- ends here ---------------------
 
         # print(f"new attention shape: {attn_weights.shape}")

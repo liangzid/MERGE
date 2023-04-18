@@ -401,6 +401,11 @@ def main():
         # config.quad_softmax="linear"
     else:
         config.quad_softmax="0"
+    if args.no_res==1:
+        print("no resiual connect using.")
+        config.no_res="1"
+    else:
+        config.no_res="0"
         
     config.save_pretrained(args.stu_save_ckpt)
 

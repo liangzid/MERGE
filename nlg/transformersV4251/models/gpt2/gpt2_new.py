@@ -513,7 +513,10 @@ class GPT2Block(nn.Module):
         attn_output = attn_outputs[0]  # output_attn: a, present, (attentions)
         outputs = attn_outputs[1:]
         # residual connection
-        hidden_states = attn_output + residual
+        if hasattr(self.config,"no_res") and self.config.no_res==1:
+            hidden_states = attn_output + 0 
+        else:
+            hidden_states = attn_output + residual
 
         if encoder_hidden_states is not None:
             # add one self-attention block for cross-attention

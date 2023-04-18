@@ -16,11 +16,12 @@ from utils import encrypt_tensor, encrypt_model
 
 from gpt import gpt
 from encryp_decoder import GPTBaseFlatten
+from encryp_decoder_nosimLN import GPTBaseFlatten
 
 # 2PC setting
 rank = sys.argv[1]
 device=str(sys.argv[2])
-if device=="-1":
+if device=="-1" or device=="cpu":
    device="cpu"
 else:
    device=f"cuda:{device}"

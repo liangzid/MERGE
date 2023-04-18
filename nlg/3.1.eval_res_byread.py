@@ -79,17 +79,47 @@ def main():
     # model_path="./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/onlyER150001000104008e-50.010.60.70.75finally/"
     # gentype="ER"
 
-    ## 10. commongen gpt2 MERGE only MM
-    task="common_gen"
+    # ## 10. commongen gpt2 MERGE only MM
+    # task="common_gen"
+    # subset=None
+    # model_path="./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-40.010.60.70.75finally/"
+    # gentype="vanilla"
+
+    ## 11. dailydialog gpt2 MERGE only MM
+    task="daily_dialog"
     subset=None
-    model_path="./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-40.010.60.70.75finally/"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75finally/"
     gentype="vanilla"
 
-    # ## 11. dailydialog gpt2 MERGE only MM
-    # task="daily_dialog"
+    # ## 12. multiwoz t5 mpcformer
+    # task="multiwoz_nlg"
     # subset=None
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mpcformer1010004108e-50.010.00.00.0finally/"
     # gentype="vanilla"
+
+    # ## 13. multiwoz bart mpcformer
+    # task="multiwoz_nlg"
+    # subset=None
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/mpcformer1010004108e-50.010.00.00.0finally/"
+    # gentype="vanilla"
+
+    # ## 14. multiwoz gpt2 onlyMM
+    # task="multiwoz_nlg"
+    # subset=None
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/onlyMM1000104028e-40.010.60.70.75finally/"
+    # gentype="vanilla"
+
+    # ## 15. multiwoz gpt2 onlyER
+    # task="multiwoz_nlg"
+    # subset=None
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/onlyMM1000104008e-40.010.60.70.75finally/"
+    # gentype="ER"
+
+    ## 16. multiwoz t5 MERGE
+    task="multiwoz_nlg"
+    subset=None
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/addQuad1000104119e-50.010.60.70.75finally/"
+    gentype="ER"
 
 
     # gentype="ER"
@@ -100,7 +130,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=4
+    cuda_num=5
 
     # gentype="ER"
 
@@ -132,16 +162,16 @@ def main():
     if gentype=="vanilla":
 
         # # # print(seqls[0])
-        # newseqls=infermodel.inference(seqls)
+        newseqls=infermodel.inference(seqls)
 
         if subset is None:
             genpath=model_path+task+"greedy.json"
         else:
             genpath=model_path+task+subset+"greedy.json"
 
-        # with open(genpath, 'w',encoding='utf8') as f:
-        #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
-        # print("data save done.")
+        with open(genpath, 'w',encoding='utf8') as f:
+            json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
+        print("data save done.")
 
         with open(genpath, 'r',encoding='utf8') as f:
             data=json.load(f,object_pairs_hook=OrderedDict)
@@ -153,16 +183,16 @@ def main():
         print(res)
 
     else:
-        # newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
+        newseqls=infermodel.inference(seqls,generate_mode_test="embedResend")
 
         if subset is None:
             genpath=model_path+task+"embedresend.json"
         else:
             genpath=model_path+task+subset+"embedresend.json"
 
-        # with open(genpath, 'w',encoding='utf8') as f:
-        #     json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
-        # print("res save done.")
+        with open(genpath, 'w',encoding='utf8') as f:
+            json.dump([newseqls,valabels],f,ensure_ascii=False,indent=4)
+        print("res save done.")
 
         # from collections import OrderedDict
         with open(genpath, 'r',encoding='utf8') as f:

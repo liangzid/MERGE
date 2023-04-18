@@ -31,7 +31,7 @@ export tau=4
 export using_interKL=0
 export using_wordEmbedMSE=0
 export using_quadacti=0
-export using_COSEm=0
+export using_COSEm=1
 export using_NEGAEM=0
 
 export using_quadacti=1 ##### now add the quadtic option.

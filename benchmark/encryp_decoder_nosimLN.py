@@ -82,11 +82,11 @@ class GPTBaseFlatten(nn.Module):
         
         for num_layer in range(self.config.num_hidden_layers):
             self.weight0_mats.append(torch.ones((self.d,
-                                    self.d)).to(self.device).T)
+                                    self.d)).to(self.device))
             self.weight1_mats.append(torch.ones((self.d,
-                                    self.I)).to(self.device).T)
+                                    self.I)).to(self.device))
             self.weight2_mats.append(torch.ones((self.I,
-                                    self.d)).to(self.device).T)
+                                    self.d)).to(self.device))
             self.bias_mats.append(torch.ones(self.I)\
                                   .to(self.device))
             self.bias1_mats.append(torch.ones(self.d)\
@@ -200,7 +200,9 @@ class GPTBaseFlatten(nn.Module):
             c0=comm.get().get_communication_stats()
 
             xo=self.multiheadMut(xo,self.M_mats[i][:,:sl,:sl])
+            # print(xo.shape,self.weight0_mats[i].shape)
             xo=xo.matmul(self.weight0_mats[i])
+            # print(xo.shape,self.weight1_mats[i].shape)
             xo=xo.matmul(self.weight1_mats[i])
             xo=xo+self.bias_mats[i]
             
@@ -268,17 +270,17 @@ class GPTBaseFlatten(nn.Module):
             # the outputs of previous layer
             # print("xo type and shape",type(xo),xo.shape)
             # print("shape before cat: ",past_states[i].shape)
-            if len(past_states[i+1])==0:
-                past_states[i+1]=xo
+            if len(past_states[i])==0:
+                past_states[i]=xo
             else:
-                past_states[i+1]=past_states[i+1].\
-                    cat([past_states[i+1],xo], 1)
+                past_states[i]=past_states[i].\
+                    cat([past_states[i],xo], 1)
             # print("shape after cat: ",past_states[i].shape)
             
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
-            xo=self.multiheadMut(past_states[i+1],
+            xo=self.multiheadMut(past_states[i],
                                  self.M_mats[i][:,
                                     :num_past_token+1,
                                     num_past_token:num_past_token+1])
@@ -316,8 +318,8 @@ class GPTBaseFlatten(nn.Module):
             self.timing["ActivCommTime"]+=(c2['time']-c0['time'])
             self.timing["ActivCommByte"]+=(c2['bytes']-c0['bytes'])
 
-        past_states[i+2]=past_states[i+2].\
-            cat([past_states[i+2],xo], 1)
+        past_states[i+1]=past_states[i+1].\
+            cat([past_states[i+1],xo], 1)
 
         return xo
         

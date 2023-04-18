@@ -121,6 +121,8 @@ def setup_train_args():
                         type=float, required=False,)
     parser.add_argument('--softmax2quad', default=0,
                         type=int, required=False,)
+    parser.add_argument('--no_res', default=0,
+                        type=int, required=False,)
     return parser.parse_args()
 
 

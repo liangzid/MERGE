@@ -53,10 +53,11 @@ export using_NEGAEm=0
 # export device="0"
 
 ## method 7
+export no_res=1
 export using_quadacti=0 ##### now add the quadtic option.
 export using_simLN=1 # 2 denotes do not use simLN, but use the approximation model
 export lamda=0.75
-export device="3"
+export device="1"
 
 ##############################################################
 
@@ -65,7 +66,7 @@ export dropout_rate=0.6
 export noise=0.7
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}longStep${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}nores${no_res}${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -75,6 +76,7 @@ ${python} train_slide.py \
 	--train=1 \
 	--epochs=${epochs} \
 	--train_step=${step} \
+	--no_res=${no_res} \
 	--lr=${lr} \
 	--cuda_num=${device} \
 	--batch_size=${batch_size} \
