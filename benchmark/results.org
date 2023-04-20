@@ -7,8 +7,7 @@
 
 * 速度测试表格
 ** TODO GPT 124M MSL=128 
-*** DONE mpcFormer softmax2relu
-CLOSED: [2023-04-20 周四 11:15]
+*** REVIEW mpcFormer softmax2relu
 
 keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
 NotFound: ActivTime
@@ -47,8 +46,7 @@ NotFound: GenerationCommByte
 defaultdict(<class 'float'>, {'EmbedTime': 319.8215516090393, 'EmbedCommTime': 52.118535993946715, 'ËmbedCommByte': 73127.09446716309, 'NormTime': 26.289513206481935, 'NormCommTime': 5.410083906538785, 'NormCommByte': 147.0703125, 'LinearTime': 252.37204604148866, 'LinearCommTime': 74.9420108828228, 'LinearCommByte': 163184.77880859375, 'SoftmaxTime': 184.05470366477965, 'SoftmaxCommTime': 47.433782088384035, 'SoftmaxCommByte': 555.71044921875, 'ActTime': 6.764379024505615, 'ActCommTime': 1.4096253681229427, 'ActCommByte': 142.875, 'GenerateOtherTime': 212.10938048362732, 'GenerateOtherCommTime': 58.063163882261144, 'GenerateOtherCommByte': 87658.21520996094, 'total_time': 1005.8528663158417})
 
 
-*** DONE mpcFormer softmax2quad
-CLOSED: [2023-04-20 周四 11:15]
+*** REVIEW mpcFormer softmax2quad
 
 
 keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
@@ -92,8 +90,80 @@ defaultdict(<class 'float'>, {'EmbedTime': 320.53231887817384, 'EmbedCommTime': 
 
 
 
-*** WAITING THE-X i.e. XXX
-*** WAITING Vanilla GPT-2
+*** DONE THE-X
+CLOSED: [2023-04-20 周四 13:44]
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: ActivTime
+NotFound: GenerationTime
+=====MEAN====
+329.29845185279845      258.003651714325        87.71049041748047       -1      -1      965.7858202934265
+=====VAR====
+58.97475875867417       4.893799006642748       8.634032428752004       -1      -1      419.6304740312783
+=====MIN====
+316.3728108406067       254.57758045196533      82.64787769317627       -1      -1      931.3671236038208
+=====MAX====
+335.5215051174164       261.04002046585083      90.31552648544312       -1      -1      986.8706562519073
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: ActivCommTime
+NotFound: GenerationCommTime
+=====MEAN====
+58.30198747811373       80.20795319583267       19.280689470353536      -1      -1      965.7858202934265
+=====VAR====
+6.670069849455028       1.789784673966881       1.3159171398767509      -1      -1      419.6304740312783
+=====MIN====
+53.84767633641604       78.93134678574279       17.26757018349599       -1      -1      931.3671236038208
+=====MAX====
+61.23126297094859       82.77877928537782       20.6635869393358        -1      -1      986.8706562519073
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: ActivCommByte
+NotFound: GenerationCommByte
+=====MEAN====
+76679316208.0   171111642624.0  635249664.0     -1      -1
+=====VAR====
+0.0     0.0     0.0     -1      -1
+=====MIN====
+76679316208.0   171111642624.0  635249664.0     -1      -1
+=====MAX====
+76679316208.0   171111642624.0  635249664.0     -1      -1
+-------------
+defaultdict(<class 'float'>, {'EmbedTime': 329.29845185279845, 'EmbedCommTime': 58.30198747811373, 'ËmbedCommByte': 73127.09446716309, 'NormTime': 27.502546787261963, 'NormCommTime': 6.141579707874916, 'NormCommByte': 147.0703125, 'LinearTime': 258.003651714325, 'LinearCommTime': 80.20795319583267, 'LinearCommByte': 163184.77880859375, 'SoftmaxTime': 87.71049041748047, 'SoftmaxCommTime': 19.280689470353536, 'SoftmaxCommByte': 605.8212890625, 'ActTime': 35.925034046173096, 'ActCommTime': 11.346552159520797, 'ActCommByte': 2071.6875, 'GenerateOtherTime': 222.7196361541748, 'GenerateOtherCommTime': 65.18890619704034, 'GenerateOtherCommByte': 87658.21520996094, 'total_time': 965.7858202934265})
+*** DONE Vanilla GPT-2
+CLOSED: [2023-04-20 周四 14:23]
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: ActivTime
+NotFound: GenerationTime
+=====MEAN====
+321.4412048339844       251.9342824459076       454.61146659851073      -1      -1      1328.2569969654082
+=====VAR====
+36.898634971897366      2.9265693838588187      135.83732208280645      -1      -1      537.4222229759118
+=====MIN====
+312.8062696456909       249.71651768684387      439.55513882637024      -1      -1      1298.2677314281464
+=====MAX====
+330.6566083431244       253.84310221672058      473.84014201164246      -1      -1      1367.7119669914246
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: ActivCommTime
+NotFound: GenerationCommTime
+=====MEAN====
+52.33051069527865       74.20912569777575       113.96074670569506      -1      -1      1328.2569969654082
+=====VAR====
+2.7280445434011678      3.7664714183676105      17.205931380977738      -1      -1      537.4222229759118
+=====MIN====
+50.43774164549541       71.84809336054605       109.40639499016106      -1      -1      1298.2677314281464
+=====MAX====
+55.41844620904885       76.56424366752617       121.75036075606477      -1      -1      1367.7119669914246
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: ActivCommByte
+NotFound: GenerationCommByte
+=====MEAN====
+76679316208.0   171111642624.0  1741351680.0    -1      -1
+=====VAR====
+0.0     0.0     0.0     -1      -1
+=====MIN====
+76679316208.0   171111642624.0  1741351680.0    -1      -1
+=====MAX====
+76679316208.0   171111642624.0  1741351680.0    -1      -1
+-------------
+defaultdict(<class 'float'>, {'EmbedTime': 321.4412048339844, 'EmbedCommTime': 52.33051069527865, 'ËmbedCommByte': 73127.09446716309, 'NormTime': 26.41507830619812, 'NormCommTime': 5.574865391710773, 'NormCommByte': 147.0703125, 'LinearTime': 251.9342824459076, 'LinearCommTime': 74.20912569777575, 'LinearCommByte': 163184.77880859375, 'SoftmaxTime': 454.61146659851073, 'SoftmaxCommTime': 113.96074670569506, 'SoftmaxCommByte': 1660.682373046875, 'ActTime': 55.4467942237854, 'ActCommTime': 14.443050337419844, 'ActCommByte': 4500.5625, 'GenerateOtherTime': 213.9932490825653, 'GenerateOtherCommTime': 58.767931226803924, 'GenerateOtherCommByte': 87658.21520996094, 'total_time': 1328.2569969654082})
 *** DONE merge with res version
 CLOSED: [2023-04-20 周四 11:15]
 keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
@@ -128,8 +198,84 @@ NotFound: SoftmaxCommByte
 1238332480.0    118003562688.0  -1      149815296.0     619118592.0
 -------------
 
-*** WAITING merge only ER
-*** WAITING merge only MM
+*** DONE merge only ER
+CLOSED: [2023-04-20 周四 13:43]
+
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: ActivTime
+NotFound: GenerationTime
+=====MEAN====
+5.4145105361938475      260.35919818878176      477.76509685516356      -1      -1      834.1264422893524
+=====VAR====
+0.016348981280825684    2.3429828899121414      21.43041941366117       -1      -1      33.218130666493096
+=====MIN====
+5.221645355224609       258.39573097229004      470.647887468338        -1      -1      824.3343379497528
+=====MAX====
+5.5963568687438965      262.9959020614624       483.65975522994995      -1      -1      840.3776621818542
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: ActivCommTime
+NotFound: GenerationCommTime
+=====MEAN====
+0.953561028954573       80.00472706507426       124.83331272688228      -1      -1      834.1264422893524
+=====VAR====
+0.003995419802254666    1.73747618002999        2.4432525158001432      -1      -1      33.218130666493096
+=====MIN====
+0.9024600171251222      78.74703175248578       122.59493040759116      -1      -1      824.3343379497528
+=====MAX====
+1.0759945795871317      82.38964712503366       126.63504987291526      -1      -1      840.3776621818542
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: ActivCommByte
+NotFound: GenerationCommByte
+=====MEAN====
+1238332480.0    172471474944.0  1740798720.0    -1      -1
+=====VAR====
+0.0     0.0     0.0     -1      -1
+=====MIN====
+1238332480.0    172471474944.0  1740798720.0    -1      -1
+=====MAX====
+1238332480.0    172471474944.0  1740798720.0    -1      -1
+-------------
+defaultdict(<class 'float'>, {'EmbedTime': 5.4145105361938475, 'EmbedCommTime': 0.953561028954573, 'ËmbedCommByte': 1180.9658813476562, 'NormTime': 27.025830841064455, 'NormCommTime': 6.09261630277615, 'NormCommByte': 141.890625, 'LinearTime': 260.35919818878176, 'LinearCommTime': 80.00472706507426, 'LinearCommByte': 164481.61596679688, 'SoftmaxTime': 477.76509685516356, 'SoftmaxCommTime': 124.83331272688228, 'SoftmaxCommByte': 1660.155029296875, 'ActTime': 58.43527755737305, 'ActCommTime': 15.887179852626286, 'ActCommByte': 4500.5625, 'GenerateTime': 0.7896572113037109, 'GenerateCommTime': 0.26304320264607667, 'GenerateCommByte': 588.9609375, 'total_time': 834.1264422893524})
+
+
+*** DONE merge only MM
+CLOSED: [2023-04-20 周四 13:44]
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: SoftmaxTime
+NotFound: GenerationTime
+=====MEAN====
+338.86435160636904      243.31016793251038      -1      59.39364347457886       -1      774.0945526599884
+=====VAR====
+4.304253125019899       0.3712003502773905      -1      0.32637885564432967     -1      20.625300134068873
+=====MIN====
+335.467059135437        242.17496418952942      -1      58.28877544403076       -1      766.173858165741
+=====MAX====
+341.2851436138153       243.94389581680298      -1      59.92918610572815       -1      779.0358774662018
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: SoftmaxCommTime
+NotFound: GenerationCommTime
+=====MEAN====
+59.00809236296918       79.64493292360567       -1      16.360449552861972      -1      774.0945526599884
+=====VAR====
+0.435878231311542       0.2007027710082169      -1      0.05885753271948939     -1      20.625300134068873
+=====MIN====
+57.74088239995763       78.9228423081804        -1      15.9371268019313        -1      766.173858165741
+=====MAX====
+59.649207924026996      80.32811553624924       -1      16.65567391156219       -1      779.0358774662018
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: SoftmaxCommByte
+NotFound: GenerationCommByte
+=====MEAN====
+77296874224.0   194582280384.0  -1      4719181824.0    -1
+=====VAR====
+0.0     0.0     -1      0.0     -1
+=====MIN====
+77296874224.0   194582280384.0  -1      4719181824.0    -1
+=====MAX====
+77296874224.0   194582280384.0  -1      4719181824.0    -1
+-------------
+defaultdict(<class 'float'>, {'EmbedTime': 338.86435160636904, 'EmbedCommTime': 59.00809236296918, 'ËmbedCommByte': 73716.04368591309, 'NormTime': 1.1195680141448974, 'NormCommTime': 0.2668283278355375, 'NormCommByte': 5.90625, 'LinearTime': 243.31016793251038, 'LinearCommTime': 79.64493292360567, 'LinearCommByte': 185568.12322998047, 'ActivTime': 59.39364347457886, 'ActivCommTime': 16.360449552861972, 'ActivCommByte': 4500.5625, 'SMAMTime': 129.579931306839, 'SMAMCommTime': 35.37902967678383, 'SMAMCommByte': 14627.023803710938, 'total_time': 774.0945526599884})
+
 *** TODO merge no res
 ** TODO T5 
 *** TODO t5 vanilla

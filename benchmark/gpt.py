@@ -314,6 +314,8 @@ class gptLayer(cnn.Module):
         intermediate_output = self.intermediate(attention_output)
         layer_output = self.output(intermediate_output, attention_output)
         return layer_output#, past
+
+    
         
 class gptAttention(cnn.Module):
     def __init__(self, config, timing):
