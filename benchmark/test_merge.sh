@@ -36,19 +36,24 @@ export head=12
 echo ">> 2. evaluate only MM"
 # export method="mpcformer_sfrelu"
 # export method="mpcformer_sfquad"
-export method="our"
+export method="thex"
+# export method="vanillaGPT"
+# export method="onlyMM"
+# export method="onlyER"
+# export method="our"
 export gen_type="vanilla" 
-export gen_type="embedReSend" 
-export device=1
-export port="3933"
-
+# export gen_type="embedReSend" 
+export device=7
+export port="394${device}"
+export CUDA_VISIBLE_DEVICES="${device}"
+export device=0
 
 $python profile_gpt.py 0 $device\
 	$layer $d $msl $prefix $head $method $gen_type $port &
 	
 nohup $python profile_gpt.py 1 $device\
       $layer $d $msl $prefix $head $method $gen_type $port\
-      >./res/$method$gen_type$device$layer$d$msl$prefix$head$port.txt &
+      >./res/method${method}gen_type${gen_type}$device$layer$d$msl$prefix$head$port.txt &
 
 echo "RUNNING test_merge.sh DONE."
 # test_merge.sh ends here

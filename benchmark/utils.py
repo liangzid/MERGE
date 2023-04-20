@@ -59,6 +59,21 @@ class softmax_2RELU(cnn.Module):
         func_x = self.func(x)
         return func_x / func_x.sum(keepdim=True, dim=self.dim)
 
+class softmax2RELU_2(cnn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.func = cnn.ReLU()
+        self.layer1=cnn.Linear(1,16)
+        self.layer2=cnn.Linear(16,16)
+        self.layer3=cnn.Linear(16,1)
+        self.dim = dim
+
+    def forward(self, x):
+        func_x = self.func((x/2+1).pow(3)).sum(keepdim=True,dim=self.dim)
+        # print(func_x.shape)
+        func_x=self.layer3(self.layer2(self.layer1(func_x)))
+        return x*func_x
+
 class softmax_2QUAD(cnn.Module):
     def __init__(self, norm, dim):
         super().__init__()

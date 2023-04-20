@@ -34,7 +34,7 @@ import crypten.nn as nn
 import crypten.communicator as comm
 from crypten.common.functions import maximum
 
-from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor
+from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor, softmax2RELU_2
 
 from gpt import gptEmbeddings
 

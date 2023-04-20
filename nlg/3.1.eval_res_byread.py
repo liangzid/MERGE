@@ -115,10 +115,16 @@ def main():
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/onlyMM1000104008e-40.010.60.70.75finally/"
     # gentype="ER"
 
-    ## 16. multiwoz t5 MERGE
+    # ## 16. multiwoz t5 MERGE
+    # task="multiwoz_nlg"
+    # subset=None
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/addQuad1000104119e-50.010.60.70.75finally/"
+    # gentype="ER"
+
+    ## 17. multiwoz bart MERGE
     task="multiwoz_nlg"
     subset=None
-    model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/addQuad1000104119e-50.010.60.70.75finally/"
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/addQuad1000104013e-40.010.60.70.75finally/"
     gentype="ER"
 
 
@@ -130,7 +136,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=5
+    cuda_num=1
 
     # gentype="ER"
 

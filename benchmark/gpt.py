@@ -11,7 +11,7 @@ from crypten.common.functions import maximum
 
 from tqdm import tqdm
 
-from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor
+from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor, softmax2RELU_2
 
 class gpt(cnn.Module):
     def __init__(self, config, timing):
@@ -20,7 +20,7 @@ class gpt(cnn.Module):
 
         # No need to init weight for timing purpose
         self.embeddings = gptEmbeddings(config, timing)
-        self.embeddings.cuda()
+        self.embeddings.cuda(config.device)
         self.encoder = cnn.ModuleList([gptLayer(config, timing) for _ in range(config.num_hidden_layers)])
         self.lm_head = cnn.Linear(config.hidden_size, config.vocab_size, bias=False)
         self.smax = cnn.Softmax(dim=-1)
@@ -352,11 +352,13 @@ class gptSelfAttention(cnn.Module):
             self.smax = cnn.Softmax(dim=-1)
         elif config.softmax_act == "softmax_2RELU":
             self.smax = softmax_2RELU(dim=-1)
+        elif config.softmax_act == "softmax2RELU_2":
+            self.smax = softmax2RELU_2(dim=-1)
         elif config.softmax_act == "softmax_2QUAD":
             self.norm = cnn.BatchNorm2d(config.hidden_size, eps=config.layer_norm_eps)
             self.smax = softmax_2QUAD(self.norm, dim=-1)
         else:
-            raise ValueError(f"softmax type {config.softmax_act} not implemented.")
+           raise ValueError(f"softmax type {config.softmax_act} not implemented.")
         self.timing = timing
     
     def reset_timing(self):

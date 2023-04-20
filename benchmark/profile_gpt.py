@@ -3,6 +3,8 @@ import os
 import time
 from collections import defaultdict
 from tqdm import tqdm
+import numpy as np
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
@@ -57,8 +59,11 @@ class config():
             self.softmax_act="softmax"
         elif method=="thex":
             self.hidden_act="relu"
-            self.softmax_act="softmax_2RELU"
-        elif method=="onlyCM":
+            self.softmax_act="softmax2RELU_2"
+        elif method=="onlyMM":
+            self.hidden_act="newGeLU"
+            self.softmax_act="softmax"
+        elif method=="onlyER":
             self.hidden_act="newGeLU"
             self.softmax_act="softmax"
         elif method=="mpcformer_sfrelu":
@@ -138,7 +143,7 @@ input_ids = F.one_hot(torch.randint(low=0, high=config.vocab_size,
 print("init done")
 timing = defaultdict(float)
 
-if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":
+if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
     m = GPTBaseFlatten(config, timing)
     model = encrypt_model(m, GPTBaseFlatten,
                   (config, timing), input_ids).eval()
@@ -150,10 +155,11 @@ else:
 # encrpy inputs
 input_ids = encrypt_tensor(input_ids,config)
 
-num=1
+num=5
 avg_t = defaultdict(float)
+res_ls=[]
 
-if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":
+if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
     if config.gen_type=="vanilla":
         for i in tqdm(range(num)):
             m.reset_timing()
@@ -164,6 +170,7 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":
 
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
             print(timing)
@@ -177,6 +184,7 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyCM":
 
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
             print(timing)
@@ -190,6 +198,7 @@ else:
                 model.generate(input_ids, config.gen_len)
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
             print(timing)
@@ -202,9 +211,70 @@ else:
                 model.generate_ourmethod(input_ids, config.gen_len)
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
             print(timing)
+def mean(ls):
+   return sum(ls)/len(ls)
+
+def var(ls):
+   return np.var(ls)
+
+def getMeanStdMinMax(res_ls):
+   ls_of_each_att={}
+   for k in res_ls[0].keys():
+      ls_of_each_att[k]=[]
+
+   for k in ls_of_each_att.keys():
+      ls_of_each_att[k]=[x[k] for x in res_ls]
+   # thus each key (e.g. linear time) have a list of values
+
+   ## statistic the meanvalue,the std, the min, and the max
+   keyls_t1=["EmbedTime","LinearTime","SoftmaxTime","ActivTime",
+             "GenerationTime","total_time",]
+   keyls_ct1=["EmbedCommTime","LinearCommTime","SoftmaxCommTime",
+              "ActivCommTime","GenerationCommTime","total_time",]
+   keyls_cb=["ËmbedCommByte","LinearCommByte","SoftmaxCommByte",
+              "ActivCommByte","GenerationCommByte"]
+   metric_cal(ls_of_each_att,keyls_t1)
+   metric_cal(ls_of_each_att,keyls_ct1)
+   metric_cal(ls_of_each_att,keyls_cb)
+
+def metric_cal(ls_of_each_att,keyls_t1):
+   tmp_mean_res=[]
+   tmp_std_res=[]
+   tmp_min_res=[]
+   tmp_max_res=[]
+   print(f"keys:{keyls_t1}")
+   for k in keyls_t1:
+      if k not in ls_of_each_att.keys():
+         print(f"NotFound: {k}")
+         tmp_mean_res.append(-1)
+         tmp_std_res.append(-1)
+         tmp_min_res.append(-1)
+         tmp_max_res.append(-1)
+      else:
+         tmp_mean_res.append(mean(ls_of_each_att[k]))
+         tmp_std_res.append(var(ls_of_each_att[k]))
+         tmp_min_res.append(min(ls_of_each_att[k]))
+         tmp_max_res.append(max(ls_of_each_att[k]))
+
+   tmp_mean_res=[str(x) for x in tmp_mean_res]
+   tmp_std_res=[str(x) for x in tmp_std_res]
+   tmp_min_res=[str(x) for x in tmp_min_res]
+   tmp_max_res=[str(x) for x in tmp_max_res]
+
+   print("=====MEAN====")
+   print("\t".join(tmp_mean_res))
+   print("=====VAR====")
+   print("\t".join(tmp_std_res))
+   print("=====MIN====")
+   print("\t".join(tmp_min_res))
+   print("=====MAX====")
+   print("\t".join(tmp_max_res))
+
+getMeanStdMinMax(res_ls)
 
 for k,v in avg_t.items():
    avg_t[k]/=num

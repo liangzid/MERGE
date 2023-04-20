@@ -1,0 +1,157 @@
+#+title: 测速实验结果记录
+#+date: Wed Apr 19 11:39:12 2023
+#+author: Zi Liang
+#+email: liangzid@stu.xjtu.edu.cn
+#+latex_class: elegantpaper
+
+
+* 速度测试表格
+** TODO GPT 124M MSL=128 
+*** DONE mpcFormer softmax2relu
+CLOSED: [2023-04-20 周四 11:15]
+
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: ActivTime
+NotFound: GenerationTime
+=====MEAN====
+319.8215516090393       252.37204604148866      184.05470366477965      -1      -1      1005.8528663158417
+=====VAR====
+2.3414402948106363      1.1198668442550208      1.949732402257664       -1      -1      23.718402584270656
+=====MIN====
+317.43425393104553      251.0783405303955       181.82295298576355      -1      -1      997.6292395591736
+=====MAX====
+321.51552414894104      254.06304931640625      185.66380882263184      -1      -1      1011.8063061237335
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: ActivCommTime
+NotFound: GenerationCommTime
+=====MEAN====
+52.118535993946715      74.9420108828228        47.433782088384035      -1      -1      1005.8528663158417
+=====VAR====
+0.33266453191433965     0.8554810945250255      0.6150837156126682      -1      -1      23.718402584270656
+=====MIN====
+51.46370592981111       74.0929973575985        46.40771150740329       -1      -1      997.6292395591736
+=====MAX====
+52.88494317396544       76.19254402804654       48.323076481116004      -1      -1      1011.8063061237335
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: ActivCommByte
+NotFound: GenerationCommByte
+=====MEAN====
+76679316208.0   171111642624.0  582704640.0     -1      -1
+=====VAR====
+0.0     0.0     0.0     -1      -1
+=====MIN====
+76679316208.0   171111642624.0  582704640.0     -1      -1
+=====MAX====
+76679316208.0   171111642624.0  582704640.0     -1      -1
+-------------
+defaultdict(<class 'float'>, {'EmbedTime': 319.8215516090393, 'EmbedCommTime': 52.118535993946715, 'ËmbedCommByte': 73127.09446716309, 'NormTime': 26.289513206481935, 'NormCommTime': 5.410083906538785, 'NormCommByte': 147.0703125, 'LinearTime': 252.37204604148866, 'LinearCommTime': 74.9420108828228, 'LinearCommByte': 163184.77880859375, 'SoftmaxTime': 184.05470366477965, 'SoftmaxCommTime': 47.433782088384035, 'SoftmaxCommByte': 555.71044921875, 'ActTime': 6.764379024505615, 'ActCommTime': 1.4096253681229427, 'ActCommByte': 142.875, 'GenerateOtherTime': 212.10938048362732, 'GenerateOtherCommTime': 58.063163882261144, 'GenerateOtherCommByte': 87658.21520996094, 'total_time': 1005.8528663158417})
+
+
+*** DONE mpcFormer softmax2quad
+CLOSED: [2023-04-20 周四 11:15]
+
+
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: ActivTime
+NotFound: GenerationTime
+=====MEAN====
+320.53231887817384      251.3868923187256       155.19955520629884      -1      -1      977.5351450920105
+=====VAR====
+7.403922806324009       1.4195031283214121      4.823657804431227       -1      -1      68.98313588646103
+=====MIN====
+316.02940225601196      250.11983227729797      152.2602310180664       -1      -1      964.7855942249298
+=====MAX====
+323.29246830940247      253.33942198753357      157.74813580513 -1      -1      987.9342453479767
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: ActivCommTime
+NotFound: GenerationCommTime
+=====MEAN====
+51.34580582571216       73.66676102636848       38.234425517357884      -1      -1      977.5351450920105
+=====VAR====
+1.7917394476371757      1.8275823946347125      1.718624861214823       -1      -1      68.98313588646103
+=====MIN====
+49.182311396463774      71.95942993252538       36.73911873996258       -1      -1      964.7855942249298
+=====MAX====
+52.99812608328648       75.81253248406574       40.09132688655518       -1      -1      987.9342453479767
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: ActivCommByte
+NotFound: GenerationCommByte
+=====MEAN====
+76679316208.0   171111642624.0  76704768.0      -1      -1
+=====VAR====
+0.0     0.0     0.0     -1      -1
+=====MIN====
+76679316208.0   171111642624.0  76704768.0      -1      -1
+=====MAX====
+76679316208.0   171111642624.0  76704768.0      -1      -1
+-------------
+defaultdict(<class 'float'>, {'EmbedTime': 320.53231887817384, 'EmbedCommTime': 51.34580582571216, 'ËmbedCommByte': 73127.09446716309, 'NormTime': 26.37512001991272, 'NormCommTime': 5.325118317920714, 'NormCommByte': 147.0703125, 'LinearTime': 251.3868923187256, 'LinearCommTime': 73.66676102636848, 'LinearCommByte': 163184.77880859375, 'SoftmaxTime': 155.19955520629884, 'SoftmaxCommTime': 38.234425517357884, 'SoftmaxCommByte': 73.1513671875, 'ActTime': 6.7954856872558596, 'ActCommTime': 1.331895143329166, 'ActCommByte': 142.875, 'GenerateOtherTime': 212.7982397556305, 'GenerateOtherCommTime': 57.160964252823035, 'GenerateOtherCommByte': 87658.21520996094, 'total_time': 977.5351450920105})
+
+
+
+
+
+
+*** WAITING THE-X i.e. XXX
+*** WAITING Vanilla GPT-2
+*** DONE merge with res version
+CLOSED: [2023-04-20 周四 11:15]
+keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
+NotFound: SoftmaxTime
+=====MEAN====
+5.15585503578186        148.70792598724364      -1      6.542934942245483       0.9499017238616944      162.48278713226318
+=====VAR====
+0.005221166595074465    1.4702416567442333      -1      0.0031444089302885914   0.0031401472380503037   1.848605442944813
+=====MIN====
+5.053839921951294       147.79524898529053      -1      6.4647533893585205      0.8986461162567139      161.45052099227905
+=====MAX====
+5.280372381210327       150.9132342338562       -1      6.597078084945679       1.0549054145812988      164.96672129631042
+keys:['EmbedCommTime', 'LinearCommTime', 'SoftmaxCommTime', 'ActivCommTime', 'GenerationCommTime', 'total_time']
+NotFound: SoftmaxCommTime
+=====MEAN====
+0.8552202220540494      51.47048560839612       -1      1.3477199304616079      0.26079520042985677     162.48278713226318
+=====VAR====
+0.004294290573576503    1.4226864923695117      -1      0.00469427817059027     0.0024961370506109927   1.848605442944813
+=====MIN====
+0.7883476257557049      50.53581283194944       -1      1.2506831790087745      0.21304968604817986     161.45052099227905
+=====MAX====
+0.9683712739497423      53.625820887624286      -1      1.4375994709553197      0.35267581103835255     164.96672129631042
+keys:['ËmbedCommByte', 'LinearCommByte', 'SoftmaxCommByte', 'ActivCommByte', 'GenerationCommByte']
+NotFound: SoftmaxCommByte
+=====MEAN====
+1238332480.0    118003562688.0  -1      149815296.0     619118592.0
+=====VAR====
+0.0     0.0     -1      0.0     0.0
+=====MIN====
+1238332480.0    118003562688.0  -1      149815296.0     619118592.0
+=====MAX====
+1238332480.0    118003562688.0  -1      149815296.0     619118592.0
+-------------
+
+*** WAITING merge only ER
+*** WAITING merge only MM
+*** TODO merge no res
+** TODO T5 
+*** TODO t5 vanilla
+*** TODO mpcFormer softmax2relu
+*** TODO mpcFormer softmax2quad
+*** TODO THE-X i.e. XXX
+*** TODO merge with res
+*** TODO merge only ER
+*** TODO merge only MM
+*** TODO merge no res
+** TODO Bart
+*** TODO t5 vanilla
+*** TODO mpcFormer softmax2relu
+*** TODO mpcFormer softmax2quad
+*** TODO THE-X i.e. XXX
+*** TODO merge with res
+*** TODO merge only ER
+*** TODO merge only MM
+*** TODO merge no res
+* TODO Vary Model Size
+x轴设定： 5个point，从124M到6B，在GPT上进行
+曲线：四条即可，merge, gpt2, thex, mpcformer
+* TODO Vary Sequence Length
+x轴设定： 5个point: 64 128 256 512 1024，在GPT上进行
+曲线：四条即可，merge, gpt2, thex, mpcformer

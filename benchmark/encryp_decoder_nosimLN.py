@@ -35,7 +35,7 @@ import crypten.nn as nn
 import crypten.communicator as comm
 from crypten.common.functions import maximum
 
-from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor
+from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newGeLU, encrypt_tensor, softmax2RELU_2
 
 from gpt import gptEmbeddings
 
@@ -56,7 +56,7 @@ class GPTBaseFlatten(nn.Module):
         self.bos_one_hot=crypten.cryptensor(self.bos_one_hot)
 
         self.embeddings=gptEmbeddings(config,timing)
-        self.embeddings.cuda()
+        self.embeddings.cuda(config.device)
 
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
