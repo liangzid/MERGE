@@ -164,8 +164,7 @@ NotFound: GenerationCommByte
 76679316208.0   171111642624.0  1741351680.0    -1      -1
 -------------
 defaultdict(<class 'float'>, {'EmbedTime': 321.4412048339844, 'EmbedCommTime': 52.33051069527865, 'ËmbedCommByte': 73127.09446716309, 'NormTime': 26.41507830619812, 'NormCommTime': 5.574865391710773, 'NormCommByte': 147.0703125, 'LinearTime': 251.9342824459076, 'LinearCommTime': 74.20912569777575, 'LinearCommByte': 163184.77880859375, 'SoftmaxTime': 454.61146659851073, 'SoftmaxCommTime': 113.96074670569506, 'SoftmaxCommByte': 1660.682373046875, 'ActTime': 55.4467942237854, 'ActCommTime': 14.443050337419844, 'ActCommByte': 4500.5625, 'GenerateOtherTime': 213.9932490825653, 'GenerateOtherCommTime': 58.767931226803924, 'GenerateOtherCommByte': 87658.21520996094, 'total_time': 1328.2569969654082})
-*** DONE merge with res version
-CLOSED: [2023-04-20 周四 11:15]
+*** REVIEW merge with res version
 keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
 NotFound: SoftmaxTime
 =====MEAN====
@@ -238,8 +237,7 @@ NotFound: GenerationCommByte
 defaultdict(<class 'float'>, {'EmbedTime': 5.4145105361938475, 'EmbedCommTime': 0.953561028954573, 'ËmbedCommByte': 1180.9658813476562, 'NormTime': 27.025830841064455, 'NormCommTime': 6.09261630277615, 'NormCommByte': 141.890625, 'LinearTime': 260.35919818878176, 'LinearCommTime': 80.00472706507426, 'LinearCommByte': 164481.61596679688, 'SoftmaxTime': 477.76509685516356, 'SoftmaxCommTime': 124.83331272688228, 'SoftmaxCommByte': 1660.155029296875, 'ActTime': 58.43527755737305, 'ActCommTime': 15.887179852626286, 'ActCommByte': 4500.5625, 'GenerateTime': 0.7896572113037109, 'GenerateCommTime': 0.26304320264607667, 'GenerateCommByte': 588.9609375, 'total_time': 834.1264422893524})
 
 
-*** DONE merge only MM
-CLOSED: [2023-04-20 周四 13:44]
+*** REVIEW merge only MM
 keys:['EmbedTime', 'LinearTime', 'SoftmaxTime', 'ActivTime', 'GenerationTime', 'total_time']
 NotFound: SoftmaxTime
 NotFound: GenerationTime

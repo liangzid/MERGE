@@ -36,7 +36,7 @@ from crypten.config import cfg
 from utils import encrypt_tensor, encrypt_model
 
 from encoderDecoder_vanilla import EncdrDecdr as gpt
-from encryp_encdec import EncDecFlatten as gptBaseFlatten
+from encryp_encdec import EncDecFlatten as GPTBaseFlatten
 
 # from encryp_decoder import GPTBaseFlatten
 # from encryp_decoder_nosimLN import GPTBaseFlatten
@@ -110,7 +110,7 @@ class config():
         self.gen_type=gen_type # enum: vanilla, embedReSend
         # self.gen_type="embedReSend" # enum: vanilla, embedReSend
         self.prefix_length=prefix_len
-        self.gen_len=self.sequence_length-self.prefix_length
+        self.gen_len=self.sequence_length-1
         self.device=device
     def __display__(self):
         t=""
@@ -175,8 +175,8 @@ else:
                   (config, timing), input_ids).eval()
 
 # encrpy inputs
+dec_ids = encrypt_tensor(input_ids[:,:2],config)
 input_ids = encrypt_tensor(input_ids,config)
-dec_ids = encrypt_tensor(input_ids[:,:1],config)
 
 num=5
 avg_t = defaultdict(float)

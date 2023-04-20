@@ -37,7 +37,7 @@ from gpt import *
 
 class gptDecLayer(cnn.Module):
     def __init__(self, config, timing):
-        super(gptCrossAttnLayer, self).__init__()
+        super(gptDecLayer, self).__init__()
         self.config = config
         self.attention = gptAttention(config, timing)
         self.cattention = gptCrossAttention(config, timing)
@@ -177,7 +177,7 @@ class gptOnlyCrossAttention(cnn.Module):
 
 class EncdrDecdr(cnn.Module):
     def __init__(self,config,timing):
-        super(gpt,self).__init__()
+        super(EncdrDecdr,self).__init__()
         self.config=config
 
         # shared embeddings
@@ -212,7 +212,7 @@ class EncdrDecdr(cnn.Module):
         
         t0 = time.time()
         comm0 = comm.get().get_communication_stats()
-        output = self.lm_head(output)
+        output = self.lm_head(dec_x)
         comm1 = comm.get().get_communication_stats()
         t1 = time.time()
             
@@ -262,7 +262,7 @@ class EncdrDecdr(cnn.Module):
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
         generation_time = {}
-        past_list = [[] for _ in range(self.config.num_hidden_layers)]
+        past_list = [[] for _ in range(self.config.decoder_layers)]
         generation_stage = False
 
         enc_x=self.forward_enc(enc_idx)
@@ -301,7 +301,7 @@ class EncdrDecdr(cnn.Module):
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
         generation_time = {}
-        past_list = [[] for _ in range(self.config.num_hidden_layers)]
+        past_list = [[] for _ in range(self.config.decoder_layers)]
         generation_stage = False
         enc_x=self.forward_enc(enc_idx)
         for token_id in range(max_new_tokens):

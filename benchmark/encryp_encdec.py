@@ -42,9 +42,12 @@ from gpt import gptEmbeddings
 
 class EncDecFlatten(nn.Module):
     def __init__(self, config, timing):
-        super(GPTBaseFlatten,self).__init__()
+        super(EncDecFlatten,self).__init__()
         self.config=config
         self.timing=timing
+        self.encoder_layers=self.config.encoder_layers
+        self.decoder_layers=self.config.decoder_layers
+        self.config.num_hidden_layers=self.decoder_layers
         # self.config.num_labels=2
         # print(config.device)
         self.device=torch.device(config.device)
@@ -92,8 +95,6 @@ class EncDecFlatten(nn.Module):
 
         self.d=config.hidden_size
         self.I=config.intermediate_size
-        self.enc_layers=self.config.encoder_layers
-        self.dec_layers=self.config.decoder_layers
 
         ## ========================= precomputed matrix
         
@@ -111,6 +112,7 @@ class EncDecFlatten(nn.Module):
             self.enc_M_mats.append(torch.ones(self.num_attention_heads,
                             self.msl,self.msl).to(self.device))
 
+        self.num_hidden_layers=self.decoder_layers
         # encryption
         for i in range(self.config.num_hidden_layers):
             self.enc_weight0_mats[i]=crypten.cryptensor(self.enc_weight0_mats[i],
@@ -170,7 +172,7 @@ class EncDecFlatten(nn.Module):
 
             self.dec_weight2_mats[i]=crypten.cryptensor(self.dec_weight2_mats[i],
                                                 src=0)
-            self.dec_bias1_mats[i]=crypten.cryptensor(self.bias1_mats[i],src=0)
+            self.dec_bias1_mats[i]=crypten.cryptensor(self.dec_bias1_mats[i],src=0)
 
         
         if config.hidden_act=="newGeLU":
@@ -188,26 +190,29 @@ class EncDecFlatten(nn.Module):
 
     def multiheadMut(self,x,M):
         bs,msl,d=x.shape 
+        target_msl=M.shape[2]
         x=x.view(bs,msl,self.num_attention_heads,-1)
-        x=x.permute(0,2,3,1) # 1,d/num_head,num_head,msl
+        x=x.permute(0,2,3,1) # bs, num_heads, d/n_head, msl
 
-        # expect M: bs,num_head,msl,1
-        d=M.shape[-1]
+        # expect M: bs,num_head,msl,target_msl, now is: bs,1,msl,target_msl
+        # d=M.shape[-1]
         M=M.unsqueeze(0)
         if bs>1:
             M=M.repeat(bs)
-        # M=M.repeat(1,1,1,msl)
 
-        xo=x.matmul(M)
+        # print("___________")
+        # print(x.shape) # bs, num_heads, d/n_head, msl
+        # print(M.shape)
+
+        xo=x.matmul(M) # bs, num_head, d/n_head,target_msl
 
         # bs,msl,d/num_head,num_head
-        if d==1:
-            xo=xo.permute(0,2,3,1).reshape(bs,1,-1)
-        else:
-            xo=xo.permute(0,2,3,1).reshape(bs,msl,-1)
+        xo=xo.permute(0,3,1,2).reshape(bs,target_msl,-1)
         return xo
-    def forward_enc(self.enc_idx):
+
+    def forward_enc(self,enc_idx):
         xo=self.embeddings(enc_idx)
+        sl=xo.shape[1]
 
         for i in range(self.encoder_layers):
             t0=time.time()
@@ -238,8 +243,12 @@ class EncDecFlatten(nn.Module):
 
             c1=comm.get().get_communication_stats()
             t1=time.time()
+
+            origin_size=xo.size()
+            xo=xo.view(-1,self.config.hidden_size)
             xo=self.LayerNorm(xo)
             xo=self.LayerNorm(xo)
+            xo=xo.view(origin_size)
 
             self.timing["LinearTime"]+=(t1-t2)
             self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
@@ -249,10 +258,12 @@ class EncDecFlatten(nn.Module):
             self.timing["ActivCommTime"]+=(c2['time']-c0['time'])
             self.timing["ActivCommByte"]+=(c2['bytes']-c0['bytes'])
             enc_x=xo
+        return enc_x
 
     def forward(self,enc_x,dec_x):
         # print(x.shape)
         xo=self.embeddings(enc_x)
+        sl=xo.shape[1]
 
         for i in range(self.encoder_layers):
             t0=time.time()
@@ -283,8 +294,11 @@ class EncDecFlatten(nn.Module):
 
             c1=comm.get().get_communication_stats()
             t1=time.time()
+            origin_size=xo.size()
+            xo=xo.view(-1,self.config.hidden_size)
             xo=self.LayerNorm(xo)
             xo=self.LayerNorm(xo)
+            xo=xo.view(origin_size)
 
             self.timing["LinearTime"]+=(t1-t2)
             self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
@@ -305,7 +319,9 @@ class EncDecFlatten(nn.Module):
             xo=xo+self.dec_self_bias_mats[i]
 
             ## noted that we use the enc_x here!
-            xo=self.multiheadMut(enc_x,self.dec_cross_M_mats[i][:,:sl,:sl])
+            enc_x_len=enc_x.shape[1]
+            xo=self.multiheadMut(enc_x,self.dec_cross_M_mats[i][:,
+                                    :enc_x_len,enc_x_len-1:enc_x_len])
             xo=xo.matmul(self.dec_cross_weight0_mats[i])
             xo=xo.matmul(self.dec_cross_weight1_mats[i])
             xo=xo+self.dec_cross_bias_mats[i]
@@ -330,8 +346,11 @@ class EncDecFlatten(nn.Module):
 
             c1=comm.get().get_communication_stats()
             t1=time.time()
+            origin_size=xo.size()
+            xo=xo.view(-1,self.config.hidden_size)
             xo=self.LayerNorm(xo)
             xo=self.LayerNorm(xo)
+            xo=xo.view(origin_size)
 
             self.timing["LinearTime"]+=(t1-t2)
             self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
@@ -350,6 +369,7 @@ class EncDecFlatten(nn.Module):
 
         alist=[]
         sl=xo.shape[1]
+        enc_x_sl=enc_x.shape[1]
 
         for i in range(self.decoder_layers):
             alist.append(xo)
@@ -362,7 +382,9 @@ class EncDecFlatten(nn.Module):
             xo=xo+self.dec_self_bias_mats[i]
 
             ## noted that we use the enc_x here!
-            xo=self.multiheadMut(enc_x,self.dec_cross_M_mats[i][:,:sl,:sl])
+            xo=self.multiheadMut(enc_x,
+                                 self.dec_cross_M_mats[i][:,:enc_x_sl,
+                                        enc_x_sl-1:enc_x_sl])
             xo=xo.matmul(self.dec_cross_weight0_mats[i])
             xo=xo.matmul(self.dec_cross_weight1_mats[i])
             xo=xo+self.dec_cross_bias_mats[i]
@@ -387,8 +409,11 @@ class EncDecFlatten(nn.Module):
 
             c1=comm.get().get_communication_stats()
             t1=time.time()
+            origin_size=xo.size()
+            xo=xo.view(-1,self.config.hidden_size)
             xo=self.LayerNorm(xo)
             xo=self.LayerNorm(xo)
+            xo=xo.view(origin_size)
 
             self.timing["LinearTime"]+=(t1-t2)
             self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
@@ -408,11 +433,9 @@ class EncDecFlatten(nn.Module):
         for k,v in self.timing.items():
             self.timing[k] = 0
 
-    def one_step(self,enc_idx,new_idx,past_states):
+    def one_step(self,enc_x,new_idx,past_states):
 
         new_idx=new_idx.unsqueeze(1)
-        
-        enc_x=self.embeddings(enc_idx) # shape should be: bs,1,d
         xo=self.embeddings(new_idx) # shape should be: bs,1,d
 
         return self.feature_onestep(enc_x,xo,past_states)
@@ -427,6 +450,7 @@ class EncDecFlatten(nn.Module):
         else:
             num_past_token=past_states[0].shape[1] # i.e. sequence length
 
+        enc_x_len=enc_x.shape[1]
         xo=new_feature
 
         L=self.config.decoder_layers
@@ -455,8 +479,8 @@ class EncDecFlatten(nn.Module):
             ## to do: need to modify this part.
             xo=self.multiheadMut(enc_x,
                                  self.dec_cross_M_mats[i][:,
-                                    :num_past_token+1,
-                                    num_past_token:num_past_token+1])
+                                    :enc_x_len,
+                                    enc_x_len-1:enc_x_len])
 
             xo=xo.matmul(self.dec_cross_weight0_mats[i])
             xo=xo.matmul(self.dec_cross_weight1_mats[i])

@@ -18,20 +18,21 @@ echo "================================"
 export layer=12
 export d=768
 # export msl=256
-export msl=128
+# export msl=128
+export msl=4
 export prefix=4
 export head=12
 
 echo ">> 2. evaluate only MM"
 # export method="mpcformer_sfrelu"
-export method="mpcformer_sfquad"
+# export method="mpcformer_sfquad"
 # export method="thex"
 # export method="vanillaGPT"
 # export method="onlyMM"
 # export method="onlyER"
-# export method="our"
-export gen_type="vanilla" 
-# export gen_type="embedReSend" 
+export method="our"
+# export gen_type="vanilla" 
+export gen_type="embedReSend" 
 export device=5
 export port="394${device}"
 export CUDA_VISIBLE_DEVICES="${device}"
