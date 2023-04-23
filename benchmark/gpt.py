@@ -77,9 +77,6 @@ class gpt(cnn.Module):
 
         ## here we dont use the lm-head.
         return output#, past
-        
-
-
 
     def generate(self, idx, max_new_tokens, temperature=1.0, do_sample=False, top_k=None):
         """
@@ -506,9 +503,9 @@ class gptIntermediate(cnn.Module):
         hidden_states = self.intermediate_act_fn(hidden_states)
         t1 = time.time()
         comm1 = comm.get().get_communication_stats()
-        self.timing["ActTime"] += (t1 - t0)
-        self.timing["ActCommTime"] += (comm1["time"] - comm0["time"])
-        self.timing["ActCommByte"] += (comm1["bytes"] - comm0["bytes"])
+        self.timing["ActivTime"] += (t1 - t0)
+        self.timing["ActivCommTime"] += (comm1["time"] - comm0["time"])
+        self.timing["ActivCommByte"] += (comm1["bytes"] - comm0["bytes"])
         return hidden_states
 
 

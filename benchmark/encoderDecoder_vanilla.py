@@ -239,7 +239,8 @@ class EncdrDecdr(cnn.Module):
         return enc_x
 
     def forward_noembed(self,enc_x,dec_feature,past_list):
-        dec_x=feature
+        # dec_x=feature
+        dec_x=dec_feature
 
         ## 3. get the hidden states of transformer decoder.
         for dl_id,layer in enumerate(self.decoder):
