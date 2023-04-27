@@ -88,7 +88,8 @@ def main():
     ## 11. dailydialog gpt2 MERGE only MM
     task="daily_dialog"
     subset=None
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75finally/"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75/"
     gentype="vanilla"
 
     # ## 12. multiwoz t5 mpcformer
@@ -121,11 +122,17 @@ def main():
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/addQuad1000104119e-50.010.60.70.75finally/"
     # gentype="ER"
 
-    ## 17. multiwoz bart MERGE
-    task="multiwoz_nlg"
-    subset=None
-    model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/addQuad1000104013e-40.010.60.70.75finally/"
-    gentype="ER"
+    # ## 17. multiwoz bart MERGE
+    # task="multiwoz_nlg"
+    # subset=None
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/addQuad1000104013e-40.010.60.70.75finally/"
+    # gentype="ER"
+
+    # ## 15. multiwoz gpt2 MERGE
+    # task="multiwoz_nlg"
+    # subset=None
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/longstep1004118e-40.01/"
+    # gentype="ER"
 
 
     # gentype="ER"
@@ -136,7 +143,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=1
+    cuda_num=7
 
     # gentype="ER"
 
@@ -167,7 +174,7 @@ def main():
 
     if gentype=="vanilla":
 
-        # # # print(seqls[0])
+        # # # # print(seqls[0])
         newseqls=infermodel.inference(seqls)
 
         if subset is None:

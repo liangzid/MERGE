@@ -1,15 +1,16 @@
 #!/bin/bash
 ######################################################################
-#1.21.DAILYDIALOG_ONLYER_DISTILL --- 
+#1.31.TRAIN_GPT2_NOSOFTMAX ---
+
+# Test the model without softmax in attention menchanisms
 
 # Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
 # Copyright © 2023, ZiLiang, all rights reserved.
-# Created: 13 四月 2023
+# Created: 27 四月 2023
 ######################################################################
 
-
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
-export root_dir="/home/liangzi/mpcGen/nlg/"
+export root_dir="/home/liangzi/mpcgen/nlg/"
 
 export epochs=3000
 export step=50000
@@ -42,32 +43,31 @@ export using_wordEmbedMSE=0
 export using_COSEm=1
 export using_NEGAEm=0
 
-# ##############################################################
+##############################################################
 
-# ## Only ER SETTINGS
+# ## method 3
 # export using_quadacti=0 ##### now add the quadtic option.
 # export using_simLN=0
 # export lamda=0.75
-# export device="1"
-# ##############################################################
+# export device="7"
 
-# export weight_decay=0.01
-# export dropout_rate=0.6
-# export noise=0.7
-# # export noise=0.2
+# ## method 6
+# export using_quadacti=1 ##### now add the quadtic option.
+# export using_simLN=1
+# export lamda=0.5
+# export device="6"
 
-# # export using_wordEmbedMSE=0
-# export stu_save_ckpt=${stu_ckpt}onlyER${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
-
-# #
-# ----------------------seprate line-----------------
-#
-
-### only MM Settings
+## method 7
 export using_quadacti=0 ##### now add the quadtic option.
-export using_simLN=2
+export using_simLN=1
+export no_res=0
+export no_softmax=1
+
+# export lamda=0.25
 export lamda=0.75
-export device="4"
+export device="5"
+
+##############################################################
 
 export weight_decay=0.01
 export dropout_rate=0.6
@@ -75,8 +75,7 @@ export noise=0.7
 # export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}onlyMM${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
-
+export stu_save_ckpt=${stu_ckpt}ActivationnoSoftmax${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -111,5 +110,5 @@ ${python} train_slide.py \
 	--root_dir=$root_dir
 
 
-echo "RUNNING 1.21.dailydialog_onlyER_distill.sh DONE."
-# 1.21.dailydialog_onlyER_distill.sh ends here
+echo "RUNNING 1.31.train_gpt2_nosoftmax.sh DONE."
+# 1.31.train_gpt2_nosoftmax.sh ends here

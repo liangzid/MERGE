@@ -213,9 +213,9 @@ def calAttnMat(task,subset,ckpt_path,ckpt_save_p):
 def main():
     # task="web_nlg"
     # task="multiwoz_nlg"
-    # task="daily_dialog"
+    task="daily_dialog"
     # task="e2e_nlg"
-    task="common_gen"
+    # task="common_gen"
     subset=None
     # ckpt_path="./save_models/saved_bert-tiny_taskcola-epoch30-lr3e-05-bs32"
     # ckpt_path="./stage1_ckpts/GEM/web_nlg-epoch5-lr5e-05-bs1"

@@ -27,6 +27,8 @@ from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
 from transformersV4251.models.gpt2.gpt2_mpcformer import \
     GPT2LMHeadModel as mpcGPT2
+from transformersV4251.models.gpt2.gpt2_no_softmax import\
+    GPT2LMHeadModel as GPT_nsm
 
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
@@ -76,12 +78,12 @@ def train(args, tmodel, smodel,prolayer,
     overall_step=0.
     step_break=0
     tqdm1=tqdm(total=EPOCH)
+    tqdm2=tqdm(total=args.train_step)
     past_losses=10000
     train_past_l=1e4
     for epoch in range(EPOCH):
         ii+=1
         tqdm1.update(1)
-        tqdm2=tqdm(total=args.train_step)
         if step_break==1:
             break
         print(f"-------EPOCH {epoch}-------------")
@@ -449,6 +451,10 @@ def main():
             smodel = AutoModelForCausalLM.from_pretrained(args.stu_ckpt)
         
     print("STU Original embedding size: ",smodel.get_input_embeddings().weight.shape[0])
+
+    if args.no_softmax==1:
+        smodel = GPT_nsm.from_pretrained(args.stu_ckpt)
+        print("Using Constant Version without Softmax Functions.")
 
     # print(smodel.transformer.h[2].attn.M)
 

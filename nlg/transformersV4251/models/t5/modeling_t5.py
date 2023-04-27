@@ -555,6 +555,9 @@ class T5Attention(nn.Module):
             position_bias_masked = position_bias
 
         scores += position_bias_masked
+
+        # this is a bug +++===
+        # move the dropout to the 后面
         attn_weights = nn.functional.softmax(scores.float(), dim=-1).type_as(
             scores
         )  # (batch_size, n_heads, seq_length, key_length)
@@ -587,6 +590,7 @@ class T5Attention(nn.Module):
         # print(f"new attention shape: {attn_weights.shape}")
         # print("----------------------")
         
+        # this is a bug +++===
         attn_weights = nn.functional.dropout(
             attn_weights, p=self.dropout, training=self.training
         )  # (batch_size, n_heads, seq_length, key_length)
