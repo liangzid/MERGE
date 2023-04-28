@@ -35,6 +35,8 @@ from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
 from transformersV4251.models.gpt2.modeling_gpt2 import \
     GPT2LMHeadModel as OldGpt2
+from transformersV4251.models.gpt2.gpt2_no_softmax import \
+    GPT2LMHeadModel as NosoftmaxGPT2
 
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
@@ -126,7 +128,11 @@ class Inference:
 
         only_decoder=True
         if "gpt" in model_path:
-            if "mpc" in model_path:
+            if "noSoftmax" in model_path:
+                print(">>>USING NO-SOFTMAX VERSION GPT-2.")
+                self.decoder=NosoftmaxGPT2\
+                    .from_pretrained(model_path)
+            elif "mpc" in model_path:
                 print("<<<<>>>>Using MPC version GPT-2.")
                 self.decoder=mpcGPT2\
                     .from_pretrained(model_path)
@@ -303,8 +309,10 @@ class Inference:
                     if self.sep_token in sentence:
                         sentence=sentence.split(self.sep_token)[-1]
                     # for daily dialog situation:
-                    elif " <User> " in sentence:
-                        sentence=sentence.split(p)[1].split(" <")[0]
+                    elif " <User> " in sentence and p in sentence:
+                        sentence=sentence.split(p)[1]
+                        if " <" in sentence:
+                            sentence=sentence.split(" <")[0]
                 print(">>>post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
@@ -397,7 +405,7 @@ class Inference:
         Embedding resend style sentence generation.
         """
         # print(">>> USING EMBEDRESEND GENERATION.")
-        # self.decoder.train()
+        self.decoder.train()
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,

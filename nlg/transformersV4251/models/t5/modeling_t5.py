@@ -544,8 +544,28 @@ class T5Attention(nn.Module):
             if past_key_value is not None:
                 position_bias = position_bias[:, :, -hidden_states.size(1) :, :]
 
-            if mask is not None:
-                position_bias = position_bias + mask  # (batch_size, n_heads, seq_length, key_length)
+            ## no attention mask
+            # if mask is not None:
+            #     position_bias = position_bias + mask  # (batch_size, n_heads, seq_length, key_length)
+
+        
+        bs=attn_weights.shape[0]
+
+        # sl=value_states.shape[2]
+        # isl=query_states.shape[2]
+
+        isl=attn_weights.shape[2]
+        sl=attn_weights.shape[3]
+
+        attn_weights=self.M.unsqueeze(0)
+        if bs!=1:
+            attn_weights=attn_weights.repeat(bs,1,1,1)
+        attn_weights = attn_weights.type(scores.dtype)
+
+        if self.isCross:
+            attn_weights=attn_weights[:,:,:isl,:sl]
+        else:
+            attn_weights=attn_weights[:,:,:isl,:sl]
 
         if self.pruned_heads:
             mask = torch.ones(position_bias.shape[1])
@@ -568,23 +588,6 @@ class T5Attention(nn.Module):
 
         # print(f"attention shape: {attn_weights.shape}")
 
-        bs=attn_weights.shape[0]
-
-        # sl=value_states.shape[2]
-        # isl=query_states.shape[2]
-
-        isl=attn_weights.shape[2]
-        sl=attn_weights.shape[3]
-
-        attn_weights=self.M.unsqueeze(0)
-        if bs!=1:
-            attn_weights=attn_weights.repeat(bs,1,1,1)
-        attn_weights = attn_weights.type(scores.dtype)
-
-        if self.isCross:
-            attn_weights=attn_weights[:,:,:isl,:sl]
-        else:
-            attn_weights=attn_weights[:,:,:isl,:sl]
         #----------------- ends here ---------------------
 
         # print(f"new attention shape: {attn_weights.shape}")

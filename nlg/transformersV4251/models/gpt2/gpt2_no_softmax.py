@@ -263,7 +263,6 @@ class GPT2Attention(nn.Module):
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
 
-        attn_weights=attn_weights[:,:,:sl,:sl]
 
         # print(f"Attn before: {attn_weights}")
         if not self.is_cross_attention:
@@ -280,7 +279,10 @@ class GPT2Attention(nn.Module):
             # Need to be a tensor, otherwise we get error: `RuntimeError: expected scalar type float but found double`.
             # Need to be on the same device, otherwise `RuntimeError: ..., x and y to be on the same device`
             mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(attn_weights.device)
-            attn_weights = torch.where(causal_mask, attn_weights, mask_value)
+
+            # attention with no mask
+            # attn_weights = torch.where(causal_mask, attn_weights, mask_value)
+
         # print(f"Attn after: {attn_weights}")
 
         # Mask heads if we want to
@@ -288,8 +290,10 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights * head_mask
 
         ## no softmax!!!
-        # attn_weights = nn.functional.softmax(attn_weights, dim=-1)
-        attn_weights=self.relu(attn_weights)
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+        ## move here for retraining
+        attn_weights=attn_weights[:,:,:sl,:sl]
+        # attn_weights=self.relu(attn_weights)
 
         # ## normalization function
         # attn_weights=nn.functional.normalize(attn_weights,p=2,dim=-1)

@@ -85,12 +85,12 @@ def main():
     # model_path="./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-40.010.60.70.75finally/"
     # gentype="vanilla"
 
-    ## 11. dailydialog gpt2 MERGE only MM
-    task="daily_dialog"
-    subset=None
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75finally/"
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75/"
-    gentype="vanilla"
+    # ## 11. dailydialog gpt2 MERGE only MM
+    # task="daily_dialog"
+    # subset=None
+    # # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/onlyMM150001000104028e-50.010.60.70.75/"
+    # gentype="vanilla"
 
     # ## 12. multiwoz t5 mpcformer
     # task="multiwoz_nlg"
@@ -132,6 +132,15 @@ def main():
     # task="multiwoz_nlg"
     # subset=None
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/longstep1004118e-40.01/"
+    # gentype="ER"
+
+    ## 16. dailydialog gpt2 MERGE
+    task="daily_dialog"
+    subset=None
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noSoftmax500001000104118e-50.010.60.70.75finally/"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noSoftmax500001000104018e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/ActivationnoSoftmax500001000104018e-50.010.60.70.75epoch20/"
+    gentype="vanilla"
     # gentype="ER"
 
 

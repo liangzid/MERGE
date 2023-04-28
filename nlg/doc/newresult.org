@@ -127,9 +127,12 @@ CLOSED: [2023-04-13 周四 20:54]
 CLOSED: [2023-04-13 周四 20:54]
 *** REVIEW MPCformer GPT-2 distill results
 ** MultiWoz
-**** REVIEW bart method7
-**** REVIEW t5 MPCformer distill
-**** REVIEW bart MPCformer distill
+**** CANCELED bart method7
+CLOSED: [2023-04-28 周五 21:38]
+**** CANCELED t5 MPCformer distill
+CLOSED: [2023-04-28 周五 21:37]
+**** CANCELED bart MPCformer distill
+CLOSED: [2023-04-28 周五 21:37]
 * REVIEW 48 server
 ** multiwoz
 **** CANCELED t5 method7 5w 
