@@ -134,25 +134,37 @@ def main():
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/longstep1004118e-40.01/"
     # gentype="ER"
 
-    ## 16. dailydialog gpt2 MERGE
-    task="daily_dialog"
+    # ## 16. dailydialog gpt2 MERGE
+    # task="daily_dialog"
+    # subset=None
+    # # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noSoftmax500001000104118e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noSoftmax500001000104018e-50.010.60.70.75finally/"
+    # # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/ActivationnoSoftmax500001000104018e-50.010.60.70.75epoch20/"
+    # gentype="vanilla"
+    # # gentype="ER"
+
+    # ## 16. dailydialog gpt2 MERGE
+    # task="multiwoz_nlg"
+    # subset=None
+    # # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noSoftmax500001000104118e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/index_after_softmax1000104119e-50.010.60.70.75epoch0/"
+    # # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/ActivationnoSoftmax500001000104018e-50.010.60.70.75epoch20/"
+    # gentype="vanilla"
+    # # gentype="ER"
+
+    ## 17. dailydialog gpt2 MERGE
+    task="multiwoz_nlg"
     subset=None
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/___withConstantMatrix/noSoftmax500001000104118e-50.010.60.70.75finally/"
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noSoftmax500001000104018e-50.010.60.70.75finally/"
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/ActivationnoSoftmax500001000104018e-50.010.60.70.75epoch20/"
-    gentype="vanilla"
-    # gentype="ER"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftMax500001000104018e-50.010.60.70.75finally/"
+    # gentype="vanilla"
+    gentype="ER"
 
-
-    # gentype="ER"
-
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
 
     if "bart" in model_path or "t5" in model_path:
         withsep=False
     
     # cuda_num=1
-    cuda_num=7
+    cuda_num=0
 
     # gentype="ER"
 
