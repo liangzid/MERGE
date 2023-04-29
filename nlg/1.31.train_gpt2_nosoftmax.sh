@@ -1,41 +1,39 @@
 #!/bin/bash
 ######################################################################
-#1.16.ONLYMM_MULTIWOZTRAIN ---
+#1.31.TRAIN_GPT2_NOSOFTMAX ---
+
+# Test the model without softmax in attention menchanisms
 
 # Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
 # Copyright © 2023, ZiLiang, all rights reserved.
-# Created: 13 四月 2023
-######################################################################
-
-######################### Commentary ##################################
-##  
+# Created: 27 四月 2023
 ######################################################################
 
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
-export root_dir="/home/liangzi/mpcGen/nlg/"
+export root_dir="/home/liangzi/mpcgen/nlg/"
 
-export epochs=10000
+export epochs=3000
 export step=50000
-# export lr=3e-5
-export lr=8e-4
+# export lr=8e-4
+export lr=8e-5
 # export lr=3e-4
 # export device="cpu"
-export batch_size=16
+export batch_size=32
 # export task="web_nlg"
 # export task="e2e_nlg"
-# export task="daily_dialog"
-export task="multiwoz_nlg"
+export task="daily_dialog"
+# export task="multiwoz_nlg"
+# export task="common_gen"
 export max_seq_length=128
 
-# export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
-# export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/"
+export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
 
-export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
-# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
-# export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
+
+# export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs1bart-base/6gpt2/"
+# export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs4gpt2/fianlly/"
 
 export stu_ckpt=${teach_ckpt}
-# export stu_ckpt=${teach_ckpt}"___withConstantMatrix"
+# export stu_ckpt=${teach_ckpt}___withConstantMatrix/
 
 export using_entropy=1
 export using_softLabel=0
@@ -51,7 +49,7 @@ export using_NEGAEm=0
 # export using_quadacti=0 ##### now add the quadtic option.
 # export using_simLN=0
 # export lamda=0.75
-# export device="5"
+# export device="7"
 
 # ## method 6
 # export using_quadacti=1 ##### now add the quadtic option.
@@ -59,30 +57,25 @@ export using_NEGAEm=0
 # export lamda=0.5
 # export device="6"
 
-# only ER
-
-## Only ER SETTINGS
+## method 7
 export using_quadacti=0 ##### now add the quadtic option.
-export using_simLN=0
-export lamda=0.75
-export device="5"
+export using_simLN=1
+export no_res=0
+export no_softmax=1
 
-# ## only MM
-# export using_quadacti=0 ##### now add the quadtic option.
-# export using_simLN=2
-# export lamda=0.75
-# export ice="2"
+# export lamda=0.25
+export lamda=0.75
+export device="7"
 
 ##############################################################
-
 
 export weight_decay=0.01
 export dropout_rate=0.6
 export noise=0.7
-# export lamda=0.5
+# export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}onlyMM${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}indexAfterSoftMax${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -117,14 +110,5 @@ ${python} train_slide.py \
 	--root_dir=$root_dir
 
 
-
-
-
-
-
-
-
-
-
-echo "RUNNING 1.16.onlyMM_multiwoztrain.sh DONE."
-# 1.16.onlyMM_multiwoztrain.sh ends here
+echo "RUNNING 1.31.train_gpt2_nosoftmax.sh DONE."
+# 1.31.train_gpt2_nosoftmax.sh ends here

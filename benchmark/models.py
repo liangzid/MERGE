@@ -9,7 +9,7 @@ import crypten.nn as cnn
 import crypten.communicator as comm
 
 from utils import activation_newGeLU, softmax_2RELU, activation_quad
-from utils import softmax_2QUAD
+from utils import softmax_2QUAD, softmax2RELU_2
 
 class Bert(cnn.Module):
     def __init__(self, config, timing):
@@ -155,6 +155,8 @@ class BertSelfAttention(cnn.Module):
             self.smax = cnn.Softmax(dim=-1)
         elif config.softmax_act == "softmax_2RELU":
             self.smax = softmax_2RELU(dim=-1)
+        elif config.softmax_act == "softmax2RELU_2":
+            self.smax = softmax2RELU_2(dim=-1)
         elif config.softmax_act == "softmax_2QUAD":
             self.norm = cnn.BatchNorm2d(config.hidden_size, eps=config.layer_norm_eps)
             self.smax = softmax_2QUAD(self.norm, dim=-1)

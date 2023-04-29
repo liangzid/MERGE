@@ -171,6 +171,10 @@ class GPT2Attention(nn.Module):
         self.M = nn.Parameter(torch.ones(config.num_attention_heads,
                                           self.msl,
                                           self.msl))
+        self.relu=nn.ReLU()
+
+        # self.normfunc=nn.functional.normal
+
         ## ======================
 
         self.pruned_heads = set()
@@ -259,7 +263,6 @@ class GPT2Attention(nn.Module):
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
 
-        attn_weights=attn_weights[:,:,:sl,:sl]
 
         # print(f"Attn before: {attn_weights}")
         if not self.is_cross_attention:
@@ -268,24 +271,38 @@ class GPT2Attention(nn.Module):
             # print(f"q length: {query_length}")
             # print(f"k length: {key_length}")
             causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length].to(torch.bool)
-            mask_value = torch.finfo(attn_weights.dtype).min
+            # no softmax, then we use the mask value 0 rather -inf.
+            # mask_value = torch.finfo(attn_weights.dtype).min
+            mask_value = 0.
             # mask_value = 0.
 
             # Need to be a tensor, otherwise we get error: `RuntimeError: expected scalar type float but found double`.
             # Need to be on the same device, otherwise `RuntimeError: ..., x and y to be on the same device`
             mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(attn_weights.device)
-            attn_weights = torch.where(causal_mask, attn_weights, mask_value)
+
+            # attention with no mask
+            # attn_weights = torch.where(causal_mask, attn_weights, mask_value)
+
         # print(f"Attn after: {attn_weights}")
 
         # Mask heads if we want to
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
+        ## no softmax!!!
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+        ## move here for retraining
+        attn_weights=attn_weights[:,:,:sl,:sl]
+        # attn_weights=self.relu(attn_weights)
+
+        # ## normalization function
+        # attn_weights=nn.functional.normalize(attn_weights,p=2,dim=-1)
 
         attn_weights = attn_weights.type(value.dtype)
         # print(attn_weights)
-        attn_weights = self.attn_dropout(attn_weights)
+
+        ## no dropout
+        # attn_weights = self.attn_dropout(attn_weights)
 
         # # print(msl,sl,msl==sl)
         # if sl==msl: # parallel forward
@@ -1673,4 +1690,3 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
             hidden_states=transformer_outputs.hidden_states,
             attentions=transformer_outputs.attentions,
         )
-

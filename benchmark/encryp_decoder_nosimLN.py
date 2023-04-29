@@ -1,15 +1,16 @@
 """
 ======================================================================
-ENCRYP_DECODER ---
+ENCRYP_DECODER_NOSIMLN --- 
 
-Encryption transformer decoder for private inference.
+    Author: Zi Liang <frostliang@lilith.com>
+    Copyright © 2023, lilith, all rights reserved.
+    Created: 17 四月 2023
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created:  7 二月 2023
+    Created: 17 四月 2023
 ======================================================================
 """
-
 
 # ------------------------ Code --------------------------------------
 
@@ -55,48 +56,48 @@ class GPTBaseFlatten(nn.Module):
         self.bos_one_hot=crypten.cryptensor(self.bos_one_hot)
 
         self.embeddings=gptEmbeddings(config,timing)
-        self.embeddings.cuda()
+        self.embeddings.cuda(config.device)
 
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = config.hidden_size
         self.inter_d=config.intermediate_size
+        self.LayerNorm = cnn.BatchNorm2d(config.hidden_size, eps=config.layer_norm_eps)
 
         if hasattr(config,"sequence_length"):
             self.msl=config.sequence_length
         else:
             self.msl=128
 
+        self.weight0_mats=[]
         self.weight1_mats=[]
         self.weight2_mats=[]
         self.bias_mats=[]
+        self.bias1_mats=[]
         self.M_mats=[]
         self.d=config.hidden_size
         self.I=config.intermediate_size
+
         ## ========================= precomputed matrix
-        self.bgin_layer=nn.Linear(config.hidden_size,self.I)
-        self.bgin_w=torch.ones((self.I,config.hidden_size)).to(device).T
-        self.bgin_b=torch.ones(self.I).to(device)
-        self.bgin_M=torch.ones(self.num_attention_heads,
-                               self.msl,self.msl).to(device)
-        self.bgin_w=crypten.cryptensor(self.bgin_w,src=0)
-        self.bgin_b=crypten.cryptensor(self.bgin_b,src=0)
-        self.bgin_M=crypten.cryptensor(self.bgin_M,src=0)
         
-        for num_layer in range(self.config.num_hidden_layers-1):
+        for num_layer in range(self.config.num_hidden_layers):
+            self.weight0_mats.append(torch.ones((self.d,
+                                    self.d)).to(self.device))
             self.weight1_mats.append(torch.ones((self.d,
-                                    self.I)).to(self.device).T)
+                                    self.I)).to(self.device))
             self.weight2_mats.append(torch.ones((self.I,
-                                    self.d)).to(self.device).T)
+                                    self.d)).to(self.device))
             self.bias_mats.append(torch.ones(self.I)\
+                                  .to(self.device))
+            self.bias1_mats.append(torch.ones(self.d)\
                                   .to(self.device))
             self.M_mats.append(torch.ones(self.num_attention_heads,
                             self.msl,self.msl).to(self.device))
-        self.last_w=torch.ones((self.d,self.I)).to(self.device).T
-        self.last_b=torch.ones((config.hidden_size)).to(self.device)
 
-        # incryption
-        for i in range(self.config.num_hidden_layers-1):
+        # encryption
+        for i in range(self.config.num_hidden_layers):
+            self.weight0_mats[i]=crypten.cryptensor(self.weight0_mats[i],
+                                                src=0)
             self.weight1_mats[i]=crypten.cryptensor(self.weight1_mats[i],
                                                 src=0)
             self.weight2_mats[i]=crypten.cryptensor(self.weight2_mats[i],
@@ -105,6 +106,7 @@ class GPTBaseFlatten(nn.Module):
                                                 src=0)
             self.M_mats[i]=crypten.cryptensor(self.M_mats[i],
                                                 src=0)
+            self.bias1_mats[i]=crypten.cryptensor(self.bias1_mats[i],src=0)
         
         if config.hidden_act=="newGeLU":
             self.activation=activation_newGeLU()
@@ -144,129 +146,98 @@ class GPTBaseFlatten(nn.Module):
         # print(x.shape)
         xo=self.embeddings(x)
 
-        t0=time.time()
-        c0=comm.get().get_communication_stats()
-
-        xo=xo.matmul(self.bgin_w)
-        xo=self.multiheadMut(xo,self.bgin_M)
-        xo=xo+self.bgin_b
-
-        c1=comm.get().get_communication_stats()
-        t1=time.time()
-
-        xo=self.activation(xo)
-
-        c2=comm.get().get_communication_stats()
-        t2=time.time()
-
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
-
-        self.timing["ActivTime"]+=(t2-t1)
-        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
-        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
-        
-
-        for i in range(self.config.num_hidden_layers-1):
+        for i in range(self.config.num_hidden_layers):
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
+            xo=self.multiheadMut(xo,self.M_mats[i][:,:sl,:sl])
+            xo=xo.matmul(self.weight0_mats[i])
             xo=xo.matmul(self.weight1_mats[i])
-            xo=xo.matmul(self.weight2_mats[i])
-            xo=self.multiheadMut(xo,self.M_mats[i])
             xo=xo+self.bias_mats[i]
             
             c1=comm.get().get_communication_stats()
             t1=time.time()
+
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
             
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
+
             xo=self.activation(xo)
 
             c2=comm.get().get_communication_stats()
             t2=time.time()
-            
-            self.timing["LinearTime"]+=(t1-t0)
-            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
-            self.timing["ActivTime"]+=(t2-t1)
-            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
-            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+            xo=xo.matmul(self.weight2_mats[i])
+            xo=xo+self.bias1_mats[i]
 
-        ## final transform
-        t0=time.time()
-        c0=comm.get().get_communication_stats()
-        xo=xo.matmul(self.last_w)+self.last_b
-        c1=comm.get().get_communication_stats()
-        t1=time.time()
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+            xo=self.LayerNorm(xo)
+            xo=self.LayerNorm(xo)
+
+            self.timing["LinearTime"]+=(t1-t2)
+            self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c2['bytes'])
+
+            self.timing["ActivTime"]+=(t2-t0)
+            self.timing["ActivCommTime"]+=(c2['time']-c0['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c0['bytes'])
 
         return xo
+
+
     def forward2(self,x):
         xo=self.embeddings(x)
 
-        alist=[xo]
+        alist=[]
         sl=xo.shape[1]
 
-        t0=time.time()
-        c0=comm.get().get_communication_stats()
-
-        xo=xo.matmul(self.bgin_w)
-        xo=self.multiheadMut(xo,self.bgin_M[:,:sl,:sl])
-        xo=xo+self.bgin_b
-
-        c1=comm.get().get_communication_stats()
-        t1=time.time()
-
-        xo=self.activation(xo)
-
-        c2=comm.get().get_communication_stats()
-        t2=time.time()
-
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
-
-        self.timing["ActivTime"]+=(t2-t1)
-        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
-        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
-
-        for i in range(self.config.num_hidden_layers-1):
+        for i in range(self.config.num_hidden_layers):
             alist.append(xo)
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
             xo=self.multiheadMut(xo,self.M_mats[i][:,:sl,:sl])
+            # print(xo.shape,self.weight0_mats[i].shape)
+            xo=xo.matmul(self.weight0_mats[i])
+            # print(xo.shape,self.weight1_mats[i].shape)
             xo=xo.matmul(self.weight1_mats[i])
-            xo=xo.matmul(self.weight2_mats[i])
             xo=xo+self.bias_mats[i]
+            
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+
+            self.timing["LinearTime"]+=(t1-t0)
+            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+            
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
+
+            xo=self.activation(xo)
+
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
+
+            xo=xo.matmul(self.weight2_mats[i])
+            xo=xo+self.bias1_mats[i]
 
             c1=comm.get().get_communication_stats()
             t1=time.time()
 
-            xo=self.activation(xo)
-            c2=comm.get().get_communication_stats()
-            t2=time.time()
-            
-            self.timing["LinearTime"]+=(t1-t0)
-            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+            self.timing["LinearTime"]+=(t1-t2)
+            self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c2['bytes'])
 
-            self.timing["ActivTime"]+=(t2-t1)
-            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
-            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
+            self.timing["ActivTime"]+=(t2-t0)
+            self.timing["ActivCommTime"]+=(c2['time']-c0['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c0['bytes'])
+            
 
         ## final transform
-        t0=time.time()
-        c0=comm.get().get_communication_stats()
-        xo=xo.matmul(self.last_w)+self.last_b
-        c1=comm.get().get_communication_stats()
-        t1=time.time()
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
         alist.append(xo)
 
         return xo,alist
@@ -294,94 +265,63 @@ class GPTBaseFlatten(nn.Module):
             num_past_token=past_states[0].shape[1] # i.e. sequence length
 
         xo=new_feature
-        if len(past_states[0])==0:
-            past_states[0]=xo
-        else:
-            past_states[0]=past_states[0].\
-                cat([past_states[0],xo], 1)
 
-        t0=time.time()
-        c0=comm.get().get_communication_stats()
-
-        xo=self.multiheadMut(past_states[0],
-                                self.bgin_M[:,
-                                            :num_past_token+1,
-                                num_past_token:num_past_token+1])
-        xo=xo.matmul(self.bgin_w)
-        xo=xo+self.bgin_b
-
-        c1=comm.get().get_communication_stats()
-        t1=time.time()
-
-        xo=self.activation(xo)
-
-        c2=comm.get().get_communication_stats()
-        t2=time.time()
-
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
-
-        self.timing["ActivTime"]+=(t2-t1)
-        self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
-        self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
-        
-        
-        L=self.config.num_hidden_layers-1
+        L=self.config.num_hidden_layers
         for i in range(L):
             # the outputs of previous layer
             # print("xo type and shape",type(xo),xo.shape)
             # print("shape before cat: ",past_states[i].shape)
-            if len(past_states[i+1])==0:
-                past_states[i+1]=xo
+            if len(past_states[i])==0:
+                past_states[i]=xo
             else:
-                past_states[i+1]=past_states[i+1].\
-                    cat([past_states[i+1],xo], 1)
+                past_states[i]=past_states[i].\
+                    cat([past_states[i],xo], 1)
             # print("shape after cat: ",past_states[i].shape)
             
             t0=time.time()
             c0=comm.get().get_communication_stats()
 
-            xo=self.multiheadMut(past_states[i+1],
+            xo=self.multiheadMut(past_states[i],
                                  self.M_mats[i][:,
                                     :num_past_token+1,
                                     num_past_token:num_past_token+1])
-
+            xo=xo.matmul(self.weight0_mats[i])
             xo=xo.matmul(self.weight1_mats[i])
-            xo=xo.matmul(self.weight2_mats[i])
             xo=xo+self.bias_mats[i]
+
             c1=comm.get().get_communication_stats()
             t1=time.time()
 
-            xo=self.activation(xo)
-            c2=comm.get().get_communication_stats()
-            t2=time.time()
-            
             self.timing["LinearTime"]+=(t1-t0)
             self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
             self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
-            self.timing["ActivTime"]+=(t2-t1)
-            self.timing["ActivCommTime"]+=(c2['time']-c1['time'])
-            self.timing["ActivCommByte"]+=(c2['bytes']-c1['bytes'])
-        
-        t0=time.time()
-        c0=comm.get().get_communication_stats()
-        xo=xo.matmul(self.last_w)+self.last_b
-        c1=comm.get().get_communication_stats()
-        t1=time.time()
-        self.timing["LinearTime"]+=(t1-t0)
-        self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-        self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+            t0=time.time()
+            c0=comm.get().get_communication_stats()
 
-        past_states[i+2]=past_states[i+2].\
-            cat([past_states[i+2],xo], 1)
+            xo=self.activation(xo)
 
-        # print("--------")
-        # print(xo)
-        # print(xo.shape)
+            c2=comm.get().get_communication_stats()
+            t2=time.time()
 
-        # return xo,past_states
+            xo=xo.matmul(self.weight2_mats[i])
+            xo=xo+self.bias1_mats[i]
+
+            c1=comm.get().get_communication_stats()
+            t1=time.time()
+
+            
+            self.timing["LinearTime"]+=(t1-t2)
+            self.timing["LinearCommTime"]+=(c1['time']-c2['time'])
+            self.timing["LinearCommByte"]+=(c1['bytes']-c2['bytes'])
+
+            self.timing["ActivTime"]+=(t2-t0)
+            self.timing["ActivCommTime"]+=(c2['time']-c0['time'])
+            self.timing["ActivCommByte"]+=(c2['bytes']-c0['bytes'])
+
+        past_states[i+1]=past_states[i+1].\
+            cat([past_states[i+1],xo], 1)
+
         return xo
         
             
@@ -475,75 +415,3 @@ class GPTBaseFlatten(nn.Module):
         self.timing["GenerationCommByte"]+=(c1['bytes']-c0['bytes'])
         
         return all_logits
-
-    # def generate_migrate(self, idx, max_new_tokens,
-    #         temperature=1.0, do_sample=False, top_k=None):
-    #     """
-    #     Take a conditioning sequence of indices idx
-    #     (LongTensor of shape (b,s,v)) and complete
-    #     the sequence max_new_tokens times, feeding
-    #     the predictions back into the model each time.
-
-    #     Most likely you'll want to make sure to be in
-    #     model.eval() mode of operation for this.
-    #     """
-    #     generation_time = {}
-    #     past_list = [[] for _ in range(self.config.num_hidden_layers)]
-    #     generation_stage = False
-    #     for token_id in range(max_new_tokens):
-    #         b, s, _ = idx.shape
-    #         time_s = time.time()
-    #         # if the sequence context is growing too long we must crop it at block_size
-    #         idx_cond = idx if idx.size(1) <= self.config.max_position_embeddings else idx[:, -self.config.max_position_embeddings:,:]
-    #         # forward the model to get the logits for the index in the sequence
-    #         #print(idx_cond.shape)
-    #         if not generation_stage:
-    #             features = self.forward_migrate(idx_cond, past_list)
-    #             generation_stage = True
-    #         else:
-    #             features = self.forward_migrate(idx_cond[:, -1:, :],
-    #                                     past_list)
-    #         #!TODO: waiting to change.
-    #         t0 = time.time()
-    #         comm0 = comm.get().get_communication_stats()
-    #         logits = logits[:, -1:, :] / temperature
-    #         probs = self.smax(logits)
-    #         idx_next = maximum.argmax(probs, dim=-1)
-    #         idx = self.cat([idx, idx_next])
-    #         comm1 = comm.get().get_communication_stats()
-    #         t1 = time.time()
-    #         time_e = time.time()
-    #         generation_time.update({(b, s): time_e - time_s})
-    #         self.timing["GenerateOtherTime"] += (t1-t0)
-    #         self.timing["GenerateOtherCommTime"] +=\
-    #             (comm1["time"] - comm0["time"])
-    #         self.timing["GenerateOtherCommByte"] +=\
-    #             (comm1["bytes"] - comm0["bytes"])
-    #         print(generation_time)
-    #     return idx
-
-    # def forward_migrate(self, input_ids, past_list):
-    #     output = self.embeddings(input_ids)
-    #     for layer_id, layer in enumerate(self.encoder):
-    #         # pass in a past key/value of shape [[b, s, h], [b, s, h]] !!not tuple, it will get deep copied..!!
-    #         if len(past_list[layer_id]) == 0:
-    #             print("input to layer None")
-    #         else:
-    #             print("input to layer size: ",
-    #                   past_list[layer_id][0].shape,
-    #                   past_list[layer_id][1].shape)
-    #         #output, past = layer(output, past_list[layer_id])
-    #         output = layer(output, past_list[layer_id])
-    #         #past_list[layer_id].append()
-    #     t0 = time.time()
-    #     comm0 = comm.get().get_communication_stats()
-    #     output = self.lm_head(output)
-    #     comm1 = comm.get().get_communication_stats()
-    #     t1 = time.time()
-    #     self.timing["LinearTime"] += (t1-t0)
-    #     self.timing["LinearCommTime"] += (comm1["time"] - comm0["time"])
-    #     self.timing["LinearCommByte"] += (comm1["bytes"] - comm0["bytes"])
-    #     self.timing["lmHeadTime"] += (t1-t0)
-    #     self.timing["lmHeadCommTime"] += (comm1["time"] - comm0["time"])
-    #     self.timing["lmHeadCommByte"] += (comm1["bytes"] - comm0["bytes"])
-    #     return output#, past

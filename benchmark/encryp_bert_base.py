@@ -31,7 +31,7 @@ import crypten.nn as cnn
 import crypten.nn as nn 
 import crypten.communicator as comm
 
-from utils import softmax_2RELU, activation_quad
+from utils import softmax_2RELU, activation_quad, softmax2RELU_2
 
 from models import Bert,BertEmbeddings,BertLayer,BertAttention,BertSelfAttention,BertSelfOutput,BertIntermediate,BertOutput
 

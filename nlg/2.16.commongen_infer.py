@@ -59,13 +59,14 @@ def main():
     # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104113e-40.010.60.70.75/"
     # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/onlyER300001000104003e-40.010.60.70.75finally/"
     # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104023e-40.010.60.70.75finally/"
-    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104018e-40.010.60.70.75finally/"
+    # model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/longStep500001000104018e-40.010.60.70.75finally/"
+    model_path=f"./stage1_ckpts/common_gen-epoch3-lr5e-05-bs32gpt2/mpcformer1010004108e-50.010.00.00.0finally/"
     
     # cuda_num=1
-    cuda_num=7
+    cuda_num=2
 
-    gentype="ER"
-    # gentype="vanilla"
+    # gentype="ER"
+    gentype="vanilla"
 
     ## ---------------------------------------------
     infermodel=Inference(model_path,cuda_num,

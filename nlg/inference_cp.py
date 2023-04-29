@@ -1,21 +1,21 @@
 """
 ======================================================================
-INFERENCE ---
-
-Generation procedure of NLG models.
+INFERENCE_CP --- 
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
     Copyright © 2023, ZiLiang, all rights reserved.
-    Created: 10 二月 2023
+    Created: 15 四月 2023
 ======================================================================
 """
 
-
 # ------------------------ Code --------------------------------------
-from pprint import pprint as ppp
-from typing import List,Tuple,Dict
+
+## normal import 
 import json
+from typing import List,Tuple,Dict
 import random
+from pprint import pprint as ppp
+
 import argparse
 from tqdm import tqdm
 import logging
@@ -35,6 +35,8 @@ from transformersV4251.models.gpt2.gpt2_new import \
     GPT2LMHeadModel as BFSCNew
 from transformersV4251.models.gpt2.modeling_gpt2 import \
     GPT2LMHeadModel as OldGpt2
+from transformersV4251.models.gpt2.gpt2_no_softmax import \
+    GPT2LMHeadModel as NosoftmaxGPT2
 
 from transformersV4251.models.t5.modeling_t5 import \
     T5ForConditionalGeneration as T5New
@@ -110,7 +112,6 @@ class Inference:
             print("no activation function founded.")
 
         self.use_filter=use_filter
-        print(">>>>>>>>>set filter as 0.")
         self.use_filter=0
         self.config=config
 
@@ -127,7 +128,11 @@ class Inference:
 
         only_decoder=True
         if "gpt" in model_path:
-            if "mpc" in model_path:
+            if "noSoftmax" in model_path:
+                print(">>>USING NO-SOFTMAX VERSION GPT-2.")
+                self.decoder=NosoftmaxGPT2\
+                    .from_pretrained(model_path)
+            elif "mpc" in model_path:
                 print("<<<<>>>>Using MPC version GPT-2.")
                 self.decoder=mpcGPT2\
                     .from_pretrained(model_path)
@@ -210,35 +215,39 @@ class Inference:
         # repetition_penalty=2.5
         self.repetition_processor=RepetitionPenaltyLogitsProcessor(repetition_penalty)
 
-        # print(">> Waiting the NLG metrics loading...")
-        # t1=time.time()
-        # ## calculate the running examples.
-        # self.metrics_ls=["bleu","meteor","chrf","ter",
-        #                           "bertscore","bleurt",
-        #            "nist_mt","meteor","rouge"]
-        # self.metrics_ls=["bleu","meteor","chrf","ter",
-        #            "nist_mt","meteor","rouge"]
-        # self.multi_ref_ls=["bleu","ter","nist_mt"]
-        # self.metricsModel_ls=[]
-        # for metric in self.metrics_ls:
-        #     if metric=="bleurt":
-        #         self.metricsModel_ls.append(evaluate.load(metric,
-        #                             module_type="metric"))
-        #     elif metric=="chrf":
-        #         self.metricsModel_ls.append(evaluate.load(metric,
-        #                             word_order=2))
-        #     else:
-        #         self.metricsModel_ls.append(evaluate.load(metric))
-        # t2=time.time()
-        # print(f"time cost in load original metrics: {t2-t1}")
+        print(">> Waiting the NLG metrics loading...")
+        t1=time.time()
+        ## calculate the running examples.
+        self.metrics_ls=["bleu","meteor","chrf","ter",
+                                  "bertscore",
+                   "nist_mt","meteor","rouge"]
+        self.metrics_ls=["bleu","meteor","chrf","ter",
+                   "nist_mt","meteor","rouge"]
+        self.metrics_ls=["nist_mt","rouge","meteor","chrf",]
 
-        # print(">> NLG metrics loading DONE.")
+        self.multi_ref_ls=["bleu","ter","nist_mt"]
+        self.metricsModel_ls=[]
+        for metric in self.metrics_ls:
+            if metric=="bleurt":
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    module_type="metric"))
+            elif metric=="chrf":
+                self.metricsModel_ls.append(evaluate.load(metric,
+                                    word_order=2))
+            else:
+                self.metricsModel_ls.append(evaluate.load(metric))
+        t2=time.time()
+        print(f"time cost in load original metrics: {t2-t1}")
+
+        print(">> NLG metrics loading DONE.")
         
 
-        # self.BartScorer=BARTScorer(device="cuda:0",max_length=1024,
-        #                     checkpoint="facebook/bart-large-cnn")
-        # self.BartScorer.load(path="/home/liangzi/BARTscoremain/bart_score.pth")
-        # print(">> Bart score checkpoint load DONE.")
+        self.BartScorer=BARTScorer(device="cuda:6",max_length=1024,
+                                   checkpoint="facebook/bart-large-cnn",
+                                   # local_files_only=True,
+                                   )
+        self.BartScorer.load(path="/home/liangzi/BARTscoremain/bart_score.pth")
+        print(">> Bart score checkpoint load DONE.")
 
         # # BLEURT
         # self.bleurt=evaluate.load("bleurt",module_type="metric")
@@ -300,8 +309,10 @@ class Inference:
                     if self.sep_token in sentence:
                         sentence=sentence.split(self.sep_token)[-1]
                     # for daily dialog situation:
-                    elif " <User> " in sentence:
-                        sentence=sentence.split(p)[1].split(" <")[0]
+                    elif " <User> " in sentence and p in sentence:
+                        sentence=sentence.split(p)[1]
+                        if " <" in sentence:
+                            sentence=sentence.split(" <")[0]
                 print(">>>post process sent: {}".format(sentence))
 
                 new_sent.append(sentence)
@@ -349,7 +360,7 @@ class Inference:
         """
         one_refs=[x[0] for x in refs]
         big_res_dict={}
-        self.metrics_ls=[]
+        # self.metrics_ls=[]
         for i,m in enumerate(self.metrics_ls):
             try:
                 # if m=="bleurt":
@@ -372,15 +383,16 @@ class Inference:
         #                         references=one_refs)
         # print(x)
         # big_res_dict["bleurt"]=sum(x['scores'])/len(hyps)
-        # print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
 
-        x=bertscore(hyps,refs,lang="en",verbose=True)
+        print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
+
+        x=bertscore(hyps,refs,lang="en",verbose=True,device="cuda:6")
         # print("bertscore res:",x)
         big_res_dict["bert_score"]=sum(x[2])/len(hyps)
 
-        # # x=self.BartScorer.multi_ref_score(hyps,one_refs,agg="max")
-        # x=self.BartScorer.score(hyps,one_refs)
-        # big_res_dict["bart_score"]=sum(x)/len(hyps)
+        # x=self.BartScorer.multi_ref_score(hyps,one_refs,agg="max")
+        x=self.BartScorer.score(hyps,one_refs)
+        big_res_dict["bart_score"]=sum(x)/len(hyps)
 
         return big_res_dict
 
@@ -393,7 +405,7 @@ class Inference:
         Embedding resend style sentence generation.
         """
         # print(">>> USING EMBEDRESEND GENERATION.")
-        # self.decoder.train()
+        self.decoder.train()
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,
@@ -811,8 +823,10 @@ def main2_testNgramRepition():
     print(x)
     print(xx)
 
+
+## running entry
 if __name__=="__main__":
-    # main()
-    # main1_testEval()
-    main2_testNgramRepition()
+    main()
+    print("EVERYTHING DONE.")
+
 

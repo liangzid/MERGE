@@ -11,13 +11,13 @@
 export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcGen/nlg/"
 
-export epochs=10
-export step=15000
+export epochs=3000
+export step=50000
 # export lr=8e-4
 export lr=8e-5
 # export lr=3e-4
 # export device="cpu"
-export batch_size=16
+export batch_size=32
 # export task="web_nlg"
 # export task="e2e_nlg"
 export task="daily_dialog"
@@ -42,28 +42,32 @@ export using_wordEmbedMSE=0
 export using_COSEm=1
 export using_NEGAEm=0
 
-##############################################################
+# ##############################################################
 
-## method 3
-export using_quadacti=0 ##### now add the quadtic option.
-export using_simLN=0
-export lamda=0.75
-export device="1"
-
-# ## method 6
-# export using_quadacti=1 ##### now add the quadtic option.
-# export using_simLN=1
-# export lamda=0.5
-# export device="6"
-
-# ## method 7
-# export using_quadacti=1 ##### now add the quadtic option.
-# export using_simLN=1
-# # export lamda=0.25
+# ## Only ER SETTINGS
+# export using_quadacti=0 ##### now add the quadtic option.
+# export using_simLN=0
 # export lamda=0.75
-# export device="0"
+# export device="1"
+# ##############################################################
 
-##############################################################
+# export weight_decay=0.01
+# export dropout_rate=0.6
+# export noise=0.7
+# # export noise=0.2
+
+# # export using_wordEmbedMSE=0
+# export stu_save_ckpt=${stu_ckpt}onlyER${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+
+# #
+# ----------------------seprate line-----------------
+#
+
+### only MM Settings
+export using_quadacti=0 ##### now add the quadtic option.
+export using_simLN=2
+export lamda=0.75
+export device="4"
 
 export weight_decay=0.01
 export dropout_rate=0.6
@@ -71,7 +75,8 @@ export noise=0.7
 # export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}onlyER${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}onlyMM${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -104,14 +109,6 @@ ${python} train_slide.py \
 	--dropout_rate=${noise}\
 	--lamda=${lamda}\
 	--root_dir=$root_dir
-
-
-
-
-
-
-
-
 
 
 echo "RUNNING 1.21.dailydialog_onlyER_distill.sh DONE."

@@ -1,3 +1,22 @@
+"""
+======================================================================
+PROFILE_ENCDRDECDR --- 
+
+    Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
+    Copyright © 2023, ZiLiang, all rights reserved.
+    Created: 20 四月 2023
+======================================================================
+"""
+
+
+# ------------------------ Code --------------------------------------
+
+## normal import 
+import json
+from typing import List,Tuple,Dict
+import random
+from pprint import pprint as ppp
+
 import sys
 import os
 import time
@@ -16,9 +35,11 @@ import crypten.communicator as comm
 from crypten.config import cfg
 from utils import encrypt_tensor, encrypt_model
 
-from gpt import gpt
-from encryp_decoder import GPTBaseFlatten
-from encryp_decoder_nosimLN import GPTBaseFlatten
+from encoderDecoder_vanilla import EncdrDecdr as gpt
+from encryp_encdec import EncDecFlatten as GPTBaseFlatten
+
+# from encryp_decoder import GPTBaseFlatten
+# from encryp_decoder_nosimLN import GPTBaseFlatten
 
 # 2PC setting
 rank = sys.argv[1]
@@ -49,7 +70,8 @@ os.environ["RENDEZVOUS"] = "env://"
 class config():
     def __init__(self):
         self.batch_size = 1
-        self.num_hidden_layers = h
+        self.encoder_layers=int(h//2)
+        self.decoder_layers=int(h//2)
         self.hidden_size = d
         self.intermediate_size = self.hidden_size * 4
         self.sequence_length=msl
@@ -88,7 +110,7 @@ class config():
         self.gen_type=gen_type # enum: vanilla, embedReSend
         # self.gen_type="embedReSend" # enum: vanilla, embedReSend
         self.prefix_length=prefix_len
-        self.gen_len=self.sequence_length-self.prefix_length
+        self.gen_len=self.sequence_length-1
         self.device=device
     def __display__(self):
         t=""
@@ -153,6 +175,7 @@ else:
                   (config, timing), input_ids).eval()
 
 # encrpy inputs
+dec_ids = encrypt_tensor(input_ids[:,:2],config)
 input_ids = encrypt_tensor(input_ids,config)
 
 num=5
@@ -166,7 +189,7 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
-                model.generate_vanilla(input_ids)
+                model.generate_vanilla(input_ids,dec_ids)
 
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
@@ -180,7 +203,7 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
-                model.generate_ourmethod(input_ids)
+                model.generate_ourmethod(input_ids,dec_ids)
 
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
@@ -195,7 +218,7 @@ else:
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
-                model.generate(input_ids, config.gen_len)
+                model.generate(input_ids,dec_ids, config.gen_len)
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
             res_ls.append(deepcopy(timing))
@@ -208,7 +231,7 @@ else:
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
-                model.generate_ourmethod(input_ids, config.gen_len)
+                model.generate_ourmethod(input_ids,dec_ids, config.gen_len)
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
             res_ls.append(deepcopy(timing))
@@ -283,4 +306,12 @@ for k,v in avg_t.items():
       avg_t[k]/=1024
 print("-------------")
 print(avg_t)
+
+
+
+
+## running entry
+if __name__=="__main__":
+    main()
+    print("EVERYTHING DONE.")
 

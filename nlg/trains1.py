@@ -211,7 +211,8 @@ def getFinetunedSet(tokenizer,
 
 def getTestDataSet(tokenizer,split="test",
                     max_sentence_length=128,
-                    task="web_nlg",subset="release_v2",withsep=False):
+                    task="web_nlg",subset="release_v2",withsep=False,
+                   padding="longest"):
     """
     For Downstream Tasks based on Conditional Generation.
     task and subtask enums:
@@ -285,7 +286,7 @@ def getTestDataSet(tokenizer,split="test",
 
         prefix_id_ls=[]
         for text in outs:
-            ou=tokenizer(text+sep_token,padding="longest",
+            ou=tokenizer(text+sep_token,padding=padding,
                         truncation=True,
                         max_length=max_sentence_length,
                             return_tensors="pt")
