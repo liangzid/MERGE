@@ -5,6 +5,14 @@
 #+latex_class: elegantpaper
 
 * 新结果记录
+
+** windterm-序号推理程序对应表格（实时删除更新）
+
+| 序号 | 1               |               2 | 3 |              4 |       5 |
+|-----+-----------------+-----------------+---+----------------+---------|
+| 程序 | -CommonGen MPC- |                 |   | -bart vanilla- | bart ER |
+|     | multiwoz t5 mpc | multiwoz bart mpc |   |                |         |
+
 ** CommonGen 数据集实验，将ourmethod 调到可接受指标范畴
 *** DONE vary epoch
 CLOSED: [2023-04-13 周四 21:21]
@@ -33,20 +41,22 @@ CLOSED: [2023-04-13 周四 21:21]
 *** DONE CommonGen 结果调优
 CLOSED: [2023-04-14 周五 17:13]
 未达到目标。
-|-----------------------+--------------+------|
-| model                 | bertscore结果 |  日期 |
-|-----------------------+--------------+------|
-| 原始GPT-2实验结果        |       0.9336 |    - |
-| our 3epoch   dr=0.4   |       0.4540 | 0411 |
-| our 10epoch dr=0.6    |       0.8810 | 0413 |
-| our 50000 step dr=0.6 |       0.8787 | 0413 |
-| only er finally 8e-5  |       0.8953 | 0414 |
-| only er finally 3e-4  |       0.8850 | 0414 |
-| only CM 3e-5          |       0.7922 | 0414 |
-| only CM 3e-4          |       0.8664 | 0414 |
-| our 8e-5 quad         |       0.8666 | 0414 |
-| our 8e-4 no quad      |       0.8607 | 0414 |
-|-----------------------+--------------+------|
+|------------------------+--------------+------|
+| model                  | bertscore结果 |  日期 |
+|------------------------+--------------+------|
+| 原始GPT-2实验结果         |       0.9336 |    - |
+| our 3epoch   dr=0.4    |       0.4540 | 0411 |
+| our 10epoch dr=0.6     |       0.8810 | 0413 |
+| our 50000 step dr=0.6  |       0.8787 | 0413 |
+| only er finally 8e-5   |       0.8953 | 0414 |
+| only er finally 3e-4   |       0.8850 | 0414 |
+| only CM 3e-5           |       0.7922 | 0414 |
+| only CM 3e-4           |       0.8664 | 0414 |
+| our 8e-5 quad          |       0.8666 | 0414 |
+| our 8e-4 no quad       |       0.8607 | 0414 |
+|------------------------+--------------+------|
+| mpcformer softmax2relu |       0.8941 | 0415 |
+|------------------------+--------------+------|
 
 *** DONE 探究是否使用quad对模型结果的影响
 CLOSED: [2023-04-14 周五 17:13]
@@ -72,31 +82,34 @@ CLOSED: [2023-04-14 周五 09:14]
 ** multiwoz
 
 *** T5与BART的结果
-|--------------+-----------|
-| model        | bertscore |
-|--------------+-----------|
-| gpt2 vanilla |    0.9237 |
-|--------------+-----------|
-| t5 vanilla   |    0.9140 |
-| t5 ours    |           |
-|--------------+-----------|
-| bart vanilla |         ? |
-| bart ours    |           |
-|--------------+-----------|
+|--------------+-----------+------|
+| model        | bertscore | 日期  |
+|--------------+-----------+------|
+| gpt2 vanilla | 0.9237    | -    |
+|--------------+-----------+------|
+| t5 vanilla   | 0.9140    | -    |
+| t5 mpc       | 0.9122   | -    |
+| t5 ours      |           |      |
+|--------------+-----------+------|
+| bart vanilla | 0 .9301   | 0415 |
+| bart mpc   | 0.9124   | -    |
+| bart ours    |           |      |
+|--------------+-----------+------|
 
 *** mpcformer baseline results
 
 |--------------+-----------|
 | model        | bertscore |
 |--------------+-----------|
-| gpt2 vanilla |    0.9237 |
-| mpc baseline |    0.7954 |
+| gpt2 vanilla | 0.9237    |
+| mpc baseline | ?         |
 |--------------+-----------|
 
 *** TODO 存在问题，模型并没有很好地进行ER的训练。kill掉已有代码，重新运行这一部分。
 ** 其他未进行
 *** WAITING 探究是否使用simpleLN对实验结果的影响
 *** TODO [#A] 数据集的稀缺词分布情况统计
+
 * REVIEW 49 server
 ** dailydialog
 *** DONE gpt2 method7 tw 
@@ -104,8 +117,11 @@ CLOSED: [2023-04-14 周五 08:44]
 *** DONE GPT2 only ER
 CLOSED: [2023-04-14 周五 09:10]
 结论：效果不好，计划拉大训练step重新测试。
-*** REVIEW MPCformer GPT2 distill res
+*** DONE MPCformer GPT2 distill res
+CLOSED: [2023-04-17 周一 16:17]
+*** WAITING gpt2 only MM
 ** commonGEN
+*** WAITING merge 测试去除attention残差连接之后的效果
 *** DONE gpt2 commonGen only CM 3e-4
 CLOSED: [2023-04-14 周五 17:12]
 *** DONE gpt2 commonGen only ER 3e-4 long step
@@ -115,7 +131,7 @@ CLOSED: [2023-04-14 周五 17:12]
 *** DONE GPT2 only ER
 CLOSED: [2023-04-14 周五 09:06]
 结论：效果较好，但存在更优的可能性，需要重新实验
-*** DONE gpt2 commongNLG only MM
+*** DONE gpt2 commonNLG only MM
 CLOSED: [2023-04-14 周五 09:15]
 效果较差
 *** DONE gpt2 commonNLG method7 8e-5
@@ -125,11 +141,35 @@ CLOSED: [2023-04-14 周五 09:15]
 CLOSED: [2023-04-13 周四 20:54]
 *** DONE gpt2 commonNLG method7 noquad
 CLOSED: [2023-04-13 周四 20:54]
-*** REVIEW MPCformer GPT-2 distill results
+*** DONE MPCformer GPT-2 distill results
+CLOSED: [2023-04-17 周一 16:28]
 ** MultiWoz
-**** WAITING bart method7
-**** WAITING t5 MPCformer distill
-**** WAITING bart MPCformer distill
+*** WAITING bart method7
+*** DONE t5 MPCformer distill
+CLOSED: [2023-04-18 周二 10:13]
+*** DONE bart MPCformer distill
+CLOSED: [2023-04-18 周二 10:14]
+*** WAITING gpt2 MERGE retrain
+*** DONE gpt2 MERGE only ER retrain
+CLOSED: [2023-04-18 周二 11:03]
+*** DONE gpt2 MERGE only MM retrain
+CLOSED: [2023-04-18 周二 11:03]
+** 补充实验表格
+DEADLINE: <2023-04-16 周日>
+*** DONE multiwoz gpt-2 mpcformer
+CLOSED: [2023-04-17 周一 16:56]
+*** DONE 补充实验表格-BART vanilla multiwoz
+CLOSED: [2023-04-17 周一 15:41]
+*** DONE 补充实验表格-BART ER multiwoz
+CLOSED: [2023-04-17 周一 15:36]
+*** DONE 补充实验表格 DD MERGE
+CLOSED: [2023-04-17 周一 15:46]
+*** DONE 补充实验表格 DD only ER
+CLOSED: [2023-04-17 周一 15:51]
+*** DONE 补充实验表格 commonGen  mpc
+CLOSED: [2023-04-17 周一 15:55]
+*** CANCELED 降低baseline的效果，通过减少训练epoch
+CLOSED: [2023-04-18 周二 09:45]
 * REVIEW 48 server
 ** multiwoz
 **** CANCELED t5 method7 5w 
@@ -144,3 +184,26 @@ CLOSED: [2023-04-14 周五 10:09]
 生成过程存在问题，未跑通
 **** DONE gpt2 MPCformer distill
 CLOSED: [2023-04-14 周五 09:39]
+* 时间计划安排表格-松弛版
+** 第一周（尽量弄完实验结果）
+*** 速度实验
+**** DONE 周一形成初步的表格，完成实验设计
+CLOSED: [2023-04-17 周一 15:43]
+**** 周二补充进行测速实验
+**** 周三添加超参数实验
+*** 精度实验
+**** DONE 周一处理完所有已调优完毕的实验数据
+CLOSED: [2023-04-17 周一 16:19]
+**** WAITING 在新的数据集上完成训练
+**** 周二克服T5和Bart存在的问题
+**** DONE 周三克服commonGEN存在的问题
+CLOSED: [2023-04-18 周二 20:06]
+*** 论文撰写
+**** 周一撰写conclusion
+**** DONE 周二撰写related work的一部分
+CLOSED: [2023-04-18 周二 20:06]
+**** DONE 周三撰写related work的剩下部分
+CLOSED: [2023-04-18 周二 20:06]
+** 第二周（本周结束后发给PHW）
+** 第三周（按照PHW的要求修改论文）
+** 第四周（投稿提交）
