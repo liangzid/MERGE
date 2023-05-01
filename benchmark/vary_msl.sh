@@ -30,7 +30,7 @@ export methods=("vanillaGPT" "mpcformer_sfrelu" "mpcformer_sfquad" \
 	      "thex" "onlyER" "our")
 export gen_ls=("vanilla" "vanilla" "vanilla" "vanilla" "embedReSend"\
 	      "embedReSend")
-export msl_ls=(64 128 256 512 1024 2048)
+export msl_ls=(256 512 1024 2048)
 
 for sl in ${msl_ls[*]};
 do
@@ -41,8 +41,8 @@ do
 	echo "method: $method; gen type: $gen_type"
 	echo ">>>max sequence legnth: $sl<<<"
 
-	export device=7
-	export device2=3
+	export device=4
+	export device2=5
 	export port="394${device}"
 	export CUDA_VISIBLE_DEVICES="${device},${device2}"
 	# export method="our"
