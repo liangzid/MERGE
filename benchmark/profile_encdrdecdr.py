@@ -61,7 +61,8 @@ port=str(sys.argv[10])
 os.environ["RANK"] = str(rank)
 os.environ["WORLD_SIZE"] = str(2)
 # os.environ["MASTER_ADDR"] = "219.245.186.45"
-os.environ["MASTER_ADDR"] = "219.245.186.48"
+# os.environ["MASTER_ADDR"] = "219.245.186.48"
+os.environ["MASTER_ADDR"] = "219.245.186.49"
 os.environ["MASTER_PORT"] = port
 os.environ["RENDEZVOUS"] = "env://"
 

@@ -47,8 +47,8 @@ do
 	echo "method: $method; gen type: $gen_type"
 	echo ">>>max sequence legnth: $sl<<<"
 
-	export device=0
-	export device2=0
+	export device=6
+	export device2=7
 	export port="394${device}"
 	# export CUDA_VISIBLE_DEVICES="${device},${device2}"
 	export CUDA_VISIBLE_DEVICES="${device}"
@@ -59,7 +59,7 @@ do
 	    $layer $d $sl $prefix $head $method $gen_type $port\
 	    >./time_varyParams/ENCODER_DEC_method${method}gen_type${gen_type}$device$layer$d$msl$prefix$head$port.txt &
 
-	$python profile_encdrdecdr.py 0 0\
+	$python profile_encdrdecdr.py 0 1\
 		$layer $d $sl $prefix $head $method $gen_type $port 
     done
 done
