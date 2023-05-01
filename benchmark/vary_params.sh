@@ -50,8 +50,8 @@ do
 	export device=6
 	export device2=7
 	export port="394${device}"
-	# export CUDA_VISIBLE_DEVICES="${device},${device2}"
-	export CUDA_VISIBLE_DEVICES="${device}"
+	export CUDA_VISIBLE_DEVICES="${device},${device2}"
+	# export CUDA_VISIBLE_DEVICES="${device}"
 	export method="our"
 	export gen_type="embedReSend"
 
