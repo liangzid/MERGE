@@ -187,13 +187,16 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
     if config.gen_type=="vanilla":
         for i in tqdm(range(num)):
             m.reset_timing()
+            c1=comm.get().get_communication_stats()
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
                 model.generate_vanilla(input_ids,dec_ids)
 
             time_e = time.time()
+            c2=comm.get().get_communication_stats()
             timing["total_time"] = (time_e - time_s)
+            timing["total_byte"] = (c2["bytes"] - c1["bytes"])
             res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
@@ -201,6 +204,7 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
     else:
         for i in tqdm(range(num)):
             m.reset_timing()
+            c1=comm.get().get_communication_stats()
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
@@ -208,6 +212,8 @@ if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
 
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            c2=comm.get().get_communication_stats()
+            timing["total_byte"] = (c2["bytes"] - c1["bytes"])
             res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
@@ -216,12 +222,15 @@ else:
     if config.gen_type=="vanilla":
         for i in tqdm(range(num)):
             m.reset_timing()
+            c1=comm.get().get_communication_stats()
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
                 model.generate(input_ids,dec_ids, config.gen_len)
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            c2=comm.get().get_communication_stats()
+            timing["total_byte"] = (c2["bytes"] - c1["bytes"])
             res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
@@ -229,12 +238,15 @@ else:
     else:
         for i in tqdm(range(num)):
             m.reset_timing()
+            c1=comm.get().get_communication_stats()
             time_s = time.time()
             # run a forward pass
             with crypten.no_grad():
                 model.generate_ourmethod(input_ids,dec_ids, config.gen_len)
             time_e = time.time()
             timing["total_time"] = (time_e - time_s)
+            c2=comm.get().get_communication_stats()
+            timing["total_byte"] = (c2["bytes"] - c1["bytes"])
             res_ls.append(deepcopy(timing))
             for k,v in timing.items():
                 avg_t[k]+=v
@@ -260,7 +272,7 @@ def getMeanStdMinMax(res_ls):
    keyls_ct1=["EmbedCommTime","LinearCommTime","SoftmaxCommTime",
               "ActivCommTime","GenerationCommTime","total_time",]
    keyls_cb=["ËmbedCommByte","LinearCommByte","SoftmaxCommByte",
-              "ActivCommByte","GenerationCommByte"]
+              "ActivCommByte","GenerationCommByte","total_byte"]
    metric_cal(ls_of_each_att,keyls_t1)
    metric_cal(ls_of_each_att,keyls_ct1)
    metric_cal(ls_of_each_att,keyls_cb)

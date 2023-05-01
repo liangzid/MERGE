@@ -41,8 +41,8 @@ do
 	echo "method: $method; gen type: $gen_type"
 	echo ">>>max sequence legnth: $sl<<<"
 
-	export device=7
-	export device2=3
+	export device=4
+	export device2=5
 	export port="394${device}"
 	export CUDA_VISIBLE_DEVICES="${device},${device2}"
 	# export method="our"
