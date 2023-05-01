@@ -293,6 +293,9 @@ class GPT2Attention(nn.Module):
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
         ## move here for retraining
         attn_weights=attn_weights[:,:,:sl,:sl]
+
+        ## normalize it.
+        attn_weights=attn_weights/torch.sum(attn_weights).unsqueeze(-1)
         # attn_weights=self.relu(attn_weights)
 
         # ## normalization function

@@ -155,9 +155,9 @@ def main():
     ## 17. dailydialog gpt2 MERGE
     task="multiwoz_nlg"
     subset=None
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftMax500001000104018e-50.010.60.70.75finally/"
-    # gentype="vanilla"
-    gentype="ER"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftMax500001000104018e-50.010.60.70.75/"
+    gentype="vanilla"
+    # gentype="ER"
 
 
     if "bart" in model_path or "t5" in model_path:

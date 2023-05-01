@@ -128,7 +128,7 @@ class Inference:
 
         only_decoder=True
         if "gpt" in model_path:
-            if "noSoftmax" in model_path:
+            if "noSoftmax" in model_path or True:
                 print(">>>USING NO-SOFTMAX VERSION GPT-2.")
                 self.decoder=NosoftmaxGPT2\
                     .from_pretrained(model_path)
