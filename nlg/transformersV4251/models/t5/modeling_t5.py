@@ -549,23 +549,19 @@ class T5Attention(nn.Module):
             #     position_bias = position_bias + mask  # (batch_size, n_heads, seq_length, key_length)
 
         
-        bs=attn_weights.shape[0]
+        bs=scores.shape[0]
 
         # sl=value_states.shape[2]
         # isl=query_states.shape[2]
 
-        isl=attn_weights.shape[2]
-        sl=attn_weights.shape[3]
+        isl=scores.shape[2]
+        sl=scores.shape[3]
 
         attn_weights=self.M.unsqueeze(0)
         if bs!=1:
             attn_weights=attn_weights.repeat(bs,1,1,1)
         attn_weights = attn_weights.type(scores.dtype)
 
-        if self.isCross:
-            attn_weights=attn_weights[:,:,:isl,:sl]
-        else:
-            attn_weights=attn_weights[:,:,:isl,:sl]
 
         if self.pruned_heads:
             mask = torch.ones(position_bias.shape[1])
@@ -574,13 +570,17 @@ class T5Attention(nn.Module):
         else:
             position_bias_masked = position_bias
 
-        scores += position_bias_masked
+        # attn_weights += position_bias_masked
 
         # this is a bug +++===
         # move the dropout to the 后面
-        attn_weights = nn.functional.softmax(scores.float(), dim=-1).type_as(
+        attn_weights = nn.functional.softmax(attn_weights.float(), dim=-1).type_as(
             scores
         )  # (batch_size, n_heads, seq_length, key_length)
+        if self.isCross:
+            attn_weights=attn_weights[:,:,:isl,:sl]
+        else:
+            attn_weights=attn_weights[:,:,:isl,:sl]
 
         #----------------- ends here ---------------------
         ## DONE. add the constant attention, instead of the \

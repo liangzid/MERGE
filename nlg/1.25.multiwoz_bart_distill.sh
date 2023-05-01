@@ -17,8 +17,8 @@ export root_dir="/home/liangzi/mpcGen/nlg/"
 export epochs=10000
 export step=50000
 # export lr=3e-5
-# export lr=9e-5
-export lr=3e-4
+export lr=9e-5
+# export lr=3e-4
 # export device="cpu"
 export batch_size=16
 # export task="web_nlg"
@@ -30,10 +30,10 @@ export max_seq_length=128
 # export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs1gpt2/"
 # export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/"
 
-export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/"
+# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/"
 
 # export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4gpt2/"
-# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
+export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
 # export teach_ckpt="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
 
 export stu_ckpt=${teach_ckpt}
@@ -83,7 +83,7 @@ export noise=0.7
 # export lamda=0.5
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}noAttentionMask${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}index_after_softmax${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
