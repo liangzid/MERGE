@@ -23,15 +23,26 @@ export msl=128
 export prefix=4
 
 # s m 1.5m l xl xxl
-# 82 180 265 391 1789 5591
-export layer_ls=(6 12 12 24 48 48)
-export d_ls=(512 768 1024 1024 2048 4096)
-export head_ls=(8 12 16 16 32 64)
+# 82M 180M 265M 391M 1789M 5591M
+# export layer_ls=(6 12 12 24 48 48)
+# export d_ls=(512 768 1024 1024 2048 4096)
+# export head_ls=(8 12 16 16 32 64)
 
-export methods=("vanillaGPT" "mpcformer_sfrelu" "mpcformer_sfquad" \
-	      "thex" "onlyER" "our")
-export gen_ls=("vanilla" "vanilla" "vanilla" "vanilla" "embedReSend"\
-	      "embedReSend")
+export layer_ls=(24 24)
+export d_ls=(2048 4096)
+export head_ls=(32 64)
+
+# export methods=("vanillaGPT" "mpcformer_sfrelu" "mpcformer_sfquad" \
+# 	      "thex" "onlyER" "our")
+# export gen_ls=("vanilla" "vanilla" "vanilla" "vanilla" "embedReSend"\
+# 	      "embedReSend")
+
+# export methods=("thex" "onlyER" "our")
+# export gen_ls=("vanilla" "embedReSend" "embedReSend")
+
+export methods=("our" )
+export gen_ls=("embedReSend")
+
 export sl=128
 
 for j in `seq 1 ${#methods[@]}`;
@@ -39,6 +50,8 @@ do
     export layer=${layer_ls[$j-1]}
     export d=${d_ls[$j-1]}
     export head=${head_ls[$j-1]}
+
+    echo "layer: $layer; d: $d; head: $head"
     
     for i in `seq 1 ${#methods[@]}`;
     do
@@ -47,13 +60,15 @@ do
 	echo "method: $method; gen type: $gen_type"
 	echo ">>>max sequence legnth: $sl<<<"
 
-	export device=6
-	export device2=7
+	# export device=6
+	# export device2=7
+	export device=0
+	export device2=3
 	export port="394${device}"
 	export CUDA_VISIBLE_DEVICES="${device},${device2}"
 	# export CUDA_VISIBLE_DEVICES="${device}"
-	export method="our"
-	export gen_type="embedReSend"
+	# export method="our"
+	# export gen_type="embedReSend"
 
 	nohup $python profile_encdrdecdr.py 1 0\
 	    $layer $d $sl $prefix $head $method $gen_type $port\

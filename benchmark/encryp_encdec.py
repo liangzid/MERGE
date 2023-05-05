@@ -40,6 +40,7 @@ from utils import softmax_2RELU, softmax_2QUAD, activation_quad, activation_newG
 from gpt import gptEmbeddings
 
 
+
 class EncDecFlatten(nn.Module):
     def __init__(self, config, timing):
         super(EncDecFlatten,self).__init__()
@@ -60,7 +61,8 @@ class EncDecFlatten(nn.Module):
         self.bos_one_hot=crypten.cryptensor(self.bos_one_hot)
 
         self.embeddings=gptEmbeddings(config,timing)
-        self.embeddings.cuda(config.device)
+        if config.device!="cpu":
+            self.embeddings.cuda(config.device)
 
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
@@ -552,9 +554,9 @@ class EncDecFlatten(nn.Module):
             logits=self.lm_head(feature)
             c1=comm.get().get_communication_stats()
             t1=time.time()
-            self.timing["LinearTime"]+=(t1-t0)
-            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+            # self.timing["LinearTime"]+=(t1-t0)
+            # self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            # self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
             probs = self.smax(logits)
             idx_next = maximum.argmax(probs, dim=-1)

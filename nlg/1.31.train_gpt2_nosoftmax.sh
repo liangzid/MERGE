@@ -58,14 +58,14 @@ export using_NEGAEm=0
 # export device="6"
 
 ## method 7
-export using_quadacti=0 ##### now add the quadtic option.
+export using_quadacti=1 ##### now add the quadtic option.
 export using_simLN=1
 export no_res=0
 export no_softmax=1
 
 # export lamda=0.25
 export lamda=0.75
-export device="7"
+export device="1"
 
 ##############################################################
 
@@ -75,7 +75,7 @@ export noise=0.7
 # export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}indexAfterSoftMax${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}relu${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 
@@ -83,6 +83,7 @@ export board_name=$stu_save_ckpt
 
 ${python} train_slide.py \
 	--train=1 \
+	--no_softmax=1 \
 	--epochs=${epochs} \
 	--train_step=${step} \
 	--lr=${lr} \

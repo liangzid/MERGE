@@ -167,7 +167,9 @@ print("init done")
 timing = defaultdict(float)
 
 if config.accelarate_type=="our" or config.accelarate_type=="onlyMM":
+    config.device="cpu"
     m = GPTBaseFlatten(config, timing)
+    m=nn.DataParallel(m,device_ids=[0,1])
     model = encrypt_model(m, GPTBaseFlatten,
                   (config, timing), input_ids).eval()
 else:

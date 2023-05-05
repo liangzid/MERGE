@@ -178,21 +178,26 @@ def getFinetunedSet(tokenizer,
                 inps.append(x["context"])
                 outs.append(x["target"])
         
+        padding_strategy="max_length"
+        padding_strategy="longest"
         if only_decoder:
             outs=[inps[i]+sep_token+outs[i]+eos_token\
                 for i in range(len(inps))]
 
-            outss=tokenizer(outs,padding="longest",
+            outss=tokenizer(outs,padding=padding_strategy,
                             truncation=True,
-                        max_length=max_sentence_length,return_tensors="pt")
+                        max_length=max_sentence_length,
+                            return_tensors="pt")
             dset=TensorDataset(outss.input_ids,outss.attention_mask,
                             )
         else:
-            inps=tokenizer(inps,padding="longest",truncation=True,
+            inps=tokenizer(inps,padding=padding_strategy,
+                           truncation=True,
                            max_length=max_sentence_length,
                            return_tensors="pt")
             outs=[bos_token+x+eos_token for x in outs]
-            outs=tokenizer(outs,padding="longest",truncation=True,
+            outs=tokenizer(outs,padding=padding_strategy,
+                           truncation=True,
                            max_length=max_sentence_length,
                            return_tensors="pt")
             dset=TensorDataset(inps.input_ids,

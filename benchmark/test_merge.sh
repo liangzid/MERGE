@@ -41,9 +41,9 @@ echo ">> 2. evaluate only MM"
 export method="onlyMM"
 # export method="onlyER"
 # export method="our"
-# export gen_type="vanilla" 
-export gen_type="embedReSend" 
-export device=6
+export gen_type="vanilla" 
+# export gen_type="embedReSend" 
+export device=1
 export port="394${device}"
 export CUDA_VISIBLE_DEVICES="${device}"
 export device=0

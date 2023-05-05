@@ -30,7 +30,7 @@ export methods=("vanillaGPT" "mpcformer_sfrelu" "mpcformer_sfquad" \
 	      "thex" "onlyER" "our")
 export gen_ls=("vanilla" "vanilla" "vanilla" "vanilla" "embedReSend"\
 	      "embedReSend")
-export msl_ls=(256 512 1024 2048)
+export msl_ls=(512 1024 2048)
 
 for sl in ${msl_ls[*]};
 do

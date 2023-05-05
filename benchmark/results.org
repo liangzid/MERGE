@@ -524,6 +524,36 @@ defaultdict(<class 'float'>, {'EmbedTime': 326.285486125946, 'EmbedCommTime': 52
 * TODO Vary Model Size
 x轴设定： 5个point，从124M到6B，在GPT上进行
 曲线：四条即可，merge, gpt2, thex, mpcformer
+
+
+
+
+前四个点的坐标已有，现准备后面2个点的坐标
+
+|---------+--------+------+-----------+------------+----------|
+| Model   | Params | Time | EmbedTime | LinearTime | CommByte |
+|---------+--------+------+-----------+------------+----------|
+| VanillaGPT | 1789M  | OOM  |           |            |          |
+| mpc sfrelu | 1789M  | OOM  |           |            |          |
+| mpc sfquad | 1789M  | OOM  |           |            |          |
+| THE-X   | 1789M  | OOM  |           |            |          |
+| our     | 1789M  |      |           |            |          |
+| only ER | 1789M  |      |           |            |          |
+|---------+--------+------+-----------+------------+----------|
+|         | 5591M  |      |           |            |          |
+|         | 5591M  |      |           |            |          |
+|         | 5591M  |      |           |            |          |
+|         | 5591M  |      |           |            |          |
+|         | 5591M  |      |           |            |          |
+|         | 5591M  |      |           |            |          |
+|---------+--------+------+-----------+------------+----------|
+
+
+
+
+
+
+
 * TODO Vary Sequence Length
 x轴设定： 5个point: 64 128 256 512 1024，在GPT上进行
 曲线：四条即可，merge, gpt2, thex, mpcformer

@@ -24,6 +24,7 @@ import torch
 import torch.utils.checkpoint
 from torch import nn
 from torch.cuda.amp import autocast
+
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from ...activations import ACT2FN
@@ -223,7 +224,7 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights + attention_mask
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
-
+        
         # shape of attn_weights: bs, num_heads,msl,msl
 
         # print("-----------")
@@ -290,13 +291,26 @@ class GPT2Attention(nn.Module):
             attn_weights = attn_weights * head_mask
 
         ## no softmax!!!
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+        # attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+
         ## move here for retraining
         attn_weights=attn_weights[:,:,:sl,:sl]
 
+        # print("+++++++++++")
+        # print(sl)
+
         ## normalize it.
-        attn_weights=attn_weights/torch.sum(attn_weights).unsqueeze(-1)
-        # attn_weights=self.relu(attn_weights)
+        # print(attn_weights[0,0,-1,:])
+
+        # for ibs in range(bs):
+        #     for ih in range(num_head):
+        #         for isl in range(sl):
+        #             attn_weights[ibs,ih,isl,:]=attn_weights[ibs,ih,isl,:].clone()\
+        #                 /torch.sum(attn_weights[ibs,ih,isl,:]).unsqueeze(-1)
+
+        # print(attn_weights[0,0,0,:])
+        
+        attn_weights=self.relu(attn_weights)
 
         # ## normalization function
         # attn_weights=nn.functional.normalize(attn_weights,p=2,dim=-1)

@@ -62,6 +62,7 @@ class gptDecLayer(cnn.Module):
 
 class gptCrossAttention(cnn.Module):
     def __init__(self, config, timing):
+
         super(gptCrossAttention, self).__init__()
         self.self = gptOnlyCrossAttention(config, timing)
         self.output = gptSelfOutput(config, timing)
@@ -197,9 +198,10 @@ class EncdrDecdr(cnn.Module):
         for k,v in self.timing.items():
             self.timing[k]=0
 
-    def forward(self,input_ids,dec_input_ids,past_list):
+    # def forward(self,input_ids,dec_input_ids,past_list):
+    def forward(self,enc_x,dec_input_ids,past_list):
         ## 1. get embeddings
-        enc_x=self.embeddings(input_ids)
+        # enc_x=self.embeddings(input_ids)
 
         ## 2. get the hidden states of transformer encoder.
         for l_id, layer in enumerate(self.encoder):
@@ -313,10 +315,10 @@ class EncdrDecdr(cnn.Module):
             # forward the model to get the logits for the index in the sequence
             #print(idx_cond.shape)
             if not generation_stage:
-                logits = self(enc_idx,idx_cond, past_list)
+                logits = self(enc_x,idx_cond, past_list)
                 generation_stage = True
             else:
-                logits = self(enc_idx,idx_cond[:, -1:, :], past_list)
+                logits = self(enc_x,idx_cond[:, -1:, :], past_list)
             #print("logit shape: ", logits.shape)
             # pluck the logits at the final step and scale by desired temperature
             t0 = time.time()

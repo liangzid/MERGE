@@ -355,9 +355,9 @@ class GPTBaseFlatten(nn.Module):
             logits=self.lm_head(feature)
             c1=comm.get().get_communication_stats()
             t1=time.time()
-            self.timing["LinearTime"]+=(t1-t0)
-            self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
-            self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
+            # self.timing["LinearTime"]+=(t1-t0)
+            # self.timing["LinearCommTime"]+=(c1['time']-c0['time'])
+            # self.timing["LinearCommByte"]+=(c1['bytes']-c0['bytes'])
 
             probs = self.smax(logits)
             idx_next = maximum.argmax(probs, dim=-1)
