@@ -30,7 +30,8 @@ export methods=("vanillaGPT" "mpcformer_sfrelu" "mpcformer_sfquad" \
 	      "thex" "onlyER" "our")
 export gen_ls=("vanilla" "vanilla" "vanilla" "vanilla" "embedReSend"\
 	      "embedReSend")
-export msl_ls=(512 1024 2048)
+# export msl_ls=(512 1024 2048)
+export msl_ls=(64)
 
 for sl in ${msl_ls[*]};
 do
@@ -41,14 +42,14 @@ do
 	echo "method: $method; gen type: $gen_type"
 	echo ">>>max sequence legnth: $sl<<<"
 
-	export device=4
-	export device2=5
+	export device=2
+	# export device2=3
 	export port="394${device}"
-	export CUDA_VISIBLE_DEVICES="${device},${device2}"
+	export CUDA_VISIBLE_DEVICES="${device}"
 	# export method="our"
 	# export gen_type="embedReSend"
 
-	nohup $python profile_encdrdecdr.py 1 1\
+	nohup $python profile_encdrdecdr.py 1 0\
 	    $layer $d $sl $prefix $head $method $gen_type $port\
 	    >./time_varyMSL/ENCODER_DEC_method${method}gen_type${gen_type}$device$layer$d$msl$prefix$head$port.txt &
 

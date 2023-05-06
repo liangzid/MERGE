@@ -264,6 +264,10 @@ class GPT2Attention(nn.Module):
         if bs!=1:
             attn_weights.repeat(bs,1,1,1)
 
+        ## no softmax!!!
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+        # print("================")
+        # print(attn_weights[0,0,sl-1,:])
 
         # print(f"Attn before: {attn_weights}")
         if not self.is_cross_attention:
@@ -271,7 +275,9 @@ class GPT2Attention(nn.Module):
             query_length, key_length = query.size(-2), key.size(-2)
             # print(f"q length: {query_length}")
             # print(f"k length: {key_length}")
-            causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length].to(torch.bool)
+            causal_mask = self.bias[:, :, key_length - query_length :128, :128].to(torch.bool)
+            # causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length].to(torch.bool)
+
             # no softmax, then we use the mask value 0 rather -inf.
             # mask_value = torch.finfo(attn_weights.dtype).min
             mask_value = 0.
@@ -282,7 +288,7 @@ class GPT2Attention(nn.Module):
             mask_value = torch.full([], mask_value, dtype=attn_weights.dtype).to(attn_weights.device)
 
             # attention with no mask
-            # attn_weights = torch.where(causal_mask, attn_weights, mask_value)
+            attn_weights = torch.where(causal_mask, attn_weights, mask_value)
 
         # print(f"Attn after: {attn_weights}")
 
@@ -290,8 +296,6 @@ class GPT2Attention(nn.Module):
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
-        ## no softmax!!!
-        # attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
         ## move here for retraining
         attn_weights=attn_weights[:,:,:sl,:sl]
@@ -310,7 +314,7 @@ class GPT2Attention(nn.Module):
 
         # print(attn_weights[0,0,0,:])
         
-        attn_weights=self.relu(attn_weights)
+        # attn_weights=self.relu(attn_weights)
 
         # ## normalization function
         # attn_weights=nn.functional.normalize(attn_weights,p=2,dim=-1)

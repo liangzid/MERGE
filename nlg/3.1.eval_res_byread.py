@@ -155,9 +155,7 @@ def main():
     ## 17. dailydialog gpt2 MERGE
     task="daily_dialog"
     subset=None
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftMax500001000104018e-50.010.60.70.75finally"
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/noMask500001000104018e-50.010.60.70.75finally"
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/manystep500001000104118e-50.010.60.70.75finally"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftmax500001000104118e-50.010.60.70.75epoch2"
     # gentype="vanilla"
     gentype="ER"
 
@@ -166,12 +164,13 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=7
+    cuda_num=1
 
     # gentype="ER"
 
-    # from inference_cp import Inference
-    from infer_constant_len import Inference
+    # from inference import Inference
+    from inference_cp import Inference
+    # from infer_constant_len import Inference
 
     ## ---------------------------------------------
     infermodel=Inference(model_path,cuda_num,
@@ -185,7 +184,9 @@ def main():
                                 max_sentence_length=infermodel.msl//2,
                                 task=task,subset=subset,withsep=withsep)
     else:
-        te=getTestDataSet(infermodel.tokenizer,split="test",
+        # split="train"
+        split="test"
+        te=getTestDataSet(infermodel.tokenizer,split=split,
                                 max_sentence_length=infermodel.msl//2,
                                 task=task,subset=subset,withsep=withsep)
 

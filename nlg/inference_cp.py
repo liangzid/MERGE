@@ -243,7 +243,7 @@ class Inference:
         
 
         self.BartScorer=BARTScorer(device="cuda:6",max_length=1024,
-                                   checkpoint="facebook/bart-large-cnn",
+                                   checkpoint="/home/liangzi/models/bart-large-cnn",
                                    # local_files_only=True,
                                    )
         self.BartScorer.load(path="/home/liangzi/BARTscoremain/bart_score.pth")
