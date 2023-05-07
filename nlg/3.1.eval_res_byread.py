@@ -155,7 +155,8 @@ def main():
     ## 17. dailydialog gpt2 MERGE
     task="daily_dialog"
     subset=None
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftmax500001000104118e-50.010.60.70.75epoch2"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftmax500001000104118e-50.010.60.70.75finally"
+    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/mask500001000104118e-50.010.60.70.75finally"
     # gentype="vanilla"
     gentype="ER"
 
@@ -164,7 +165,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=1
+    cuda_num=3
 
     # gentype="ER"
 

@@ -24,9 +24,24 @@ export lr=8e-5
 # export task="common_gen"
 export max_seq_length=128
 
-export batch_size=32
-export task="daily_dialog"
-export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
+# export batch_size=32
+# export task="daily_dialog"
+# export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
+
+# export batch_size=16
+# export task="multiwoz_nlg"
+# export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs4gpt2/"
+# export device="0"
+
+# export batch_size=16
+# export task="common_gen"
+# export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs32gpt2/"
+# export device="1"
+
+export batch_size=16
+export task="multiwoz_nlg"
+export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
+export device="2"
 
 # export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs1bart-base/6gpt2/"
 # export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs4gpt2/fianlly/"
@@ -64,7 +79,6 @@ export no_softmax=1
 
 # export lamda=0.25
 export lamda=0.75
-export device="0"
 
 ##############################################################
 
@@ -110,5 +124,5 @@ ${python} train_slide.py \
 	--root_dir=$root_dir
 
 
-echo "RUNNING 1.31.train_gpt2_nosoftmax.sh DONE."
-# 1.31.train_gpt2_nosoftmax.sh ends here
+echo "RUNNING 1.32.vary_gpt2_nosoftmax_train.sh DONE."
+# 1.32.vary_gpt2_nosoftmax_train.sh ends here
