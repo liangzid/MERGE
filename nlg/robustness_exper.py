@@ -76,6 +76,8 @@ import sys
 sys.path.append("/home/liangzi/")
 from BARTscoremain.bart_score import BARTScorer
 
+from trains1 import *
+
 class Inference:
     def __init__(self,
                  model_path="data/helloworld",
@@ -643,6 +645,7 @@ class Inference:
 
         # attns=torch.ones_like(prefix_ids)
         # attns=attns.to(self.device)
+        total_mse_losses=[]
 
         embedds=self.embedds(prefix_ids)
         # 1.2 then get the embeddings of ids.
@@ -690,27 +693,25 @@ class Inference:
                     # newadded_embedd=self.embedds(prefix_ids[:,-1:])
                     newadded_embedd=self.embedds(prefix_ids[:,-1:])
 
-                    embedds=torch.cat([embedds,newadded_embedd,
-                                       ],
-                                      dim=1)
-                    
                     # print(embedds)
                     # noise=(torch.rand(embedds.shape)-0.5)*2/14
-                    noise=(torch.rand(embedds.shape)-0.5)*2*eps
+                    noise=(torch.rand(newadded_embedd.shape)-0.5)*2*eps
                     # mask p% noise
                     p=mask_p
                     mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
                     noise=noise*mask_noise
                     # print("noise ",noise)
                     noise=noise.to(embedds.device)
-                    new_embedds=embedds+noise
+                    new_embedd=newadded_embedd+noise
+                    mse_logits=F.mse_loss(new_embedd,newadded_embedd)
+                    # print(f"mse between two embedds: {mse_logits}")
+                    total_mse_losses.append(mse_logits)
 
-                    mse_logits=F.mse_loss(embedds,new_embedds)
-                    if _%10==0:
-                        print(f"mse between two embedds: {mse_logits}")
-                    embedds=new_embedds
-                    
-                    
+                    newadded_embedd=new_embedd
+
+                    embedds=torch.cat([embedds,newadded_embedd,
+                                       ],
+                                      dim=1)
                     # embedds=self.embedds(prefix_ids)
 
                 # hidden_sta=output.hidden_states[-1]
@@ -735,6 +736,8 @@ class Inference:
                 # print(decoder_input_ids)
                 if decoder_input_ids[0,-1]==self.eos_token_id:
                     break
+        averaged_mse_score=sum(total_mse_losses)/len(total_mse_losses)
+        print("MSE score: ",averaged_mse_score)
         return decoder_input_ids
 
 def main():
@@ -841,13 +844,13 @@ def main_real():
     withsep=True
 
     cuda_num=args.cuda_num
-    if "cpu" !=args.cuda_num:
-        cuda_num="cuda:{}".format(cuda_num)
+    # if "cpu" !=args.cuda_num:
+    #     cuda_num="cuda:{}".format(cuda_num)
 
     if args.method=="vanilla":
-        model_path=""
+        model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2"
     else:
-        model_path=""
+        model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/mask500001000104118e-50.010.60.70.75finally"
 
     infermodel=Inference(model_path,cuda_num,
                          # approximation=True,
@@ -860,6 +863,10 @@ def main_real():
                             max_sentence_length=infermodel.msl//2,
                             task=task,subset=subset,withsep=withsep)
     va,valabels=te
+
+    va=va[:300]
+    valabels=valabels[:300]
+
     seqls=va
     
     newseqls=infermodel.inference(seqls,generate_mode_test="greedy",

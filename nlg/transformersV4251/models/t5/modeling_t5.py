@@ -544,12 +544,15 @@ class T5Attention(nn.Module):
             if past_key_value is not None:
                 position_bias = position_bias[:, :, -hidden_states.size(1) :, :]
 
-            ## no attention mask
-            # if mask is not None:
-            #     position_bias = position_bias + mask  # (batch_size, n_heads, seq_length, key_length)
-
-        
+            ## no attention mask here, but at another place.
+            if mask is not None:
+                position_bias = position_bias  # (batch_size, n_heads, seq_length, key_length)
+        threshold=-1
+        mask= torch.where(mask < threshold,
+                            torch.zeros_like(mask),
+                            torch.ones_like(mask))
         bs=scores.shape[0]
+        head=scores.shape[1]
 
         # sl=value_states.shape[2]
         # isl=query_states.shape[2]
@@ -581,6 +584,14 @@ class T5Attention(nn.Module):
             attn_weights=attn_weights[:,:,:isl,:sl]
         else:
             attn_weights=attn_weights[:,:,:isl,:sl]
+        # print("-=-=-=-=-=-=-=")
+        if mask.shape[2]==1:
+            mask=mask.repeat(1,head,isl,1)
+        else:
+            mask=mask.repeat(1,head,1,1)
+        # print(mask.shape)
+        # print(attn_weights.shape)
+        attn_weights=attn_weights*mask
 
         #----------------- ends here ---------------------
         ## DONE. add the constant attention, instead of the \

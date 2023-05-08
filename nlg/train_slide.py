@@ -410,7 +410,6 @@ def main():
         config.no_res="0"
         
     config.save_pretrained(args.stu_save_ckpt)
-    config.save_pretrained(args.stu_ckpt)
 
     print(f"config softmax2quad: {args.softmax2quad}")
     if args.softmax2quad==1:
@@ -455,7 +454,8 @@ def main():
 
     if args.no_softmax==1 and "t5" not in args.teach_ckpt \
        and "bart" not in args.teach_ckpt:
-        smodel = GPT_nsm.from_pretrained(args.stu_ckpt)
+        smodel = GPT_nsm.from_pretrained(args.stu_ckpt,
+                                         config=args.stu_save_ckpt)
         print("Using Constant Version without Softmax Functions.")
 
     # print(smodel.transformer.h[2].attn.M)
