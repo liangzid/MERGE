@@ -18,9 +18,12 @@ export root_dir="/home/liangzi/mpcgen/nlg/"
 # export eps=0.3
 
 # export p_ls=(0.0 0.15 0.35 0.5 0.7 0.85)
-export p_ls=(0.0 0.25 0.5 0.75)
-export eps_ls=(0.0 0.15 0.35 0.5 0.7 0.85)
-export method_ls=("vanilla" "er")
+# export p_ls=(0.0 0.25 0.5 0.75)
+export p_ls=(0.0)
+# export eps_ls=(0.0 0.15 0.35 0.5 0.7 0.85)
+export eps_ls=(0.0 0.03 0.05 0.08 0.10 0.15 0.35 0.5 0.7 0.85)
+# export method_ls=("vanilla" "er")
+export method_ls=("vanilla")
 
 export cuda_num=5
 

@@ -128,7 +128,8 @@ class Inference:
 
         only_decoder=True
         if "gpt" in model_path:
-            if "noSoftmax" in model_path or True:
+            if ("noSoftmax" in model_path or True) and approximation\
+               and "mpc" not in model_path:
                 print(">>>USING NO-SOFTMAX VERSION GPT-2.")
                 self.decoder=NosoftmaxGPT2\
                     .from_pretrained(model_path)
@@ -242,7 +243,7 @@ class Inference:
         print(">> NLG metrics loading DONE.")
         
 
-        self.BartScorer=BARTScorer(device="cuda:6",max_length=1024,
+        self.BartScorer=BARTScorer(device="cuda:2",max_length=1024,
                                    checkpoint="/home/liangzi/models/bart-large-cnn",
                                    # local_files_only=True,
                                    )
@@ -386,7 +387,7 @@ class Inference:
 
         print(f"hyps:{hyps[0]}; refs:{refs[0]}; one-refs: {one_refs[0]}")
 
-        x=bertscore(hyps,refs,lang="en",verbose=True,device="cuda:6")
+        x=bertscore(hyps,refs,lang="en",verbose=True,device="cuda:2")
         # print("bertscore res:",x)
         big_res_dict["bert_score"]=sum(x[2])/len(hyps)
 
@@ -746,7 +747,7 @@ def main():
     print(xxx)
 
 
-    DEVICE="cuda:6"
+    DEVICE="cuda:2"
     # pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/"
     # pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114103e-50.01/"
     pth="./stage1_ckpts/web_nlg-epoch3-lr5e-05-bs1gpt2/___withConstantMatrixDistilled1114003e-40.01/"

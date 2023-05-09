@@ -24,13 +24,13 @@ from collections import OrderedDict
 def main():
     withsep=True
 
-    ## 17. dailydialog gpt2 MERGE
-    task="daily_dialog"
-    subset=None
-    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftmax500001000104118e-50.010.60.70.75finally"
-    model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/mask500001000104118e-50.010.60.70.75finally"
-    gentype="vanilla"
-    # gentype="ER"
+    # ## 17. dailydialog gpt2 MERGE
+    # task="daily_dialog"
+    # subset=None
+    # # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/indexAfterSoftmax500001000104118e-50.010.60.70.75finally"
+    # model_path="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs4gpt2/mask500001000104118e-50.010.60.70.75finally"
+    # gentype="vanilla"
+    # # gentype="ER"
 
     # ## 17. multiwoz gpt2 MERGE
     # task="multiwoz_nlg"
@@ -39,13 +39,13 @@ def main():
     # gentype="vanilla"
     # # gentype="ER"
 
-    # ## 17. multiwoz t5 &BART MERGE
-    # task="multiwoz_nlg"
-    # subset=None
+    ## 17. multiwoz t5 &BART MERGE
+    task="multiwoz_nlg"
+    subset=None
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally"
-    # # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-basemask500001000104118e-50.010.60.70.75finally/"
     # gentype="vanilla"
-    # # gentype="ER"
+    gentype="ER"
 
     # ## 17. commongen gpt2 MERGE
     # task="common_gen"
@@ -60,7 +60,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=6
+    cuda_num=0
 
     # gentype="ER"
 
