@@ -1,5 +1,5 @@
 """
-======================================================================
+=====================================================================
 3.2.NOSOFTMAX_EVAL --- 
 
     Author: Zi Liang <liangzid@stu.xjtu.edu.cn>
@@ -43,7 +43,14 @@ def main():
     task="multiwoz_nlg"
     subset=None
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-basemask500001000104118e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/bigNoise500001000104118e-50.010.60.850.85finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/maskAgain500001000104118e-50.010.60.70.75epoch20/"
     model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-basemask500001000104118e-50.010.60.70.75finally/"
+
+
     # gentype="vanilla"
     gentype="ER"
 
@@ -60,7 +67,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=0
+    cuda_num=2
 
     # gentype="ER"
 
@@ -80,8 +87,8 @@ def main():
                                 max_sentence_length=infermodel.msl//2,
                                 task=task,subset=subset,withsep=withsep)
     else:
-        # split="train"
-        split="test"
+        split="train"
+        # split="test"
         te=getTestDataSet(infermodel.tokenizer,split=split,
                                 max_sentence_length=infermodel.msl//2,
                                 task=task,subset=subset,withsep=withsep)

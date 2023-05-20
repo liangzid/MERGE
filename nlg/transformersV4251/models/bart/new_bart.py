@@ -251,8 +251,15 @@ class BartAttention(nn.Module):
                 f" {attn_weights.size()}"
             )
 
+        ## ---------added for calculating constant matrix--------------------
+        isl=attn_weights.shape[1]
+        sl=attn_weights.shape[2]
+        attn_weights=self.M.unsqueeze(0)
+        if bsz!=1:
+            attn_weights=attn_weights.repeat(bsz,1,1,1)
+        attn_weights=attn_weights.type(value_states.dtype)
 
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
+
 
         # print(attn_weights.shape)
         # print("+++++++")
@@ -268,27 +275,21 @@ class BartAttention(nn.Module):
             attn_weights = attn_weights.view(bsz, self.num_heads, tgt_len, src_len) * attention_mask
             attn_weights = attn_weights.view(bsz * self.num_heads, tgt_len, src_len)
 
-        # ## ---------added for calculating constant matrix--------------------
-        # isl=attn_weights.shape[1]
-        # sl=attn_weights.shape[2]
-        # attn_weights=self.M.unsqueeze(0)
-        # if bsz!=1:
-        #     attn_weights=attn_weights.repeat(bsz,1,1,1)
-        # attn_weights=attn_weights.type(value_states.dtype)
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 
-        # # print(attn_weights.shape)
-        # # if is_cross_attention:
-        # #     attn_weights=attn_weights[:,:,:isl,:sl]
-        # # else:
-        # #     attn_weights=attn_weights[:,:,:sl,:sl]
-        # attn_weights=attn_weights[:,:,:isl,:sl]
-        # # print(attn_weights.shape)
+        # print(attn_weights.shape)
+        # if is_cross_attention:
+        #     attn_weights=attn_weights[:,:,:isl,:sl]
+        # else:
+        #     attn_weights=attn_weights[:,:,:sl,:sl]
+        attn_weights=attn_weights[:,:,:isl,:sl]
+        # print(attn_weights.shape)
 
-        # # print(self.num_heads, self.config.num_attention_heads)
-        # # print(sl,isl,tgt_len,src_len)
-        # attn_weights=attn_weights.reshape(-1,tgt_len,src_len)
-        # # assert attn_weights.shape==(bsz * self.num_heads, tgt_len, src_len)
-        # ## ---------added for calculating constant matrix--------------------
+        # print(self.num_heads, self.config.num_attention_heads)
+        # print(sl,isl,tgt_len,src_len)
+        attn_weights=attn_weights.reshape(-1,tgt_len,src_len)
+        # assert attn_weights.shape==(bsz * self.num_heads, tgt_len, src_len)
+        ## ---------added for calculating constant matrix--------------------
 
 
         if layer_head_mask is not None:

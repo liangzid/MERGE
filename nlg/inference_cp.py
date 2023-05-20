@@ -280,7 +280,6 @@ class Inference:
 
                     ## using self-defined forward function
                     outputs=self.gen_greedyUgly(input_ids)
-
                     # outputs=self.gen_virtualEmbedReSend(input_ids)
                     # outputs=self.gen_embedResend(input_ids)
                 else:
@@ -406,7 +405,7 @@ class Inference:
         Embedding resend style sentence generation.
         """
         # print(">>> USING EMBEDRESEND GENERATION.")
-        self.decoder.train()
+        # self.decoder.train()
 
         # 1.2 then get the embeddings of ids.
         ## noted: here we only need the semantic embedding,
@@ -649,8 +648,14 @@ class Inference:
             gen_len=self.msl-sl
         else:
             bs,sl=prefix_ids.shape
-            decoder_input_ids=self.tokenizer([" "],return_tensors="pt").input_ids
+            decoder_input_ids=torch.tensor([self.config.decoder_start_token_id])\
+                                   .unsqueeze(0)
             decoder_input_ids=decoder_input_ids.to(self.device)
+
+            # if "bart" in self.model_path:
+            decoder_input_ids=decoder_input_ids[:,:1]
+            decoder_input_embedds=self.embedds(decoder_input_ids)
+
             sl=1
             gen_len=self.msl-sl
 
@@ -663,6 +668,12 @@ class Inference:
                     output=self.decoder(
                         inputs_embeds=embedds,
                         # attention_mask=attns,
+                        output_hidden_states=True,
+                        )
+                else:
+                    output=self.decoder.forward(
+                        prefix_ids,
+                        decoder_inputs_embeds=decoder_input_embedds,
                         output_hidden_states=True,
                         )
                 if self.only_decoder:
@@ -694,7 +705,35 @@ class Inference:
                     
                     # print(embedds)
                     # noise=(torch.rand(embedds.shape)-0.5)*2/14
-                    noise=(torch.rand(embedds.shape)-0.5)*2/4
+                    noise=(torch.rand(embedds.shape)-0.5)*2/4*0.
+                    # mask p% noise
+                    p=0.25
+                    mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))
+                    noise=noise*mask_noise
+                    # print("noise ",noise)
+                    noise=noise.to(embedds.device)
+                    new_embedds=embedds+noise
+
+                    mse_logits=F.mse_loss(embedds,new_embedds)
+                    if _%10==0:
+                        print(f"mse between two embedds: {mse_logits}")
+                    embedds=new_embedds
+                else:
+                    # here we just use the greedy search for generation
+                    prefix_ids = torch.cat([prefix_ids,
+                                    sorted_ids[None, 0, None]], dim=-1)
+                    decoder_input_ids=prefix_ids
+
+                    # newadded_embedd=self.embedds(prefix_ids[:,-1:])
+                    newadded_embedd=self.embedds(prefix_ids[:,-1:])
+
+                    embedds=torch.cat([embedds,newadded_embedd,
+                                       ],
+                                      dim=1)
+                    
+                    # print(embedds)
+                    # noise=(torch.rand(embedds.shape)-0.5)*2/14
+                    noise=(torch.rand(embedds.shape)-0.5)*2/4*0.
                     # mask p% noise
                     p=0.25
                     mask_noise=torch.bernoulli(torch.ones_like(noise)*(1-p))

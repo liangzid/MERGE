@@ -38,16 +38,17 @@ export max_seq_length=128
 # export teach_ckpt="./stage1_ckpts/${task}-epoch3-lr5e-05-bs32gpt2/"
 # export device="1"
 
-export batch_size=16
+export batch_size=32
 export task="multiwoz_nlg"
 # export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
 export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
-export device="6"
+export device="3"
 
 # export teach_ckpt="./stage1_ckpts/daily_dialog-epoch3-lr5e-05-bs1bart-base/6gpt2/"
 # export teach_ckpt="./stage1_ckpts/e2e_nlg-epoch3-lr5e-05-bs4gpt2/fianlly/"
 
 export stu_ckpt=${teach_ckpt}
+# export stu_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/"
 # export stu_ckpt=${teach_ckpt}___withConstantMatrix/
 
 export using_entropy=1
@@ -85,11 +86,11 @@ export lamda=0.75
 
 export weight_decay=0.01
 export dropout_rate=0.6
-export noise=0.7
+export noise=0.75
 # export noise=0.2
 
 # export using_wordEmbedMSE=0
-export stu_save_ckpt=${stu_ckpt}mask${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}newModel${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 

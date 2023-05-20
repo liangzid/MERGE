@@ -239,8 +239,9 @@ def train(args, tmodel, smodel,prolayer,
                 # print("---")
                 # print(shift_laem.shape)
                 # print(shift_sta.shape)
-                wordCos_loss=cosineEmbedLoss(shift_laem.reshape(-1,states.shape[-1]),
-                                              shift_sta.reshape(-1,states.shape[-1]),
+                wordCos_loss=cosineEmbedLoss\
+                    (shift_laem.reshape(-1,states.shape[-1]),
+                              shift_sta.reshape(-1,states.shape[-1]),
                                               labels.reshape(-1))
                 num_loss+=1
             if args.using_NEGAEm==1:

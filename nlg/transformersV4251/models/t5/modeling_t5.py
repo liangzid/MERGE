@@ -551,6 +551,7 @@ class T5Attention(nn.Module):
         mask= torch.where(mask < threshold,
                             torch.zeros_like(mask),
                             torch.ones_like(mask))
+        # print(f"mask: {mask}")
         bs=scores.shape[0]
         head=scores.shape[1]
 
@@ -566,6 +567,7 @@ class T5Attention(nn.Module):
         attn_weights = attn_weights.type(scores.dtype)
 
 
+        print(f"self.pruned_heads: {self.pruned_heads}.")
         if self.pruned_heads:
             mask = torch.ones(position_bias.shape[1])
             mask[list(self.pruned_heads)] = 0
@@ -573,7 +575,6 @@ class T5Attention(nn.Module):
         else:
             position_bias_masked = position_bias
 
-        # attn_weights += position_bias_masked
 
         # this is a bug +++===
         # move the dropout to the 后面
@@ -584,6 +585,14 @@ class T5Attention(nn.Module):
             attn_weights=attn_weights[:,:,:isl,:sl]
         else:
             attn_weights=attn_weights[:,:,:isl,:sl]
+
+        position_bias_masked=position_bias_masked.repeat(bs,1,1,1)
+        print(f"attn: {attn_weights.shape}")
+        print(f"position: {position_bias_masked.shape}")
+        
+        ## this line has an error.
+        attn_weights += position_bias_masked
+
         # print("-=-=-=-=-=-=-=")
         if mask.shape[2]==1:
             mask=mask.repeat(1,head,isl,1)
