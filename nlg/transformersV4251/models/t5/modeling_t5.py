@@ -567,7 +567,7 @@ class T5Attention(nn.Module):
         attn_weights = attn_weights.type(scores.dtype)
 
 
-        print(f"self.pruned_heads: {self.pruned_heads}.")
+        # print(f"self.pruned_heads: {self.pruned_heads}.")
         if self.pruned_heads:
             mask = torch.ones(position_bias.shape[1])
             mask[list(self.pruned_heads)] = 0
@@ -575,6 +575,18 @@ class T5Attention(nn.Module):
         else:
             position_bias_masked = position_bias
 
+        position_bias_masked=position_bias_masked.repeat(bs,1,1,1)
+        # print(f"attn: {attn_weights.shape}")
+        # print(f"position: {position_bias_masked.shape}")
+        # print(position_bias.shape)
+        p1,p2,p3,p4=position_bias.shape
+        new34=self.M.shape[-1]
+        newposition_bias=torch.zeros((p1,p2,new34,
+                                      new34)).to(position_bias.device)
+        newposition_bias[:,:,:p3,:p4]=position_bias
+
+        ## this line has an error.
+        attn_weights = attn_weights+newposition_bias
 
         # this is a bug +++===
         # move the dropout to the 后面
@@ -586,12 +598,7 @@ class T5Attention(nn.Module):
         else:
             attn_weights=attn_weights[:,:,:isl,:sl]
 
-        position_bias_masked=position_bias_masked.repeat(bs,1,1,1)
-        print(f"attn: {attn_weights.shape}")
-        print(f"position: {position_bias_masked.shape}")
         
-        ## this line has an error.
-        attn_weights += position_bias_masked
 
         # print("-=-=-=-=-=-=-=")
         if mask.shape[2]==1:
