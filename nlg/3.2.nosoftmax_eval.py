@@ -42,19 +42,18 @@ def main():
     ## 17. multiwoz t5 &BART MERGE
     task="multiwoz_nlg"
     subset=None
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-basemask500001000104118e-50.010.60.70.75finally/"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/bigNoise500001000104118e-50.010.60.850.85finally/"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/mask500001000104118e-50.010.60.70.75finally/maskAgain500001000104118e-50.010.60.70.75epoch20/"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-basemask500001000104118e-50.010.60.70.75finally/"
-    model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/onlyER500001000104008e-50.010.60.750.85finally/"
-    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/onlyER500001000104008e-50.010.60.750.85finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseonlyER500001000104008e-50.010.60.750.75finally"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE500001000104118e-5finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/newModel500001000104118e-50.010.60.750.75epoch25/"
+
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/newModel800001000104118e-50.010.60.750.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-5finally/"
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-50.010.30.450.75finally/"
 
 
-    # gentype="vanilla"
-    gentype="ER"
+    gentype="vanilla"
+    # gentype="ER"
 
     # ## 17. commongen gpt2 MERGE
     # task="common_gen"
@@ -69,7 +68,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=2
+    cuda_num=3
 
     # gentype="ER"
 

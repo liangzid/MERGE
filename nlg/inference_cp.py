@@ -457,8 +457,8 @@ class Inference:
                 if self.only_decoder:
                     decoder_input_ids=prefix_ids
                 
-                # print("======")
-                # print(output.logits.shape)
+                print("======")
+                print(output.logits.shape)
                 next_token_logits=output.logits[0,-1,:]
                 next_token_distribution=F.softmax(next_token_logits,dim=-1)
 

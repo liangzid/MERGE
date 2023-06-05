@@ -13,7 +13,7 @@ export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcgen/nlg/"
 
 export epochs=3000
-export step=50000
+export step=80000
 # export lr=8e-4
 export lr=8e-5
 # export lr=3e-4

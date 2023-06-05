@@ -11,15 +11,17 @@ export python=/home/liangzi/anaconda3/envs/HE/bin/python3
 export root_dir="/home/liangzi/mpcgen/nlg/"
 
 export epochs=3000
-export step=50000
+export step=100000
 # export lr=8e-4
 export lr=8e-5
 export max_seq_length=128
 
-export batch_size=32
+# export batch_size=32
+export batch_size=1
 export task="multiwoz_nlg"
-export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
-export device="4"
+# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
+export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
+export device="3"
 
 export stu_ckpt=${teach_ckpt}
 
@@ -45,15 +47,17 @@ export using_quadacti=1 ##### now add the quadtic option.
 export using_simLN=1
 export no_res=0
 export no_softmax=1
-export stu_save_ckpt=${stu_ckpt}MERGE${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+
+export weight_decay=0.01
+export dropout_rate=0.7
+export noise=0.75
+# export noise=0.2
 export lamda=0.75
+
+export stu_save_ckpt=${stu_ckpt}MERGEabsoluteReally${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 ##############################################################
 
-export weight_decay=0.01
-export dropout_rate=0.6
-export noise=0.75
-# export noise=0.2
 
 
 export lonelyLongOverallPath="./distillModelResTest.log"

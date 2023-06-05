@@ -180,7 +180,7 @@ class BartAttention(nn.Module):
         else:
             self.msl=128
         self.M = nn.Parameter(torch.ones(config.num_attention_heads,
-                                          self.msl,
+                                          self.msl*2, # new 0604
                                           self.msl))
         self.config=config
 
@@ -270,7 +270,17 @@ class BartAttention(nn.Module):
         #     attn_weights=attn_weights[:,:,:isl,:sl]
         # else:
         #     attn_weights=attn_weights[:,:,:sl,:sl]
+
+        ## past
         attn_weights=attn_weights[:,:,:isl,:sl]
+        ## new version
+        if isl!=sl:
+            # new 0604
+            # attn_weights=attn_weights[:,:,sl:isl+sl,:sl]
+            attn_weights=attn_weights[:,:,:isl,:sl]
+        else:
+            attn_weights=attn_weights[:,:,:isl,:sl]
+
         # print(attn_weights.shape)
 
         if attention_mask is not None:
