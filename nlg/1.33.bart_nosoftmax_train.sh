@@ -16,12 +16,12 @@ export step=100000
 export lr=8e-5
 export max_seq_length=128
 
-# export batch_size=32
-export batch_size=1
+export batch_size=32
+# export batch_size=1
 export task="multiwoz_nlg"
 # export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
 export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
-export device="3"
+export device="1"
 
 export stu_ckpt=${teach_ckpt}
 
@@ -49,16 +49,14 @@ export no_res=0
 export no_softmax=1
 
 export weight_decay=0.01
-export dropout_rate=0.7
-export noise=0.75
+export dropout_rate=0.75
+export noise=0.95
 # export noise=0.2
-export lamda=0.75
+export lamda=0.9
 
-export stu_save_ckpt=${stu_ckpt}MERGEabsoluteReally${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
+export stu_save_ckpt=${stu_ckpt}BigNoise${step}${using_entropy}${using_softLabel}${using_interKL}${using_wordEmbedMSE}${using_COSEm}${using_NEGAEm}${tau}${using_quadacti}${using_simLN}${lr}${weight_decay}${dropout_rate}${noise}${lamda}
 
 ##############################################################
-
-
 
 export lonelyLongOverallPath="./distillModelResTest.log"
 

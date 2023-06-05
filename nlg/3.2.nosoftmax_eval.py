@@ -49,11 +49,13 @@ def main():
 
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/newModel800001000104118e-50.010.60.750.75finally/"
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-5finally/"
-    model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-50.010.30.450.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-50.010.30.450.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-50.010.30.450.75finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGEabsolute500001000104118e-50.010.850.850.85finally/"
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/MERGEabsolute500001000104118e-50.010.850.850.85finally"
 
-
-    gentype="vanilla"
-    # gentype="ER"
+    # gentype="vanilla"
+    gentype="ER"
 
     # ## 17. commongen gpt2 MERGE
     # task="common_gen"
@@ -68,7 +70,7 @@ def main():
         withsep=False
     
     # cuda_num=1
-    cuda_num=3
+    cuda_num=1
 
     # gentype="ER"
 

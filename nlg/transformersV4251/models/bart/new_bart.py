@@ -180,7 +180,7 @@ class BartAttention(nn.Module):
         else:
             self.msl=128
         self.M = nn.Parameter(torch.ones(config.num_attention_heads,
-                                          self.msl*2, # new 0604
+                                          self.msl, # new 0604
                                           self.msl))
         self.config=config
 
