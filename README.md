@@ -222,9 +222,20 @@ ${python} train_slide.py \
 ```
 
 ## Speed Experiments
+Inference Time:
+<img
+  src="./imgs/speed1.png"
+  title=" "
+  style="display: inline-block; margin: 0 auto; max-width: 300px">
+
+Communication Bytes:
+<img
+  src="./imgs/speed2.png"
+  title=" "
+  style="display: inline-block; margin: 0 auto; max-width: 300px">
 
 <img
-  src="./imgs/speed.png"
+  src="./imgs/curve.png"
   title=" "
   style="display: inline-block; margin: 0 auto; max-width: 300px">
 
