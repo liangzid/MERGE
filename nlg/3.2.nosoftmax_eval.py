@@ -52,7 +52,11 @@ def main():
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-50.010.30.450.75finally/"
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGE900001000104118e-50.010.30.450.75finally/"
     # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseMERGEabsolute500001000104118e-50.010.850.850.85finally/"
-    model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/MERGEabsolute500001000104118e-50.010.850.850.85finally"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/MERGEabsolute500001000104118e-50.010.850.850.85finally"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/BigNoise1000001000104118e-50.010.750.80.85finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/BigNoise1000001000104118e-50.010.750.90.9finally/"
+    # model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseBigNoise1000001000104118e-50.010.750.90.9finally/"
+    model_path="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-baseBigNoise1000001000104118e-50.010.80.90.9"
 
     # gentype="vanilla"
     gentype="ER"

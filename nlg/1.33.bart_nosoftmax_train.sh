@@ -19,9 +19,9 @@ export max_seq_length=128
 export batch_size=32
 # export batch_size=1
 export task="multiwoz_nlg"
-# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
-export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
-export device="1"
+export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch6-lr5e-5-bs32bart-base"
+# export teach_ckpt="./stage1_ckpts/multiwoz_nlg-epoch3-lr5e-05-bs4t5-small/"
+export device="6"
 
 export stu_ckpt=${teach_ckpt}
 
@@ -49,7 +49,7 @@ export no_res=0
 export no_softmax=1
 
 export weight_decay=0.01
-export dropout_rate=0.75
+export dropout_rate=0.9
 export noise=0.95
 # export noise=0.2
 export lamda=0.9
