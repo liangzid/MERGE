@@ -11,8 +11,23 @@ This repository refers to following two projects:
 I reproduce MPCformer and THE-X for three generative language models (GPT series, T5, and Bart) in this repository, which can be seen in [this place](https://github.com/liangzid/MPCGen/tree/master/nlg/transformersV4251/models).
 
 ## Introduction of MERGE framework
-Recent years have seen increasing concerns about the private inference of NLP services and Transformer models. However, existing two-party privacy-preserving methods solely consider NLU scenarios, while the private inference of text generation such as translation, dialogue, and code completion remains unsolved. Besides, while migrated to NLG models, existing privacy-preserving methods perform poorly in terms of inference speed, and suffer from the convergence problem during the training stage. To address these issues, we propose MERGE, a fast private text generation framework for Transformer-based language models. Specifically, MERGE reuse the output hidden state as the word embedding to bypass the embedding computation, and reorganize the linear operations in the Transformer module to accelerate the forward procedure.
-Based on these two optimizations, extensive experiments show that MERGE can achieve a 26.5x speedup under the sequence length 512, and reduce 80\% communication bytes, with an up to 10x speedup to existing state-of-art models.
+The drastic increase in language models’ parameters has led to
+a new trend of deploying models in cloud servers, raising growing concerns about private inference for Transformer-based
+models. Existing two-party privacy-preserving techniques,
+however, only take into account natural language understanding (NLU) scenarios. Private inference in natural language
+generation (NLG), crucial for applications like translation and
+code completion, remains underexplored. In addition, previous
+privacy-preserving techniques suffer from convergence issues
+during model training and exhibit poor inference speed when
+used with NLG models due to the neglect of time-consuming
+operations in auto-regressive generations. To address these
+issues, we propose a fast private text generation framework
+for Transformer-based language models, namely MERGE.
+MERGE reuses the output hidden state as the word embedding to bypass the embedding computation and reorganize
+the linear operations in the Transformer module to accelerate the forward procedure. Extensive experiments show that
+MERGE achieves a 26.5x speedup to the vanilla encrypted
+model under the sequence length 512, and reduces 80% communication cost, with an up to 10x speedup to state-of-the-art
+approximated models.
 
 ### Inference Bottleneck of Private Generation
 
